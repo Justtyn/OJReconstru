@@ -49,7 +49,6 @@ CREATE TABLE `classes` (
   `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT '班级ID',
   `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '班级名称',
   `creator_id` int unsigned DEFAULT NULL COMMENT '创建者',
-  `homework_quantity` int NOT NULL DEFAULT '0' COMMENT '作业数量',
   `code` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '加入码',
   `start_date` date DEFAULT NULL COMMENT '开始日期',
   `end_date` date DEFAULT NULL COMMENT '结束日期',

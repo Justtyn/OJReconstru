@@ -37,7 +37,6 @@ CREATE TABLE classes (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   creator_id BIGINT,
-  homework_quantity INT,
   code VARCHAR(64),
   start_date DATE,
   end_date DATE,

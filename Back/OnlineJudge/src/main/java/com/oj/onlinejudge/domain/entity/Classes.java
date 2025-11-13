@@ -22,9 +22,6 @@ public class Classes {
     @TableField("creator_id")
     @Schema(description = "创建者教师ID")
     private Long creatorId; // teacher id
-    @TableField("homework_quantity")
-    @Schema(description = "作业数量")
-    private Integer homeworkQuantity;
     @Schema(description = "班级邀请码")
     private String code;
     @TableField("start_date")

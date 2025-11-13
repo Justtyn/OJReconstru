@@ -23,3 +23,18 @@ logging:
   level:
     root: warn
 
+app:
+  mail:
+    enabled: false
+  auth:
+    require-email-verify: false
+    verify.store: memory
+  logging:
+    login:
+      async: false
+
+jwt:
+  whitelist:
+    - /api/auth/login
+    - /api/auth/register
+    - /api/auth/verifyEmail

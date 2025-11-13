@@ -10,7 +10,7 @@ spring:
     username: root
     password: jzh030528
   mail:
-    host: smtp.example.com
+    host: smtp.qq.com
     port: 587
     username: 1046220903@qq.com
     password: mtcnsxneerxsbbhh
@@ -31,6 +31,9 @@ spring:
     init:
       mode: never
       schema-locations: classpath:re-oj.sql
+  redis:
+    host: localhost
+    port: 6379
 
 mybatis-plus:
   mapper-locations: classpath:/mapper/**/*.xml
@@ -58,7 +61,19 @@ jwt:
   whitelist:
     - /api/auth/login
     - /api/auth/register
+    - /api/auth/verifyEmail
 
 security:
   password:
     salt: change-this-salt
+
+app:
+  mail:
+    enabled: true
+  auth:
+    require-email-verify: true
+    verify.store: redis
+    verify-redis-prefix: "verify:reg:"
+  logging:
+    login:
+      async: true

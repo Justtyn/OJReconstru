@@ -4,6 +4,7 @@ import com.oj.onlinejudge.common.api.ApiResponse;
 import com.oj.onlinejudge.config.JwtProperties;
 import com.oj.onlinejudge.domain.dto.LoginRequest;
 import com.oj.onlinejudge.domain.dto.RegisterRequest;
+import com.oj.onlinejudge.domain.dto.VerifyEmailRequest;
 import com.oj.onlinejudge.domain.entity.LoginLog;
 import com.oj.onlinejudge.domain.entity.Student;
 import com.oj.onlinejudge.domain.entity.Teacher;
@@ -13,9 +14,11 @@ import com.oj.onlinejudge.security.AuthenticatedUser;
 import com.oj.onlinejudge.security.JwtTokenProvider;
 import com.oj.onlinejudge.security.PasswordService;
 import com.oj.onlinejudge.service.LoginLogService;
+import com.oj.onlinejudge.service.MailService;
 import com.oj.onlinejudge.service.StudentService;
 import com.oj.onlinejudge.service.TeacherService;
 import com.oj.onlinejudge.service.AdminService;
+import com.oj.onlinejudge.service.VerificationCodeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,6 +28,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,23 +45,93 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtProperties jwtProperties;
     private final LoginLogService loginLogService;
+    private final MailService mailService;
+    private final VerificationCodeService verificationCodeService;
 
-    @Operation(summary = "注册", description = "创建学生账号并返回Token")
+    @Value("${app.auth.require-email-verify:true}")
+    private boolean requireEmailVerify;
+
+    private static final long VERIFY_EXPIRE_MINUTES = 10L;
+
+    @Operation(summary = "注册(发送验证码或直接注册)", description = "当开启邮箱验证时发送验证码；测试或关闭时直接注册并返回Token")
     @PostMapping("/register")
     public ApiResponse<AuthUserVO> register(@Valid @RequestBody RegisterRequest request,
                                             HttpServletRequest httpReq) {
+        // 基础校验：用户名重复
         if (studentService.findByUsername(request.getUsername()).isPresent()) {
             throw new IllegalArgumentException("用户名已存在");
         }
-        Student s = new Student();
-        s.setUsername(request.getUsername());
-        s.setPassword(passwordService.encode(request.getPassword()));
-        s.setEmail(request.getEmail());
-        s.setName(request.getName());
-        s.setScore(0);
-        if (!studentService.save(s)) {
-            return ApiResponse.failure(500, "注册失败");
+        // 邮箱占用（仅校验正式用户表，待验证数据由 Redis 暂存，不做全局扫描）
+        if (StringUtils.hasText(request.getEmail())) {
+            boolean emailUsed = studentService.lambdaQuery().eq(Student::getEmail, request.getEmail()).count() > 0;
+            if (emailUsed) throw new IllegalArgumentException("邮箱已被使用");
         }
+
+        if (!requireEmailVerify) {
+            // 直接创建用户并返回 token（用于测试环境）
+            Student s = new Student();
+            s.setUsername(request.getUsername());
+            s.setPassword(passwordService.encode(request.getPassword()));
+            s.setEmail(request.getEmail());
+            s.setName(request.getName());
+            s.setScore(0);
+            s.setIsVerified(true);
+            studentService.save(s);
+            if (StringUtils.hasText(s.getEmail())) {
+                mailService.sendRegisterSuccess(s.getEmail(), s.getUsername(), "student");
+            }
+            String token = jwtTokenProvider.generateToken(s.getId(), s.getUsername(), "student");
+            String bearer = jwtProperties.getPrefix() + " " + token;
+            createLoginLog(s.getId(), s.getUsername(), "student", httpReq, true, null);
+            AuthUserVO vo = AuthUserVO.builder()
+                    .id(s.getId()).username(s.getUsername()).email(s.getEmail()).avatar(s.getAvatar())
+                    .role("student").token(bearer)
+                    .details(buildDetails(s))
+                    .build();
+            return ApiResponse.success("注册成功", vo);
+        }
+        // 开启邮箱验证：存储到 Redis 并发送验证码
+        verificationCodeService.savePending(request.getUsername(), request.getEmail(),
+                passwordService.encode(request.getPassword()), request.getName(),
+                generateAlphaNumCode(6), VERIFY_EXPIRE_MINUTES);
+        if (StringUtils.hasText(request.getEmail())) {
+            verificationCodeService.get(request.getUsername()).ifPresent(p ->
+                    mailService.sendVerificationCode(p.email, p.username, p.code, VERIFY_EXPIRE_MINUTES));
+        }
+        createLoginLog(null, request.getUsername(), "student", httpReq, true, "register_pending");
+        return ApiResponse.success("验证码已发送，请查收邮件并在有效期内完成验证", null);
+    }
+
+    @Operation(summary = "验证邮箱并激活", description = "提交验证码，验证通过后创建账号并返回Token")
+    @PostMapping("/verifyEmail")
+    public ApiResponse<AuthUserVO> verifyEmail(@Valid @RequestBody VerifyEmailRequest req,
+                                               HttpServletRequest httpReq) {
+        VerificationCodeService.Pending p = verificationCodeService.get(req.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("未找到待验证的注册信息"));
+        if (System.currentTimeMillis() > p.expireEpochMillis) {
+            verificationCodeService.remove(req.getUsername());
+            throw new IllegalArgumentException("验证码已过期，请重新注册");
+        }
+        if (!p.code.equalsIgnoreCase(req.getCode())) {
+            verificationCodeService.increaseAttempts(req.getUsername());
+            throw new IllegalArgumentException("验证码不正确");
+        }
+        // 创建正式用户
+        Student s = new Student();
+        s.setUsername(p.username);
+        s.setPassword(p.passwordHash);
+        s.setEmail(p.email);
+        s.setName(p.name);
+        s.setScore(0);
+        s.setIsVerified(true);
+        studentService.save(s);
+        // 清理验证码记录
+        verificationCodeService.remove(req.getUsername());
+        // 发注册成功邮件
+        if (StringUtils.hasText(s.getEmail())) {
+            mailService.sendRegisterSuccess(s.getEmail(), s.getUsername(), "student");
+        }
+        // 返回登录态
         String token = jwtTokenProvider.generateToken(s.getId(), s.getUsername(), "student");
         String bearer = jwtProperties.getPrefix() + " " + token;
         createLoginLog(s.getId(), s.getUsername(), "student", httpReq, true, null);
@@ -65,9 +139,9 @@ public class AuthController {
                 .id(s.getId()).username(s.getUsername()).email(s.getEmail()).avatar(s.getAvatar())
                 .role("student")
                 .token(bearer)
-                .details(buildDetails(s)) // 新增 details
+                .details(buildDetails(s))
                 .build();
-        return ApiResponse.success("注册成功", vo);
+        return ApiResponse.success("注册并激活成功", vo);
     }
 
     @Operation(summary = "登录", description = "用户名密码登录，返回Token")
@@ -90,10 +164,13 @@ public class AuthController {
                 String tokenT = jwtTokenProvider.generateToken(teacher.getId(), teacher.getUsername(), "teacher");
                 String bearerT = jwtProperties.getPrefix() + " " + tokenT;
                 createLoginLog(teacher.getId(), teacher.getUsername(), "teacher", httpReq, true, null);
+                if (StringUtils.hasText(teacher.getEmail())) {
+                    mailService.sendLoginNotice(teacher.getEmail(), teacher.getUsername(), "teacher", httpReq.getRemoteAddr());
+                }
                 AuthUserVO voT = AuthUserVO.builder()
                         .id(teacher.getId()).username(teacher.getUsername()).email(teacher.getEmail()).avatar(teacher.getAvatar())
                         .role("teacher").token(bearerT)
-                        .details(buildDetails(teacher)) // 新增 details
+                        .details(buildDetails(teacher))
                         .build();
                 return ApiResponse.success("登录成功", voT);
             case "admin":
@@ -111,10 +188,13 @@ public class AuthController {
                 String tokenA = jwtTokenProvider.generateToken(admin.getId(), admin.getUsername(), "admin");
                 String bearerA = jwtProperties.getPrefix() + " " + tokenA;
                 createLoginLog(admin.getId(), admin.getUsername(), "admin", httpReq, true, null);
+                if (StringUtils.hasText(admin.getEmail())) {
+                    mailService.sendLoginNotice(admin.getEmail(), admin.getUsername(), "admin", httpReq.getRemoteAddr());
+                }
                 AuthUserVO voA = AuthUserVO.builder()
                         .id(admin.getId()).username(admin.getUsername()).email(admin.getEmail()).avatar(admin.getAvatar())
                         .role("admin").token(bearerA)
-                        .details(buildDetails(admin)) // 新增 details
+                        .details(buildDetails(admin))
                         .build();
                 return ApiResponse.success("登录成功", voA);
             case "student":
@@ -125,6 +205,9 @@ public class AuthController {
                     createLoginLog(user.getId(), user.getUsername(), "student", httpReq, false, "密码错误");
                     throw new IllegalArgumentException("账号或密码错误");
                 }
+                if (user.getIsVerified() != null && !user.getIsVerified()) {
+                    throw new IllegalArgumentException("邮箱未验证，无法登录");
+                }
                 // 更新学生最近登录时间及IP
                 user.setLastLoginTime(java.time.LocalDateTime.now());
                 user.setLastLoginIp(httpReq.getRemoteAddr());
@@ -132,10 +215,13 @@ public class AuthController {
                 String token = jwtTokenProvider.generateToken(user.getId(), user.getUsername(), "student");
                 String bearer = jwtProperties.getPrefix() + " " + token;
                 createLoginLog(user.getId(), user.getUsername(), "student", httpReq, true, null);
+                if (StringUtils.hasText(user.getEmail())) {
+                    mailService.sendLoginNotice(user.getEmail(), user.getUsername(), "student", httpReq.getRemoteAddr());
+                }
                 AuthUserVO vo = AuthUserVO.builder()
                         .id(user.getId()).username(user.getUsername()).email(user.getEmail()).avatar(user.getAvatar())
                         .role("student").token(bearer)
-                        .details(buildDetails(user)) // 新增 details
+                        .details(buildDetails(user))
                         .build();
                 return ApiResponse.success("登录成功", vo);
         }
@@ -157,6 +243,24 @@ public class AuthController {
         if (latest != null) {
             latest.setLogoutTime(java.time.LocalDateTime.now());
             loginLogService.updateById(latest);
+        }
+        // 邮件提醒
+        String role = current.getRole();
+        if ("student".equals(role)) {
+            Student s = studentService.getById(current.getUserId());
+            if (s != null && StringUtils.hasText(s.getEmail())) {
+                mailService.sendLogoutNotice(s.getEmail(), s.getUsername(), role);
+            }
+        } else if ("teacher".equals(role)) {
+            Teacher t = teacherService.getById(current.getUserId());
+            if (t != null && StringUtils.hasText(t.getEmail())) {
+                mailService.sendLogoutNotice(t.getEmail(), t.getUsername(), role);
+            }
+        } else if ("admin".equals(role)) {
+            Admin a = adminService.getById(current.getUserId());
+            if (a != null && StringUtils.hasText(a.getEmail())) {
+                mailService.sendLogoutNotice(a.getEmail(), a.getUsername(), role);
+            }
         }
         return ApiResponse.success("注销成功", null);
     }
@@ -204,7 +308,7 @@ public class AuthController {
     private void createLoginLog(Long userId, String username, String role, HttpServletRequest req,
                                 boolean success, String failReason) {
         LoginLog log = new LoginLog();
-        log.setUserId(userId);
+        log.setUserId(userId == null ? 0L : userId);
         log.setUsername(username);
         log.setRole(role);
         log.setLoginTime(java.time.LocalDateTime.now());
@@ -237,8 +341,17 @@ public class AuthController {
             f.setAccessible(true);
             try {
                 map.put(name, f.get(entity));
-            } catch (IllegalAccessException ignored) {}
+            } catch (IllegalAccessException ignored) {
+            }
         }
         return map;
+    }
+
+    private String generateAlphaNumCode(int len) {
+        String chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789abcdefghjkmnpqrstuvwxyz"; // 去掉易混淆字符
+        java.security.SecureRandom r = new java.security.SecureRandom();
+        StringBuilder sb = new StringBuilder(len);
+        for (int i = 0; i < len; i++) sb.append(chars.charAt(r.nextInt(chars.length())));
+        return sb.toString();
     }
 }

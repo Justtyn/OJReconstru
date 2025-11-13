@@ -9,4 +9,5 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class LoginLogServiceImpl extends ServiceImpl<LoginLogMapper, LoginLog> implements LoginLogService {
+    // keep default synchronous behavior
 }

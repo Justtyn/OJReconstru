@@ -84,6 +84,9 @@ public class AuthController {
                     createLoginLog(teacher.getId(), teacher.getUsername(), "teacher", httpReq, false, "密码错误");
                     throw new IllegalArgumentException("账号或密码错误");
                 }
+                // 更新教师最近登录时间
+                teacher.setLastLoginTime(java.time.LocalDateTime.now());
+                teacherService.updateById(teacher);
                 String tokenT = jwtTokenProvider.generateToken(teacher.getId(), teacher.getUsername(), "teacher");
                 String bearerT = jwtProperties.getPrefix() + " " + tokenT;
                 createLoginLog(teacher.getId(), teacher.getUsername(), "teacher", httpReq, true, null);
@@ -101,6 +104,10 @@ public class AuthController {
                     createLoginLog(admin.getId(), admin.getUsername(), "admin", httpReq, false, "密码错误");
                     throw new IllegalArgumentException("账号或密码错误");
                 }
+                // 更新管理员最近登录时间及IP
+                admin.setLastLoginTime(java.time.LocalDateTime.now());
+                admin.setLastLoginIp(httpReq.getRemoteAddr());
+                adminService.updateById(admin);
                 String tokenA = jwtTokenProvider.generateToken(admin.getId(), admin.getUsername(), "admin");
                 String bearerA = jwtProperties.getPrefix() + " " + tokenA;
                 createLoginLog(admin.getId(), admin.getUsername(), "admin", httpReq, true, null);
@@ -118,6 +125,10 @@ public class AuthController {
                     createLoginLog(user.getId(), user.getUsername(), "student", httpReq, false, "密码错误");
                     throw new IllegalArgumentException("账号或密码错误");
                 }
+                // 更新学生最近登录时间及IP
+                user.setLastLoginTime(java.time.LocalDateTime.now());
+                user.setLastLoginIp(httpReq.getRemoteAddr());
+                studentService.updateById(user);
                 String token = jwtTokenProvider.generateToken(user.getId(), user.getUsername(), "student");
                 String bearer = jwtProperties.getPrefix() + " " + token;
                 createLoginLog(user.getId(), user.getUsername(), "student", httpReq, true, null);
@@ -153,8 +164,7 @@ public class AuthController {
     @Operation(summary = "当前用户信息", description = "根据 Token 返回当前登录用户信息", security = {@SecurityRequirement(name = "BearerAuth")})
     @GetMapping("/users/me")
     public ApiResponse<AuthUserVO> me(@RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false)
-                                      @Parameter(description = "当前认证用户") AuthenticatedUser current,
-                                      HttpServletRequest request) {
+                                      @Parameter(description = "当前认证用户") AuthenticatedUser current) {
         if (current == null) {
             return ApiResponse.failure(401, "未登录或Token失效");
         }

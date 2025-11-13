@@ -1,7 +1,5 @@
 package com.oj.onlinejudge.config;
 
-// OpenAPI/Swagger 文档配置：启用文档与 Bearer 鉴权展示
-
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
@@ -10,11 +8,16 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * OpenAPI/Swagger 文档配置。
+ * 功能：启用接口文档并展示 Bearer 鉴权入口，便于在 Swagger UI 中统一携带 JWT。
+ */
 @Configuration
 public class SwaggerConfig {
 
     /**
-     * 配置 OpenAPI 文档信息与 Bearer Token 安全方案
+     * 配置 OpenAPI 文档信息与 Bearer Token 安全方案。
+     * 使用方法：在 Swagger UI 点击 “Authorize”，粘贴 JWT 后自动带入请求头。
      */
     @Bean
     public OpenAPI openAPI(JwtProperties jwtProperties) {

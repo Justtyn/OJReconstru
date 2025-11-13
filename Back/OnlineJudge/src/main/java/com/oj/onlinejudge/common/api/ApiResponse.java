@@ -11,26 +11,38 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ApiResponse<T> {
 
-    /** 业务状态码，0 表示成功 */
+    /**
+     * 业务状态码，0 表示成功
+     */
     private int code;
 
-    /** 人类可读的提示消息 */
+    /**
+     * 人类可读的提示消息
+     */
     private String message;
 
-    /** 泛型数据载体 */
+    /**
+     * 泛型数据载体
+     */
     private T data;
 
-    /** 成功响应（默认消息） */
+    /**
+     * 成功响应（默认消息）
+     */
     public static <T> ApiResponse<T> success(T data) {
         return new ApiResponse<>(0, "success", data);
     }
 
-    /** 成功响应（自定义消息） */
+    /**
+     * 成功响应（自定义消息）
+     */
     public static <T> ApiResponse<T> success(String message, T data) {
         return new ApiResponse<>(0, message, data);
     }
 
-    /** 失败响应 */
+    /**
+     * 失败响应
+     */
     public static <T> ApiResponse<T> failure(int code, String message) {
         return new ApiResponse<>(code, message, null);
     }

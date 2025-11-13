@@ -9,7 +9,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * OpenAPI 配置：增加 Bearer 鉴权方案，方便在 Swagger UI 中携带 Token 调试。
+ * OpenAPI 配置。
+ * 功能：为 Swagger UI 增加 Bearer 鉴权方案，便于调试时携带 Token。
  */
 @Configuration
 public class OpenApiConfig {
@@ -29,4 +30,3 @@ public class OpenApiConfig {
                 .addSecurityItem(new SecurityRequirement().addList(schemeName));
     }
 }
-

@@ -1,8 +1,8 @@
 package com.oj.onlinejudge.security;
 
 // JWT Token 工具：负责生成、解析、验证 Token
-// - generateToken: 生成带用户名与ID的 JWT
-// - parseUser: 解析为简化的认证用户对象
+// - generateToken: 生成带用户名、ID 与 角色 的 JWT
+// - parseUser: 解析为认证用户对象
 // - resolveToken: 从请求头去掉前缀提取实际 Token
 
 import com.oj.onlinejudge.config.JwtProperties;
@@ -37,13 +37,19 @@ public class JwtTokenProvider {
         this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    /** 生成用户 Token */
+    /** 生成用户 Token（保持旧签名兼容，默认 student） */
     public String generateToken(Long userId, String username) {
+        return generateToken(userId, username, "student");
+    }
+
+    /** 生成包含角色的用户 Token */
+    public String generateToken(Long userId, String username, String role) {
         Instant now = Instant.now();
         Instant expiry = now.plus(jwtProperties.getExpireMinutes(), ChronoUnit.MINUTES);
         return Jwts.builder()
             .setSubject(String.valueOf(userId))
             .claim("username", username)
+            .claim("role", role)
             .setIssuedAt(Date.from(now))
             .setExpiration(Date.from(expiry))
             .signWith(secretKey, SignatureAlgorithm.HS256)
@@ -55,7 +61,9 @@ public class JwtTokenProvider {
         Claims claims = parseClaims(token);
         Long userId = Long.valueOf(claims.getSubject());
         String username = claims.get("username", String.class);
-        return new AuthenticatedUser(userId, username);
+        String role = claims.get("role", String.class);
+        if (role == null) role = "student"; // 兼容旧 token
+        return new AuthenticatedUser(userId, username, role);
     }
 
     private Claims parseClaims(String token) {

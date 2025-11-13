@@ -20,7 +20,8 @@ public class AuthUserVO {
     private String email;
     @Schema(description = "头像URL")
     private String avatar;
+    @Schema(description = "角色 student|teacher|admin")
+    private String role;
     @Schema(description = "带前缀的JWT令牌")
     private String token;
 }
-

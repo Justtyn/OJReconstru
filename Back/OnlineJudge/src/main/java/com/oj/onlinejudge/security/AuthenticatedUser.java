@@ -16,4 +16,7 @@ public class AuthenticatedUser {
     private Long userId;
 
     private String username;
+
+    // 新增：角色（student / teacher / admin）
+    private String role;
 }

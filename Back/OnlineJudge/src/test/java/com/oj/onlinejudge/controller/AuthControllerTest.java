@@ -4,6 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oj.onlinejudge.domain.dto.LoginRequest;
 import com.oj.onlinejudge.domain.dto.RegisterRequest;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.oj.onlinejudge.domain.entity.Teacher;
+import com.oj.onlinejudge.domain.entity.Admin;
+import com.oj.onlinejudge.security.PasswordService;
+import com.oj.onlinejudge.service.TeacherService;
+import com.oj.onlinejudge.service.AdminService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +30,9 @@ class AuthControllerTest {
 
     @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper objectMapper;
+    @Autowired TeacherService teacherService;
+    @Autowired AdminService adminService;
+    @Autowired PasswordService passwordService;
 
     @Test
     @DisplayName("登录-用户名不存在")
@@ -68,6 +76,7 @@ class AuthControllerTest {
             .andReturn().getResponse().getContentAsString();
         JsonNode node = objectMapper.readTree(res).get("data");
         assertThat(node.get("username").asText()).isEqualTo("reg1");
+        assertThat(node.get("role").asText()).isEqualTo("student");
     }
 
     @Test
@@ -100,11 +109,46 @@ class AuthControllerTest {
                 .content(objectMapper.writeValueAsString(lr)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.data.token", startsWith("Bearer ")))
+            .andExpect(jsonPath("$.data.role", is("student")))
             .andReturn().getResponse().getContentAsString();
         String token = objectMapper.readTree(loginRes).get("data").get("token").asText();
         mockMvc.perform(post("/api/auth/logout")
                 .header("Authorization", token))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code", is(0)));
+    }
+
+    @Test
+    @DisplayName("教师登录-成功")
+    void teacher_login_success() throws Exception {
+        Teacher t = new Teacher();
+        t.setUsername("t_login1");
+        t.setPassword(passwordService.encode("teachpass"));
+        teacherService.save(t);
+        LoginRequest lr = new LoginRequest();
+        lr.setUsername("t_login1"); lr.setPassword("teachpass"); lr.setRole("teacher");
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(lr)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.role", is("teacher")))
+            .andExpect(jsonPath("$.data.token", startsWith("Bearer ")));
+    }
+
+    @Test
+    @DisplayName("管理员登录-成功")
+    void admin_login_success() throws Exception {
+        Admin a = new Admin();
+        a.setUsername("a_login1");
+        a.setPassword(passwordService.encode("adminpass"));
+        adminService.save(a);
+        LoginRequest lr = new LoginRequest();
+        lr.setUsername("a_login1"); lr.setPassword("adminpass"); lr.setRole("admin");
+        mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(lr)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.role", is("admin")))
+            .andExpect(jsonPath("$.data.token", startsWith("Bearer ")));
     }
 }

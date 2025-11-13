@@ -10,7 +10,7 @@ public class PasswordProperties {
     /**
      * 全局盐值，在哈希用户密码前附加，提高安全性
      */
-    private String salt = "this_is_a_default_salt";
+    private String salt = "change-this-salt";
 
     public String getSalt() {
         return salt;

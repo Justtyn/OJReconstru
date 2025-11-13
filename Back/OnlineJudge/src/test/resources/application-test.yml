@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false
+    username: sa
+    password: ''
+  jackson:
+    time-zone: Asia/Shanghai
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema-test.sql
+      data-locations: classpath:data-test.sql
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+
+logging:
+  level:
+    root: warn
+

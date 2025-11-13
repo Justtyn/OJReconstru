@@ -1,29 +1,26 @@
 package com.oj.onlinejudge.domain.vo;
 
-// 用户视图对象：登录或查询返回的用户基础信息与 Token
-
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@Schema(description = "用户返回视图对象")
-public class UserVO {
-
+@NoArgsConstructor
+@AllArgsConstructor
+@Schema(name = "AuthUserVO", description = "认证用户信息及令牌")
+public class AuthUserVO {
     @Schema(description = "用户ID")
     private Long id;
-
     @Schema(description = "用户名")
     private String username;
-
     @Schema(description = "邮箱")
     private String email;
-
-    @Schema(description = "头像地址")
+    @Schema(description = "头像URL")
     private String avatar;
-
-    @Schema(description = "认证 Token (Bearer ...) ")
+    @Schema(description = "带前缀的JWT令牌")
     private String token;
 }
 

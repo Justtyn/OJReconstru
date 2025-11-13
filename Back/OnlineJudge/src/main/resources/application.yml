@@ -53,7 +53,7 @@ pagehelper:
 jwt:
   header: Authorization
   prefix: Bearer
-  secret: change-this-secret
+  secret: 80ry9ew97pgt2973ftg907tgyropwheskmgpaiojrgr90pu809we8yg0whg98ghweagarg4323t2
   expire-minutes: 120
   whitelist:
     - /api/auth/login

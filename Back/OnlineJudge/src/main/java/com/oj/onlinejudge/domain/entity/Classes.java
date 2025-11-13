@@ -5,17 +5,17 @@ package com.oj.onlinejudge.domain.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.Data;
-import io.swagger.v3.oas.annotations.media.Schema;
 
 @Data
 @TableName("classes")
-@Schema(description = "班级：包含课程班级的基本信息")
+@Schema(name = "Classes", description = "班级实体")
 public class Classes {
     @TableId
-    @Schema(description = "主键ID")
+    @Schema(description = "班级ID")
     private Long id;
     @Schema(description = "班级名称")
     private String name;
@@ -25,7 +25,7 @@ public class Classes {
     @TableField("homework_quantity")
     @Schema(description = "作业数量")
     private Integer homeworkQuantity;
-    @Schema(description = "班级邀请码/加入码")
+    @Schema(description = "班级邀请码")
     private String code;
     @TableField("start_date")
     @Schema(description = "开始日期")
@@ -33,7 +33,7 @@ public class Classes {
     @TableField("end_date")
     @Schema(description = "结束日期")
     private LocalDate endDate;
-    @Schema(description = "班级描述")
+    @Schema(description = "描述")
     private String description;
     @Schema(description = "创建时间")
     private LocalDateTime createdAt;

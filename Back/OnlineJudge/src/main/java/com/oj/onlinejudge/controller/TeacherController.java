@@ -11,17 +11,14 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.oj.onlinejudge.common.api.ApiResponse;
 import com.oj.onlinejudge.domain.entity.Teacher;
 import com.oj.onlinejudge.service.TeacherService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.Parameters;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/teachers")
 @RequiredArgsConstructor
-@Tag(name = "教师管理", description = "教师的增删改查接口")
 public class TeacherController {
 
     private final TeacherService teacherService;
@@ -29,14 +26,10 @@ public class TeacherController {
     /**
      * 分页查询教师列表
      */
+    @Operation(summary = "教师-分页列表")
     @GetMapping
-    @Operation(summary = "分页列表", description = "分页获取教师列表")
-    @Parameters({
-        @Parameter(name = "page", description = "页码(从1开始)", required = false),
-        @Parameter(name = "size", description = "每页数量", required = false)
-    })
-    public ApiResponse<Page<Teacher>> list(@RequestParam(defaultValue = "1") long page,
-                                           @RequestParam(defaultValue = "10") long size) {
+    public ApiResponse<Page<Teacher>> list(@Parameter(description = "页码") @RequestParam(defaultValue = "1") long page,
+                                           @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") long size) {
         Page<Teacher> p = teacherService.page(new Page<>(page, size));
         return ApiResponse.success(p);
     }
@@ -44,8 +37,8 @@ public class TeacherController {
     /**
      * 根据ID查询教师详情
      */
+    @Operation(summary = "教师-详情")
     @GetMapping("/{id}")
-    @Operation(summary = "教师详情", description = "根据ID获取教师信息")
     public ApiResponse<Teacher> get(@Parameter(description = "教师ID") @PathVariable Long id) {
         Teacher teacher = teacherService.getById(id);
         return teacher == null ? ApiResponse.failure(404, "教师不存在") : ApiResponse.success(teacher);
@@ -54,9 +47,9 @@ public class TeacherController {
     /**
      * 新增教师
      */
+    @Operation(summary = "教师-创建")
     @PostMapping
-    @Operation(summary = "创建教师", description = "新增一个教师账号")
-    public ApiResponse<Teacher> create(@RequestBody Teacher body) {
+    public ApiResponse<Teacher> create(@Parameter(description = "教师实体") @RequestBody Teacher body) {
         body.setId(null);
         boolean ok = teacherService.save(body);
         return ok ? ApiResponse.success("创建成功", body) : ApiResponse.failure(500, "创建失败");
@@ -65,9 +58,10 @@ public class TeacherController {
     /**
      * 更新教师
      */
+    @Operation(summary = "教师-更新")
     @PutMapping("/{id}")
-    @Operation(summary = "更新教师", description = "根据ID更新教师信息")
-    public ApiResponse<Teacher> update(@Parameter(description = "教师ID") @PathVariable Long id, @RequestBody Teacher body) {
+    public ApiResponse<Teacher> update(@Parameter(description = "教师ID") @PathVariable Long id,
+                                       @Parameter(description = "教师实体") @RequestBody Teacher body) {
         body.setId(id);
         boolean ok = teacherService.updateById(body);
         return ok ? ApiResponse.success("更新成功", body) : ApiResponse.failure(404, "教师不存在");
@@ -76,8 +70,8 @@ public class TeacherController {
     /**
      * 删除教师
      */
+    @Operation(summary = "教师-删除")
     @DeleteMapping("/{id}")
-    @Operation(summary = "删除教师", description = "根据ID删除教师")
     public ApiResponse<Void> delete(@Parameter(description = "教师ID") @PathVariable Long id) {
         boolean ok = teacherService.removeById(id);
         return ok ? ApiResponse.success(null) : ApiResponse.failure(404, "教师不存在");

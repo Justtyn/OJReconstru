@@ -20,15 +20,15 @@ public class SwaggerConfig {
     public OpenAPI openAPI(JwtProperties jwtProperties) {
         String schemeName = "BearerAuth";
         return new OpenAPI()
-            .info(new Info()
-                .title("Re Online Judge API")
-                .version("1.0.0")
-                .description("基础接口文档，涵盖判题平台常用能力"))
-            .components(new Components().addSecuritySchemes(schemeName, new SecurityScheme()
-                .type(SecurityScheme.Type.HTTP)
-                .scheme("bearer")
-                .bearerFormat("JWT")
-                .name(jwtProperties.getHeader())))
-            .addSecurityItem(new SecurityRequirement().addList(schemeName));
+                .info(new Info()
+                        .title("Re Online Judge API")
+                        .version("1.0.0")
+                        .description("基础接口文档，涵盖判题平台常用能力"))
+                .components(new Components().addSecuritySchemes(schemeName, new SecurityScheme()
+                        .type(SecurityScheme.Type.HTTP)
+                        .scheme("bearer")
+                        .bearerFormat("JWT")
+                        .name(jwtProperties.getHeader())))
+                .addSecurityItem(new SecurityRequirement().addList(schemeName));
     }
 }

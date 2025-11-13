@@ -64,7 +64,9 @@ public class AuthController {
         AuthUserVO vo = AuthUserVO.builder()
                 .id(s.getId()).username(s.getUsername()).email(s.getEmail()).avatar(s.getAvatar())
                 .role("student")
-                .token(bearer).build();
+                .token(bearer)
+                .details(buildDetails(s)) // 新增 details
+                .build();
         return ApiResponse.success("注册成功", vo);
     }
 
@@ -87,7 +89,9 @@ public class AuthController {
                 createLoginLog(teacher.getId(), teacher.getUsername(), "teacher", httpReq, true, null);
                 AuthUserVO voT = AuthUserVO.builder()
                         .id(teacher.getId()).username(teacher.getUsername()).email(teacher.getEmail()).avatar(teacher.getAvatar())
-                        .role("teacher").token(bearerT).build();
+                        .role("teacher").token(bearerT)
+                        .details(buildDetails(teacher)) // 新增 details
+                        .build();
                 return ApiResponse.success("登录成功", voT);
             case "admin":
                 Admin admin = adminService.lambdaQuery()
@@ -102,7 +106,9 @@ public class AuthController {
                 createLoginLog(admin.getId(), admin.getUsername(), "admin", httpReq, true, null);
                 AuthUserVO voA = AuthUserVO.builder()
                         .id(admin.getId()).username(admin.getUsername()).email(admin.getEmail()).avatar(admin.getAvatar())
-                        .role("admin").token(bearerA).build();
+                        .role("admin").token(bearerA)
+                        .details(buildDetails(admin)) // 新增 details
+                        .build();
                 return ApiResponse.success("登录成功", voA);
             case "student":
             default:
@@ -117,7 +123,9 @@ public class AuthController {
                 createLoginLog(user.getId(), user.getUsername(), "student", httpReq, true, null);
                 AuthUserVO vo = AuthUserVO.builder()
                         .id(user.getId()).username(user.getUsername()).email(user.getEmail()).avatar(user.getAvatar())
-                        .role("student").token(bearer).build();
+                        .role("student").token(bearer)
+                        .details(buildDetails(user)) // 新增 details
+                        .build();
                 return ApiResponse.success("登录成功", vo);
         }
     }
@@ -145,41 +153,40 @@ public class AuthController {
     @Operation(summary = "当前用户信息", description = "根据 Token 返回当前登录用户信息", security = {@SecurityRequirement(name = "BearerAuth")})
     @GetMapping("/users/me")
     public ApiResponse<AuthUserVO> me(@RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false)
-                                      @Parameter(description = "当前认证用户") AuthenticatedUser current) {
+                                      @Parameter(description = "当前认证用户") AuthenticatedUser current,
+                                      HttpServletRequest request) {
         if (current == null) {
             return ApiResponse.failure(401, "未登录或Token失效");
         }
         String role = current.getRole();
-        String email = null;
-        String avatar = null;
-        String username = current.getUsername();
         Long id = current.getUserId();
+        Object entity;
         switch (role) {
             case "teacher":
-                Teacher t = teacherService.getById(id);
-                if (t == null) return ApiResponse.failure(404, "用户不存在");
-                email = t.getEmail();
-                avatar = t.getAvatar();
-                username = t.getUsername();
+                entity = teacherService.getById(id);
                 break;
             case "admin":
-                Admin a = adminService.getById(id);
-                if (a == null) return ApiResponse.failure(404, "用户不存在");
-                email = a.getEmail();
-                avatar = a.getAvatar();
-                username = a.getUsername();
+                entity = adminService.getById(id);
                 break;
             case "student":
             default:
-                Student s = studentService.getById(id);
-                if (s == null) return ApiResponse.failure(404, "用户不存在");
-                email = s.getEmail();
-                avatar = s.getAvatar();
-                username = s.getUsername();
+                entity = studentService.getById(id);
                 break;
         }
+        if (entity == null) {
+            return ApiResponse.failure(404, "用户不存在");
+        }
+        java.util.Map<String, Object> details = buildDetails(entity); // 使用统一方法，自动过滤敏感字段
+        String username = (String) details.getOrDefault("username", current.getUsername());
+        String email = (String) details.get("email");
+        String avatar = (String) details.get("avatar");
+        // 组装带前缀 token：优先使用已解析的 raw token
+        String raw = current.getToken();
+        String bearer = raw != null ? jwtProperties.getPrefix() + " " + raw : null;
         AuthUserVO vo = AuthUserVO.builder()
                 .id(id).username(username).email(email).avatar(avatar).role(role)
+                .token(bearer)
+                .details(details)
                 .build();
         return ApiResponse.success(vo);
     }
@@ -204,5 +211,24 @@ public class AuthController {
             else log.setDevice("Other");
         }
         loginLogService.save(log);
+    }
+
+    /**
+     * 构建用户详情 Map，过滤敏感字段（如 password）
+     */
+    private java.util.Map<String, Object> buildDetails(Object entity) {
+        java.util.Map<String, Object> map = new java.util.LinkedHashMap<>();
+        if (entity == null) return map;
+        for (java.lang.reflect.Field f : entity.getClass().getDeclaredFields()) {
+            String name = f.getName();
+            if ("password".equalsIgnoreCase(name)) { // 过滤密码
+                continue;
+            }
+            f.setAccessible(true);
+            try {
+                map.put(name, f.get(entity));
+            } catch (IllegalAccessException ignored) {}
+        }
+        return map;
     }
 }

@@ -3,18 +3,20 @@ package com.oj.onlinejudge.controller;
 // 管理员模块 REST 控制器，提供管理员的增删改查接口
 // - 列表查询：分页返回管理员列表
 // - 详情查询：根据ID返回管理员信息
-// - 创建：新增管理员
-// - 更新：根据ID更新管理员
-// - 删除：根据ID删除管理员
+// - 创建：新增管理员（对密码进行加密存储）
+// - 更新：根据ID更新管理员（若未提供密码则保持旧值，若提供则加密）
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.oj.onlinejudge.common.api.ApiResponse;
 import com.oj.onlinejudge.domain.entity.Admin;
 import com.oj.onlinejudge.service.AdminService;
+import com.oj.onlinejudge.security.PasswordService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+import com.oj.onlinejudge.security.AuthenticatedUser;
 
 @RestController
 @RequestMapping("/api/admins")
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
 
     private final AdminService adminService;
+    private final PasswordService passwordService;
 
     /**
      * 分页查询管理员列表
@@ -31,8 +34,13 @@ public class AdminController {
      */
     @Operation(summary = "管理员-分页列表")
     @GetMapping
-    public ApiResponse<Page<Admin>> list(@Parameter(description = "页码，从1开始") @RequestParam(defaultValue = "1") long page,
-                                         @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") long size) {
+    public ApiResponse<Page<Admin>> list(
+            @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
+            @Parameter(description = "页码，从1开始") @RequestParam(defaultValue = "1") long page,
+            @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") long size) {
+        if (current == null) {
+            return ApiResponse.failure(401, "未登录或Token失效");
+        }
         Page<Admin> p = adminService.page(new Page<>(page, size));
         return ApiResponse.success(p);
     }
@@ -44,35 +52,66 @@ public class AdminController {
      */
     @Operation(summary = "管理员-详情")
     @GetMapping("/{id}")
-    public ApiResponse<Admin> get(@Parameter(description = "管理员ID") @PathVariable Long id) {
+    public ApiResponse<Admin> get(
+            @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
+            @Parameter(description = "管理员ID") @PathVariable Long id) {
+        if (current == null) {
+            return ApiResponse.failure(401, "未登录或Token失效");
+        }
         Admin admin = adminService.getById(id);
         return admin == null ? ApiResponse.failure(404, "管理员不存在") : ApiResponse.success(admin);
     }
 
     /**
-     * 新增管理员
+     * 新增管理员（如包含明文密码，将进行哈希存储）
      * @param body 管理员实体
      * @return 新建结果
      */
     @Operation(summary = "管理员-创建")
     @PostMapping
-    public ApiResponse<Admin> create(@Parameter(description = "管理员实体") @RequestBody Admin body) {
+    public ApiResponse<Admin> create(
+            @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
+            @Parameter(description = "管理员实体") @RequestBody Admin body) {
+        if (current == null) {
+            return ApiResponse.failure(401, "未登录或Token失效");
+        }
         body.setId(null);
+        // 强制要求密码必填
+        if (!org.springframework.util.StringUtils.hasText(body.getPassword())) {
+            throw new IllegalArgumentException("密码不能为空");
+        }
+        if (StringUtils.hasText(body.getPassword())) {
+            body.setPassword(passwordService.encode(body.getPassword()));
+        }
         boolean ok = adminService.save(body);
         return ok ? ApiResponse.success("创建成功", body) : ApiResponse.failure(500, "创建失败");
     }
 
     /**
-     * 更新管理员
+     * 更新管理员（未提供 password 时保留原密码）
      * @param id 管理员ID
      * @param body 管理员实体（部分/全部字段）
      * @return 更新结果
      */
     @Operation(summary = "管理员-更新")
     @PutMapping("/{id}")
-    public ApiResponse<Admin> update(@Parameter(description = "管理员ID") @PathVariable Long id,
-                                     @Parameter(description = "管理员实体") @RequestBody Admin body) {
+    public ApiResponse<Admin> update(
+            @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
+            @Parameter(description = "管理员ID") @PathVariable Long id,
+            @Parameter(description = "管理员实体") @RequestBody Admin body) {
+        if (current == null) {
+            return ApiResponse.failure(401, "未登录或Token失效");
+        }
         body.setId(id);
+        if (StringUtils.hasText(body.getPassword())) {
+            body.setPassword(passwordService.encode(body.getPassword()));
+        } else {
+            Admin old = adminService.getById(id);
+            if (old == null) {
+                return ApiResponse.failure(404, "管理员不存在");
+            }
+            body.setPassword(old.getPassword());
+        }
         boolean ok = adminService.updateById(body);
         return ok ? ApiResponse.success("更新成功", body) : ApiResponse.failure(404, "管理员不存在");
     }
@@ -84,7 +123,12 @@ public class AdminController {
      */
     @Operation(summary = "管理员-删除")
     @DeleteMapping("/{id}")
-    public ApiResponse<Void> delete(@Parameter(description = "管理员ID") @PathVariable Long id) {
+    public ApiResponse<Void> delete(
+            @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
+            @Parameter(description = "管理员ID") @PathVariable Long id) {
+        if (current == null) {
+            return ApiResponse.failure(401, "未登录或Token失效");
+        }
         boolean ok = adminService.removeById(id);
         return ok ? ApiResponse.success(null) : ApiResponse.failure(404, "管理员不存在");
     }

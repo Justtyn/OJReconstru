@@ -14,6 +14,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestAttribute;
+import com.oj.onlinejudge.security.AuthenticatedUser;
 
 @RestController
 @RequestMapping("/api/students")
@@ -26,10 +28,15 @@ public class StudentController {
     /** 分页查询学生列表，支持 username/email 模糊搜索 */
     @Operation(summary = "学生-分页列表")
     @GetMapping
-    public ApiResponse<Page<Student>> list(@Parameter(description = "页码") @RequestParam(defaultValue = "1") long page,
-                                           @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") long size,
-                                           @Parameter(description = "按用户名模糊搜索") @RequestParam(required = false) String username,
-                                           @Parameter(description = "按邮箱模糊搜索") @RequestParam(required = false) String email) {
+    public ApiResponse<Page<Student>> list(
+            @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
+            @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") long size,
+            @Parameter(description = "按用户名模糊搜索") @RequestParam(required = false) String username,
+            @Parameter(description = "按邮箱模糊搜索") @RequestParam(required = false) String email,
+            @Parameter(description = "页码") @RequestParam(defaultValue = "1") long page) {
+        if (current == null) {
+            return ApiResponse.failure(401, "未登录或Token失效");
+        }
         LambdaQueryWrapper<Student> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(username)) {
             wrapper.like(Student::getUsername, username);
@@ -44,7 +51,12 @@ public class StudentController {
     /** 根据ID查询学生详情 */
     @Operation(summary = "学生-详情")
     @GetMapping("/{id}")
-    public ApiResponse<Student> get(@Parameter(description = "学生ID") @PathVariable Long id) {
+    public ApiResponse<Student> get(
+            @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
+            @Parameter(description = "学生ID") @PathVariable Long id) {
+        if (current == null) {
+            return ApiResponse.failure(401, "未登录或Token失效");
+        }
         Student student = studentService.getById(id);
         return student == null ? ApiResponse.failure(404, "学生不存在") : ApiResponse.success(student);
     }
@@ -52,7 +64,12 @@ public class StudentController {
     /** 新增学生（如包含明文密码，将进行哈希存储） */
     @Operation(summary = "学生-创建")
     @PostMapping
-    public ApiResponse<Student> create(@Parameter(description = "学生实体") @RequestBody Student body) {
+    public ApiResponse<Student> create(
+            @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
+            @Parameter(description = "学生实体") @RequestBody Student body) {
+        if (current == null) {
+            return ApiResponse.failure(401, "未登录或Token失效");
+        }
         body.setId(null);
         if (StringUtils.hasText(body.getPassword())) {
             body.setPassword(passwordService.encode(body.getPassword()));
@@ -64,8 +81,13 @@ public class StudentController {
     /** 更新学生（未提供 password 时保留原密码） */
     @Operation(summary = "学生-更新")
     @PutMapping("/{id}")
-    public ApiResponse<Student> update(@Parameter(description = "学生ID") @PathVariable Long id,
-                                       @Parameter(description = "学生实体") @RequestBody Student body) {
+    public ApiResponse<Student> update(
+            @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
+            @Parameter(description = "学生ID") @PathVariable Long id,
+            @Parameter(description = "学生实体") @RequestBody Student body) {
+        if (current == null) {
+            return ApiResponse.failure(401, "未登录或Token失效");
+        }
         body.setId(id);
         if (StringUtils.hasText(body.getPassword())) {
             body.setPassword(passwordService.encode(body.getPassword()));
@@ -84,7 +106,12 @@ public class StudentController {
     /** 删除学生 */
     @Operation(summary = "学生-删除")
     @DeleteMapping("/{id}")
-    public ApiResponse<Void> delete(@Parameter(description = "学生ID") @PathVariable Long id) {
+    public ApiResponse<Void> delete(
+            @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
+            @Parameter(description = "学生ID") @PathVariable Long id) {
+        if (current == null) {
+            return ApiResponse.failure(401, "未登录或Token失效");
+        }
         boolean ok = studentService.removeById(id);
         return ok ? ApiResponse.success(null) : ApiResponse.failure(404, "学生不存在");
     }

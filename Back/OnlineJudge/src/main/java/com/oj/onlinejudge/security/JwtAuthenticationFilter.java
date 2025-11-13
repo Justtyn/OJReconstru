@@ -65,6 +65,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         try {
             AuthenticatedUser user = jwtTokenProvider.parseUser(token);
+            // token 已在 parseUser 设置，这里确保设置请求属性
             request.setAttribute(AuthenticatedUser.REQUEST_ATTRIBUTE, user);
             filterChain.doFilter(request, response);
         } catch (JwtException | IllegalArgumentException ex) {

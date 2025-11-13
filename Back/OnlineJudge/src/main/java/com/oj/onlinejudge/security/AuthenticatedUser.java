@@ -19,4 +19,7 @@ public class AuthenticatedUser {
 
     // 新增：角色（student / teacher / admin）
     private String role;
+
+    // 新增：原始 JWT Token（无前缀），用于 /me 返回
+    private String token;
 }

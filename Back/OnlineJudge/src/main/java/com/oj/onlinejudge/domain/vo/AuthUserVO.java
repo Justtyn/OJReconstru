@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Map;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -24,4 +26,6 @@ public class AuthUserVO {
     private String role;
     @Schema(description = "带前缀的JWT令牌")
     private String token;
+    @Schema(description = "完整用户属性快照，包含该角色实体所有字段")
+    private Map<String, Object> details; // 新增：返回全部属性
 }

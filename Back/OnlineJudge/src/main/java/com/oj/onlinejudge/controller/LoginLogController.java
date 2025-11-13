@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import com.oj.onlinejudge.security.AuthenticatedUser;
 
 @RestController
 @RequestMapping("/api/login-logs")
@@ -25,10 +26,15 @@ public class LoginLogController {
      */
     @Operation(summary = "登录日志-分页列表")
     @GetMapping
-    public ApiResponse<Page<LoginLog>> list(@Parameter(description = "页码") @RequestParam(defaultValue = "1") long page,
-                                            @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") long size,
-                                            @Parameter(description = "角色过滤") @RequestParam(required = false) String role,
-                                            @Parameter(description = "用户ID过滤") @RequestParam(required = false) Long userId) {
+    public ApiResponse<Page<LoginLog>> list(
+            @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
+            @Parameter(description = "页码") @RequestParam(defaultValue = "1") long page,
+            @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") long size,
+            @Parameter(description = "角色过滤") @RequestParam(required = false) String role,
+            @Parameter(description = "用户ID过滤") @RequestParam(required = false) Long userId) {
+        if (current == null) {
+            return ApiResponse.failure(401, "未登录或Token失效");
+        }
         LambdaQueryWrapper<LoginLog> wrapper = new LambdaQueryWrapper<>();
         if (role != null && !role.isEmpty()) wrapper.eq(LoginLog::getRole, role);
         if (userId != null) wrapper.eq(LoginLog::getUserId, userId);
@@ -39,7 +45,12 @@ public class LoginLogController {
     /** 查询单条日志 */
     @Operation(summary = "登录日志-详情")
     @GetMapping("/{id}")
-    public ApiResponse<LoginLog> get(@Parameter(description = "日志ID") @PathVariable Long id) {
+    public ApiResponse<LoginLog> get(
+            @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
+            @Parameter(description = "日志ID") @PathVariable Long id) {
+        if (current == null) {
+            return ApiResponse.failure(401, "未登录或Token失效");
+        }
         LoginLog log = loginLogService.getById(id);
         return log == null ? ApiResponse.failure(404, "记录不存在") : ApiResponse.success(log);
     }
@@ -47,7 +58,12 @@ public class LoginLogController {
     /** 新增日志 */
     @Operation(summary = "登录日志-创建")
     @PostMapping
-    public ApiResponse<LoginLog> create(@Parameter(description = "日志实体") @RequestBody LoginLog body) {
+    public ApiResponse<LoginLog> create(
+            @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
+            @Parameter(description = "日志实体") @RequestBody LoginLog body) {
+        if (current == null) {
+            return ApiResponse.failure(401, "未登录或Token失效");
+        }
         body.setId(null);
         boolean ok = loginLogService.save(body);
         return ok ? ApiResponse.success("创建成功", body) : ApiResponse.failure(500, "创建失败");
@@ -56,8 +72,13 @@ public class LoginLogController {
     /** 更新日志 */
     @Operation(summary = "登录日志-更新")
     @PutMapping("/{id}")
-    public ApiResponse<LoginLog> update(@Parameter(description = "日志ID") @PathVariable Long id,
-                                        @Parameter(description = "日志实体") @RequestBody LoginLog body) {
+    public ApiResponse<LoginLog> update(
+            @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
+            @Parameter(description = "日志ID") @PathVariable Long id,
+            @Parameter(description = "日志实体") @RequestBody LoginLog body) {
+        if (current == null) {
+            return ApiResponse.failure(401, "未登录或Token失效");
+        }
         body.setId(id);
         boolean ok = loginLogService.updateById(body);
         return ok ? ApiResponse.success("更新成功", body) : ApiResponse.failure(404, "记录不存在");
@@ -66,7 +87,12 @@ public class LoginLogController {
     /** 删除日志 */
     @Operation(summary = "登录日志-删除")
     @DeleteMapping("/{id}")
-    public ApiResponse<Void> delete(@Parameter(description = "日志ID") @PathVariable Long id) {
+    public ApiResponse<Void> delete(
+            @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
+            @Parameter(description = "日志ID") @PathVariable Long id) {
+        if (current == null) {
+            return ApiResponse.failure(401, "未登录或Token失效");
+        }
         boolean ok = loginLogService.removeById(id);
         return ok ? ApiResponse.success(null) : ApiResponse.failure(404, "记录不存在");
     }

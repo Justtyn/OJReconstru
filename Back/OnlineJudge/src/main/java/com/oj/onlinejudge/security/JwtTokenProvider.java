@@ -63,7 +63,8 @@ public class JwtTokenProvider {
         String username = claims.get("username", String.class);
         String role = claims.get("role", String.class);
         if (role == null) role = "student"; // 兼容旧 token
-        return new AuthenticatedUser(userId, username, role);
+        // 将原始 token 设置进去
+        return new AuthenticatedUser(userId, username, role, token);
     }
 
     private Claims parseClaims(String token) {

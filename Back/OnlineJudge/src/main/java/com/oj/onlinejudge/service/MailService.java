@@ -5,5 +5,6 @@ public interface MailService {
     void sendRegisterSuccess(String to, String username, String role);
     void sendLoginNotice(String to, String username, String role, String ip);
     void sendLogoutNotice(String to, String username, String role);
+    void sendPasswordResetCode(String to, String username, String code, long minutes);
+    void sendPasswordChangedNotice(String to, String username, String role);
 }
-

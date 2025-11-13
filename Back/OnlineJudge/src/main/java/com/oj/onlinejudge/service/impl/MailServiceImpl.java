@@ -73,6 +73,27 @@ public class MailServiceImpl implements MailService {
         sendHtml(to, "【Re-OnlineJudge】登出提醒", html);
     }
 
+    @Override
+    public void sendPasswordResetCode(String to, String username, String code, long minutes) {
+        String html = "<div style='font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:auto;padding:24px;border:1px solid #eee;border-radius:8px;'>" +
+                "<h2 style='color:#2b6cb0;margin:0 0 12px;'>Re-OnlineJudge 找回密码</h2>" +
+                "<p>您好，" + escape(username) + "：</p>" +
+                "<p>您的找回密码验证码为：</p>" +
+                "<div style='font-size:28px;font-weight:700;letter-spacing:4px;color:#1a202c;padding:12px 16px;background:#f7fafc;border-radius:6px;display:inline-block;'>" + code + "</div>" +
+                "<p style='color:#718096;margin-top:12px;'>验证码将在 " + minutes + " 分钟后过期，请尽快完成验证。</p>" +
+                "<hr style='border:none;border-top:1px solid #e2e8f0;margin:20px 0;'>" +
+                "<p style='font-size:12px;color:#a0aec0;'>如果您未发起操作，请忽略此邮件。</p>" +
+                "</div>";
+        sendHtml(to, "【Re-OnlineJudge】找回密码验证码", html);
+    }
+
+    @Override
+    public void sendPasswordChangedNotice(String to, String username, String role) {
+        String html = baseCard("密码已更新", "您的账号密码已被修改", username, role,
+                "如果非本人操作，请立即再次修改密码并联系管理员。");
+        sendHtml(to, "【Re-OnlineJudge】密码修改通知", html);
+    }
+
     private String baseCard(String title, String subtitle, String username, String role, String message) {
         return "<div style='font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:auto;padding:24px;border:1px solid #eee;border-radius:8px;'>" +
                 "<h2 style='color:#2b6cb0;margin:0 0 8px;'>" + escape(title) + "</h2>" +
@@ -89,4 +110,3 @@ public class MailServiceImpl implements MailService {
 
     private String escape(String s) { return s == null ? "" : s.replace("<","&lt;").replace(">","&gt;"); }
 }
-

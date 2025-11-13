@@ -67,8 +67,8 @@ public class AuthController {
             if (emailUsed) throw new IllegalArgumentException("邮箱已被使用");
         }
 
+        // 直接创建用户并返回 token（用于测试环境）
         if (!requireEmailVerify) {
-            // 直接创建用户并返回 token（用于测试环境）
             Student s = new Student();
             s.setUsername(request.getUsername());
             s.setPassword(passwordService.encode(request.getPassword()));
@@ -303,6 +303,74 @@ public class AuthController {
                 .details(details)
                 .build();
         return ApiResponse.success(vo);
+    }
+
+    // 找回密码：发送验证码（学生）
+    @Operation(summary = "找回密码-发送验证码(学生)", description = "根据用户名向绑定邮箱发送找回密码验证码")
+    @PostMapping("/password/forgot/sendCode")
+    public ApiResponse<Void> forgotPasswordSend(@Valid @RequestBody com.oj.onlinejudge.domain.dto.ForgotPasswordSendCodeRequest req) {
+        Student s = studentService.findByUsername(req.getUsername()).orElseThrow(() -> new IllegalArgumentException("账号不存在"));
+        if (!StringUtils.hasText(s.getEmail())) {
+            throw new IllegalArgumentException("该账号未绑定邮箱，无法找回密码");
+        }
+        String code = generateAlphaNumCode(6);
+        // 将验证码存入待验证，利用 VerificationCodeService 简单复用：passwordHash 字段临时放置 newPass 占位符
+        verificationCodeService.savePending("pwd:" + s.getUsername(), s.getEmail(), "", s.getName(), code, VERIFY_EXPIRE_MINUTES);
+        mailService.sendPasswordResetCode(s.getEmail(), s.getUsername(), code, VERIFY_EXPIRE_MINUTES);
+        return ApiResponse.success("验证码已发送至邮箱", null);
+    }
+
+    // 找回密码：提交验证码并设置新密码（学生）
+    @Operation(summary = "找回密码-验证并重置(学生)", description = "提交验证码和新密码，验证通过后更新密码并邮件通知")
+    @PostMapping("/password/forgot/verify")
+    public ApiResponse<Void> forgotPasswordVerify(@Valid @RequestBody com.oj.onlinejudge.domain.dto.ForgotPasswordVerifyRequest req) {
+        Student s = studentService.findByUsername(req.getUsername()).orElseThrow(() -> new IllegalArgumentException("账号不存在"));
+        VerificationCodeService.Pending p = verificationCodeService.get("pwd:" + req.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("请先发送验证码"));
+        if (System.currentTimeMillis() > p.expireEpochMillis) {
+            verificationCodeService.remove("pwd:" + req.getUsername());
+            throw new IllegalArgumentException("验证码已过期");
+        }
+        if (!p.code.equalsIgnoreCase(req.getCode())) {
+            verificationCodeService.increaseAttempts("pwd:" + req.getUsername());
+            throw new IllegalArgumentException("验证码不正确");
+        }
+        // 禁止设置与当前相同的密码
+        if (passwordService.matches(req.getNewPassword(), s.getPassword())) {
+            return ApiResponse.failure(400, "新密码不能与旧密码相同");
+        }
+        // 更新密码
+        s.setPassword(passwordService.encode(req.getNewPassword()));
+        studentService.updateById(s);
+        verificationCodeService.remove("pwd:" + req.getUsername());
+        if (StringUtils.hasText(s.getEmail())) {
+            mailService.sendPasswordChangedNotice(s.getEmail(), s.getUsername(), "student");
+        }
+        return ApiResponse.success("密码已更新", null);
+    }
+
+    // 已登录修改密码（学生）：校验 old/new，无需邮箱验证
+    @Operation(summary = "修改密码(学生)", description = "登录后，校验旧密码并设置新密码；更新后发送通知", security = {@SecurityRequirement(name = "BearerAuth")})
+    @PostMapping("/password/change")
+    public ApiResponse<Void> changePassword(@RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
+                                            @Valid @RequestBody com.oj.onlinejudge.domain.dto.ChangePasswordRequest req) {
+        if (current == null || !"student".equals(current.getRole())) {
+            return ApiResponse.failure(401, "未登录或角色不匹配");
+        }
+        Student s = studentService.getById(current.getUserId());
+        if (s == null) return ApiResponse.failure(404, "用户不存在");
+        if (!passwordService.matches(req.getOldPassword(), s.getPassword())) {
+            return ApiResponse.failure(400, "旧密码不正确");
+        }
+        if (passwordService.matches(req.getNewPassword(), s.getPassword())) {
+            return ApiResponse.failure(400, "新密码不能与旧密码相同");
+        }
+        s.setPassword(passwordService.encode(req.getNewPassword()));
+        studentService.updateById(s);
+        if (StringUtils.hasText(s.getEmail())) {
+            mailService.sendPasswordChangedNotice(s.getEmail(), s.getUsername(), "student");
+        }
+        return ApiResponse.success("密码修改成功", null);
     }
 
     private void createLoginLog(Long userId, String username, String role, HttpServletRequest req,

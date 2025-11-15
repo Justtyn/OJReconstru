@@ -42,7 +42,9 @@ public class ClassesMemberController {
         return ApiResponse.success(p);
     }
 
-    /** 查询详情 */
+    /**
+     * 查询详情
+     */
     @Operation(summary = "班级成员-详情")
     @GetMapping("/{id}")
     public ApiResponse<ClassesMember> get(
@@ -55,7 +57,9 @@ public class ClassesMemberController {
         return cm == null ? ApiResponse.failure(404, "记录不存在") : ApiResponse.success(cm);
     }
 
-    /** 新增记录 */
+    /**
+     * 新增记录
+     */
     @Operation(summary = "班级成员-创建")
     @PostMapping
     public ApiResponse<ClassesMember> create(
@@ -69,7 +73,9 @@ public class ClassesMemberController {
         return ok ? ApiResponse.success("创建成功", body) : ApiResponse.failure(500, "创建失败");
     }
 
-    /** 更新记录 */
+    /**
+     * 更新记录
+     */
     @Operation(summary = "班级成员-更新")
     @PutMapping("/{id}")
     public ApiResponse<ClassesMember> update(
@@ -84,7 +90,9 @@ public class ClassesMemberController {
         return ok ? ApiResponse.success("更新成功", body) : ApiResponse.failure(404, "记录不存在");
     }
 
-    /** 删除记录 */
+    /**
+     * 删除记录
+     */
     @Operation(summary = "班级成员-删除")
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(

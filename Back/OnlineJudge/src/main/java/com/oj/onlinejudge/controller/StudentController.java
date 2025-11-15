@@ -25,7 +25,9 @@ public class StudentController {
     private final StudentService studentService;
     private final PasswordService passwordService;
 
-    /** 分页查询学生列表，支持 username/email 模糊搜索 */
+    /**
+     * 分页查询学生列表，支持 username/email 模糊搜索
+     */
     @Operation(summary = "学生-分页列表")
     @GetMapping
     public ApiResponse<Page<Student>> list(
@@ -48,7 +50,9 @@ public class StudentController {
         return ApiResponse.success(p);
     }
 
-    /** 根据ID查询学生详情 */
+    /**
+     * 根据ID查询学生详情
+     */
     @Operation(summary = "学生-详情")
     @GetMapping("/{id}")
     public ApiResponse<Student> get(
@@ -61,7 +65,9 @@ public class StudentController {
         return student == null ? ApiResponse.failure(404, "学生不存在") : ApiResponse.success(student);
     }
 
-    /** 新增学生（如包含明文密码，将进行哈希存储） */
+    /**
+     * 新增学生（如包含明文密码，将进行哈希存储）
+     */
     @Operation(summary = "学生-创建")
     @PostMapping
     public ApiResponse<Student> create(
@@ -78,7 +84,9 @@ public class StudentController {
         return ok ? ApiResponse.success("创建成功", body) : ApiResponse.failure(500, "创建失败");
     }
 
-    /** 更新学生（未提供 password 时保留原密码） */
+    /**
+     * 更新学生（未提供 password 时保留原密码）
+     */
     @Operation(summary = "学生-更新")
     @PutMapping("/{id}")
     public ApiResponse<Student> update(
@@ -103,7 +111,9 @@ public class StudentController {
         return ok ? ApiResponse.success("更新成功", body) : ApiResponse.failure(404, "学生不存在");
     }
 
-    /** 删除学生 */
+    /**
+     * 删除学生
+     */
     @Operation(summary = "学生-删除")
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(

@@ -108,5 +108,7 @@ public class MailServiceImpl implements MailService {
                 "</div>";
     }
 
-    private String escape(String s) { return s == null ? "" : s.replace("<","&lt;").replace(">","&gt;"); }
+    private String escape(String s) {
+        return s == null ? "" : s.replace("<", "&lt;").replace(">", "&gt;");
+    }
 }

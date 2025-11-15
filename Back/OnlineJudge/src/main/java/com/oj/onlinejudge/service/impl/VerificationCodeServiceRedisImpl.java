@@ -3,8 +3,10 @@ package com.oj.onlinejudge.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oj.onlinejudge.service.VerificationCodeService;
+
 import java.time.Duration;
 import java.util.Optional;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -61,7 +63,8 @@ public class VerificationCodeServiceRedisImpl implements VerificationCodeService
                 Long ttl = redis.getExpire(key);
                 if (ttl == null || ttl <= 0) ttl = 60L; // default
                 redis.opsForValue().set(key, objectMapper.writeValueAsString(p), Duration.ofSeconds(ttl));
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         });
     }
 

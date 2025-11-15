@@ -42,7 +42,9 @@ public class LoginLogController {
         return ApiResponse.success(p);
     }
 
-    /** 查询单条日志 */
+    /**
+     * 查询单条日志
+     */
     @Operation(summary = "登录日志-详情")
     @GetMapping("/{id}")
     public ApiResponse<LoginLog> get(
@@ -55,7 +57,9 @@ public class LoginLogController {
         return log == null ? ApiResponse.failure(404, "记录不存在") : ApiResponse.success(log);
     }
 
-    /** 新增日志 */
+    /**
+     * 新增日志
+     */
     @Operation(summary = "登录日志-创建")
     @PostMapping
     public ApiResponse<LoginLog> create(
@@ -69,7 +73,9 @@ public class LoginLogController {
         return ok ? ApiResponse.success("创建成功", body) : ApiResponse.failure(500, "创建失败");
     }
 
-    /** 更新日志 */
+    /**
+     * 更新日志
+     */
     @Operation(summary = "登录日志-更新")
     @PutMapping("/{id}")
     public ApiResponse<LoginLog> update(
@@ -84,7 +90,9 @@ public class LoginLogController {
         return ok ? ApiResponse.success("更新成功", body) : ApiResponse.failure(404, "记录不存在");
     }
 
-    /** 删除日志 */
+    /**
+     * 删除日志
+     */
     @Operation(summary = "登录日志-删除")
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(

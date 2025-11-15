@@ -10,7 +10,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "security.password")
 public class PasswordProperties {
 
-    /** 全局盐值：在对用户密码做哈希前附加此盐值，提高对简单彩虹表的抵抗能力。 */
+    /**
+     * 全局盐值：在对用户密码做哈希前附加此盐值，提高对简单彩虹表的抵抗能力。
+     */
     private String salt = "change-this-salt";
 
     public String getSalt() {

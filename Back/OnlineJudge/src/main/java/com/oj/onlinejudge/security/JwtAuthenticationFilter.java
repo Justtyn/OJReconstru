@@ -10,12 +10,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oj.onlinejudge.common.api.ApiResponse;
 import com.oj.onlinejudge.config.JwtProperties;
 import io.jsonwebtoken.JwtException;
+
 import java.io.IOException;
 import java.util.List;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.CollectionUtils;
@@ -34,7 +36,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.jwtProperties = jwtProperties;
     }
 
-    /** 白名单与 OPTIONS 预检请求不拦截 */
+    /**
+     * 白名单与 OPTIONS 预检请求不拦截
+     */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
@@ -48,7 +52,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return whitelist.stream().anyMatch(pattern -> pathMatcher.match(pattern, uri));
     }
 
-    /** 过滤逻辑：解析并验证 Token，失败返回 401 */
+    /**
+     * 过滤逻辑：解析并验证 Token，失败返回 401
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {

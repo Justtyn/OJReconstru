@@ -26,8 +26,8 @@ public class FilterConfig {
      */
     @Bean
     public FilterRegistrationBean<JwtAuthenticationFilter> jwtFilterRegistration(
-        JwtTokenProvider jwtTokenProvider,
-        JwtProperties jwtProperties) {
+            JwtTokenProvider jwtTokenProvider,
+            JwtProperties jwtProperties) {
 
         FilterRegistrationBean<JwtAuthenticationFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(new JwtAuthenticationFilter(jwtTokenProvider, jwtProperties));

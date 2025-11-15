@@ -10,12 +10,14 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import javax.annotation.PostConstruct;
 import javax.crypto.SecretKey;
+
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -30,33 +32,41 @@ public class JwtTokenProvider {
         this.jwtProperties = jwtProperties;
     }
 
-    /** 初始化 HMAC 密钥 */
+    /**
+     * 初始化 HMAC 密钥
+     */
     @PostConstruct
     public void init() {
         byte[] keyBytes = jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8);
         this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    /** 生成用户 Token（保持旧签名兼容，默认 student） */
+    /**
+     * 生成用户 Token（保持旧签名兼容，默认 student）
+     */
     public String generateToken(Long userId, String username) {
         return generateToken(userId, username, "student");
     }
 
-    /** 生成包含角色的用户 Token */
+    /**
+     * 生成包含角色的用户 Token
+     */
     public String generateToken(Long userId, String username, String role) {
         Instant now = Instant.now();
         Instant expiry = now.plus(jwtProperties.getExpireMinutes(), ChronoUnit.MINUTES);
         return Jwts.builder()
-            .setSubject(String.valueOf(userId))
-            .claim("username", username)
-            .claim("role", role)
-            .setIssuedAt(Date.from(now))
-            .setExpiration(Date.from(expiry))
-            .signWith(secretKey, SignatureAlgorithm.HS256)
-            .compact();
+                .setSubject(String.valueOf(userId))
+                .claim("username", username)
+                .claim("role", role)
+                .setIssuedAt(Date.from(now))
+                .setExpiration(Date.from(expiry))
+                .signWith(secretKey, SignatureAlgorithm.HS256)
+                .compact();
     }
 
-    /** 从 Token 中解析认证用户 */
+    /**
+     * 从 Token 中解析认证用户
+     */
     public AuthenticatedUser parseUser(String token) {
         Claims claims = parseClaims(token);
         Long userId = Long.valueOf(claims.getSubject());
@@ -69,13 +79,15 @@ public class JwtTokenProvider {
 
     private Claims parseClaims(String token) {
         return Jwts.parserBuilder()
-            .setSigningKey(secretKey)
-            .build()
-            .parseClaimsJws(token)
-            .getBody();
+                .setSigningKey(secretKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 
-    /** 去除前缀，提取原始 Token 字符串 */
+    /**
+     * 去除前缀，提取原始 Token 字符串
+     */
     public String resolveToken(String headerValue) {
         if (!StringUtils.hasText(headerValue)) {
             return null;

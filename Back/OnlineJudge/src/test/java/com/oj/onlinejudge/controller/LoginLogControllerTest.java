@@ -55,7 +55,7 @@ class LoginLogControllerTest {
     void get_notFound() throws Exception {
         String tk = token();
         mockMvc.perform(get("/api/login-logs/{id}", 9999).header("Authorization", tk))
-            .andExpect(status().isOk())
+            .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.code", is(404)));
     }
 }

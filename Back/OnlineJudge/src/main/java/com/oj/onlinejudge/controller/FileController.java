@@ -5,6 +5,7 @@ package com.oj.onlinejudge.controller;
 import com.oj.onlinejudge.common.api.ApiResponse;
 import com.oj.onlinejudge.security.AuthenticatedUser;
 import com.oj.onlinejudge.service.AvatarStorageService;
+import com.oj.onlinejudge.exception.ApiException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,7 +33,7 @@ public class FileController {
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "头像文件") @org.springframework.web.bind.annotation.RequestPart("file") MultipartFile file) throws IOException {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         String url = avatarStorageService.storeAvatar(file);
         return ApiResponse.success(Map.of("url", url));

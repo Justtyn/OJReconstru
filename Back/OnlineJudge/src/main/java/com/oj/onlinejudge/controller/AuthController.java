@@ -19,6 +19,7 @@ import com.oj.onlinejudge.service.StudentService;
 import com.oj.onlinejudge.service.TeacherService;
 import com.oj.onlinejudge.service.AdminService;
 import com.oj.onlinejudge.service.VerificationCodeService;
+import com.oj.onlinejudge.exception.ApiException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -59,12 +60,12 @@ public class AuthController {
                                             HttpServletRequest httpReq) {
         // 基础校验：用户名重复
         if (studentService.findByUsername(request.getUsername()).isPresent()) {
-            throw new IllegalArgumentException("用户名已存在");
+            throw ApiException.badRequest("用户名已存在");
         }
         // 邮箱占用（仅校验正式用户表，待验证数据由 Redis 暂存，不做全局扫描）
         if (StringUtils.hasText(request.getEmail())) {
             boolean emailUsed = studentService.lambdaQuery().eq(Student::getEmail, request.getEmail()).count() > 0;
-            if (emailUsed) throw new IllegalArgumentException("邮箱已被使用");
+            if (emailUsed) throw ApiException.badRequest("邮箱已被使用");
         }
 
         // 直接创建用户并返回 token（用于测试环境）
@@ -107,14 +108,14 @@ public class AuthController {
     public ApiResponse<AuthUserVO> verifyEmail(@Valid @RequestBody VerifyEmailRequest req,
                                                HttpServletRequest httpReq) {
         VerificationCodeService.Pending p = verificationCodeService.get(req.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("未找到待验证的注册信息"));
+                .orElseThrow(() -> ApiException.badRequest("未找到待验证的注册信息"));
         if (System.currentTimeMillis() > p.expireEpochMillis) {
             verificationCodeService.remove(req.getUsername());
-            throw new IllegalArgumentException("验证码已过期，请重新注册");
+            throw ApiException.badRequest("验证码已过期，请重新注册");
         }
         if (!p.code.equalsIgnoreCase(req.getCode())) {
             verificationCodeService.increaseAttempts(req.getUsername());
-            throw new IllegalArgumentException("验证码不正确");
+            throw ApiException.badRequest("验证码不正确");
         }
         // 创建正式用户
         Student s = new Student();
@@ -153,10 +154,10 @@ public class AuthController {
             case "teacher":
                 Teacher teacher = teacherService.lambdaQuery()
                         .eq(Teacher::getUsername, loginRequest.getUsername()).one();
-                if (teacher == null) throw new IllegalArgumentException("账号不存在");
+                if (teacher == null) throw ApiException.badRequest("账号不存在");
                 if (!passwordService.matches(loginRequest.getPassword(), teacher.getPassword())) {
                     createLoginLog(teacher.getId(), teacher.getUsername(), "teacher", httpReq, false, "密码错误");
-                    throw new IllegalArgumentException("账号或密码错误");
+                    throw ApiException.badRequest("账号或密码错误");
                 }
                 // 更新教师最近登录时间
                 teacher.setLastLoginTime(java.time.LocalDateTime.now());
@@ -176,10 +177,10 @@ public class AuthController {
             case "admin":
                 Admin admin = adminService.lambdaQuery()
                         .eq(Admin::getUsername, loginRequest.getUsername()).one();
-                if (admin == null) throw new IllegalArgumentException("账号不存在");
+                if (admin == null) throw ApiException.badRequest("账号不存在");
                 if (!passwordService.matches(loginRequest.getPassword(), admin.getPassword())) {
                     createLoginLog(admin.getId(), admin.getUsername(), "admin", httpReq, false, "密码错误");
-                    throw new IllegalArgumentException("账号或密码错误");
+                    throw ApiException.badRequest("账号或密码错误");
                 }
                 // 更新管理员最近登录时间及IP
                 admin.setLastLoginTime(java.time.LocalDateTime.now());
@@ -200,13 +201,13 @@ public class AuthController {
             case "student":
             default:
                 Student user = studentService.findByUsername(loginRequest.getUsername())
-                        .orElseThrow(() -> new IllegalArgumentException("账号不存在"));
+                        .orElseThrow(() -> ApiException.badRequest("账号不存在"));
                 if (!passwordService.matches(loginRequest.getPassword(), user.getPassword())) {
                     createLoginLog(user.getId(), user.getUsername(), "student", httpReq, false, "密码错误");
-                    throw new IllegalArgumentException("账号或密码错误");
+                    throw ApiException.badRequest("账号或密码错误");
                 }
                 if (user.getIsVerified() != null && !user.getIsVerified()) {
-                    throw new IllegalArgumentException("邮箱未验证，无法登录");
+                    throw ApiException.badRequest("邮箱未验证，无法登录");
                 }
                 // 更新学生最近登录时间及IP
                 user.setLastLoginTime(java.time.LocalDateTime.now());
@@ -232,7 +233,7 @@ public class AuthController {
     public ApiResponse<Void> logout(@RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false)
                                     @Parameter(description = "当前认证用户，从请求属性解析") AuthenticatedUser current) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         LoginLog latest = loginLogService.lambdaQuery()
                 .eq(LoginLog::getUserId, current.getUserId())
@@ -270,7 +271,7 @@ public class AuthController {
     public ApiResponse<AuthUserVO> me(@RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false)
                                       @Parameter(description = "当前认证用户") AuthenticatedUser current) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         String role = current.getRole();
         Long id = current.getUserId();
@@ -288,7 +289,7 @@ public class AuthController {
                 break;
         }
         if (entity == null) {
-            return ApiResponse.failure(404, "用户不存在");
+            throw ApiException.notFound("用户不存在");
         }
         java.util.Map<String, Object> details = buildDetails(entity); // 使用统一方法，自动过滤敏感字段
         String username = (String) details.getOrDefault("username", current.getUsername());
@@ -309,9 +310,9 @@ public class AuthController {
     @Operation(summary = "找回密码-发送验证码(学生)", description = "根据用户名向绑定邮箱发送找回密码验证码")
     @PostMapping("/password/forgot/sendCode")
     public ApiResponse<Void> forgotPasswordSend(@Valid @RequestBody com.oj.onlinejudge.domain.dto.ForgotPasswordSendCodeRequest req) {
-        Student s = studentService.findByUsername(req.getUsername()).orElseThrow(() -> new IllegalArgumentException("账号不存在"));
+        Student s = studentService.findByUsername(req.getUsername()).orElseThrow(() -> ApiException.badRequest("账号不存在"));
         if (!StringUtils.hasText(s.getEmail())) {
-            throw new IllegalArgumentException("该账号未绑定邮箱，无法找回密码");
+            throw ApiException.badRequest("该账号未绑定邮箱，无法找回密码");
         }
         String code = generateAlphaNumCode(6);
         // 将验证码存入待验证，利用 VerificationCodeService 简单复用：passwordHash 字段临时放置 newPass 占位符
@@ -324,20 +325,20 @@ public class AuthController {
     @Operation(summary = "找回密码-验证并重置(学生)", description = "提交验证码和新密码，验证通过后更新密码并邮件通知")
     @PostMapping("/password/forgot/verify")
     public ApiResponse<Void> forgotPasswordVerify(@Valid @RequestBody com.oj.onlinejudge.domain.dto.ForgotPasswordVerifyRequest req) {
-        Student s = studentService.findByUsername(req.getUsername()).orElseThrow(() -> new IllegalArgumentException("账号不存在"));
+        Student s = studentService.findByUsername(req.getUsername()).orElseThrow(() -> ApiException.badRequest("账号不存在"));
         VerificationCodeService.Pending p = verificationCodeService.get("pwd:" + req.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("请先发送验证码"));
+                .orElseThrow(() -> ApiException.badRequest("请先发送验证码"));
         if (System.currentTimeMillis() > p.expireEpochMillis) {
             verificationCodeService.remove("pwd:" + req.getUsername());
-            throw new IllegalArgumentException("验证码已过期");
+            throw ApiException.badRequest("验证码已过期");
         }
         if (!p.code.equalsIgnoreCase(req.getCode())) {
             verificationCodeService.increaseAttempts("pwd:" + req.getUsername());
-            throw new IllegalArgumentException("验证码不正确");
+            throw ApiException.badRequest("验证码不正确");
         }
         // 禁止设置与当前相同的密码
         if (passwordService.matches(req.getNewPassword(), s.getPassword())) {
-            return ApiResponse.failure(400, "新密码不能与旧密码相同");
+            throw ApiException.badRequest("新密码不能与旧密码相同");
         }
         // 更新密码
         s.setPassword(passwordService.encode(req.getNewPassword()));
@@ -355,15 +356,15 @@ public class AuthController {
     public ApiResponse<Void> changePassword(@RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
                                             @Valid @RequestBody com.oj.onlinejudge.domain.dto.ChangePasswordRequest req) {
         if (current == null || !"student".equals(current.getRole())) {
-            return ApiResponse.failure(401, "未登录或角色不匹配");
+            throw ApiException.unauthorized("未登录或角色不匹配");
         }
         Student s = studentService.getById(current.getUserId());
-        if (s == null) return ApiResponse.failure(404, "用户不存在");
+        if (s == null) throw ApiException.notFound("用户不存在");
         if (!passwordService.matches(req.getOldPassword(), s.getPassword())) {
-            return ApiResponse.failure(400, "旧密码不正确");
+            throw ApiException.badRequest("旧密码不正确");
         }
         if (passwordService.matches(req.getNewPassword(), s.getPassword())) {
-            return ApiResponse.failure(400, "新密码不能与旧密码相同");
+            throw ApiException.badRequest("新密码不能与旧密码相同");
         }
         s.setPassword(passwordService.encode(req.getNewPassword()));
         studentService.updateById(s);

@@ -9,6 +9,7 @@ package com.oj.onlinejudge.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.oj.onlinejudge.common.api.ApiResponse;
 import com.oj.onlinejudge.domain.entity.Admin;
+import com.oj.onlinejudge.exception.ApiException;
 import com.oj.onlinejudge.service.AdminService;
 import com.oj.onlinejudge.security.PasswordService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,7 +41,7 @@ public class AdminController {
             @Parameter(description = "页码，从1开始") @RequestParam(defaultValue = "1") long page,
             @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") long size) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         Page<Admin> p = adminService.page(new Page<>(page, size));
         return ApiResponse.success(p);
@@ -58,10 +59,13 @@ public class AdminController {
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "管理员ID") @PathVariable Long id) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         Admin admin = adminService.getById(id);
-        return admin == null ? ApiResponse.failure(404, "管理员不存在") : ApiResponse.success(admin);
+        if (admin == null) {
+            throw ApiException.notFound("管理员不存在");
+        }
+        return ApiResponse.success(admin);
     }
 
     /**
@@ -76,18 +80,21 @@ public class AdminController {
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "管理员实体") @RequestBody Admin body) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         body.setId(null);
         // 强制要求密码必填
         if (!org.springframework.util.StringUtils.hasText(body.getPassword())) {
-            throw new IllegalArgumentException("密码不能为空");
+            throw ApiException.badRequest("密码不能为空");
         }
         if (StringUtils.hasText(body.getPassword())) {
             body.setPassword(passwordService.encode(body.getPassword()));
         }
         boolean ok = adminService.save(body);
-        return ok ? ApiResponse.success("创建成功", body) : ApiResponse.failure(500, "创建失败");
+        if (!ok) {
+            throw ApiException.internal("创建失败");
+        }
+        return ApiResponse.success("创建成功", body);
     }
 
     /**
@@ -104,7 +111,7 @@ public class AdminController {
             @Parameter(description = "管理员ID") @PathVariable Long id,
             @Parameter(description = "管理员实体") @RequestBody Admin body) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         body.setId(id);
         if (StringUtils.hasText(body.getPassword())) {
@@ -112,12 +119,15 @@ public class AdminController {
         } else {
             Admin old = adminService.getById(id);
             if (old == null) {
-                return ApiResponse.failure(404, "管理员不存在");
+                throw ApiException.notFound("管理员不存在");
             }
             body.setPassword(old.getPassword());
         }
         boolean ok = adminService.updateById(body);
-        return ok ? ApiResponse.success("更新成功", body) : ApiResponse.failure(404, "管理员不存在");
+        if (!ok) {
+            throw ApiException.notFound("管理员不存在");
+        }
+        return ApiResponse.success("更新成功", body);
     }
 
     /**
@@ -132,9 +142,12 @@ public class AdminController {
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "管理员ID") @PathVariable Long id) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         boolean ok = adminService.removeById(id);
-        return ok ? ApiResponse.success(null) : ApiResponse.failure(404, "管理员不存在");
+        if (!ok) {
+            throw ApiException.notFound("管理员不存在");
+        }
+        return ApiResponse.success(null);
     }
 }

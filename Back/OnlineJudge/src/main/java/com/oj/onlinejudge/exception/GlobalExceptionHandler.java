@@ -3,12 +3,12 @@ package com.oj.onlinejudge.exception;
 // 全局异常处理：统一转换为 ApiResponse，便于前端处理
 
 import com.oj.onlinejudge.common.api.ApiResponse;
-
 import java.util.stream.Collectors;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -19,6 +19,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(ApiException.class)
+    public ResponseEntity<ApiResponse<Void>> handleApiException(ApiException ex) {
+        ApiErrorCode code = ex.getErrorCode();
+        return ResponseEntity.status(code.getStatus())
+                .body(ApiResponse.failure(code.getCode(), ex.getMessage()));
+    }
 
     /**
      * 处理参数校验异常，返回 400
@@ -47,6 +54,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Void> handleIllegalArgument(IllegalArgumentException ex) {
         return ApiResponse.failure(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
+    }
+
+    @ExceptionHandler(DuplicateKeyException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<Void> handleDuplicateKey(DuplicateKeyException ex) {
+        return ApiResponse.failure(HttpStatus.CONFLICT.value(), "数据已存在或违反唯一约束");
     }
 
     /**

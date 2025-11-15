@@ -10,6 +10,7 @@ package com.oj.onlinejudge.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.oj.onlinejudge.common.api.ApiResponse;
 import com.oj.onlinejudge.domain.entity.Classes;
+import com.oj.onlinejudge.exception.ApiException;
 import com.oj.onlinejudge.service.ClassesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -34,7 +35,7 @@ public class ClassesController {
             @Parameter(description = "页码") @RequestParam(defaultValue = "1") long page,
             @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") long size) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         Page<Classes> p = classesService.page(new Page<>(page, size));
         return ApiResponse.success(p);
@@ -49,10 +50,13 @@ public class ClassesController {
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "班级ID") @PathVariable Long id) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         Classes c = classesService.getById(id);
-        return c == null ? ApiResponse.failure(404, "班级不存在") : ApiResponse.success(c);
+        if (c == null) {
+            throw ApiException.notFound("班级不存在");
+        }
+        return ApiResponse.success(c);
     }
 
     /**
@@ -64,11 +68,14 @@ public class ClassesController {
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "班级实体") @RequestBody Classes body) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         body.setId(null);
         boolean ok = classesService.save(body);
-        return ok ? ApiResponse.success("创建成功", body) : ApiResponse.failure(500, "创建失败");
+        if (!ok) {
+            throw ApiException.internal("创建失败");
+        }
+        return ApiResponse.success("创建成功", body);
     }
 
     /**
@@ -81,11 +88,14 @@ public class ClassesController {
             @Parameter(description = "班级ID") @PathVariable Long id,
             @Parameter(description = "班级实体") @RequestBody Classes body) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         body.setId(id);
         boolean ok = classesService.updateById(body);
-        return ok ? ApiResponse.success("更新成功", body) : ApiResponse.failure(404, "班级不存在");
+        if (!ok) {
+            throw ApiException.notFound("班级不存在");
+        }
+        return ApiResponse.success("更新成功", body);
     }
 
     /**
@@ -97,9 +107,12 @@ public class ClassesController {
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "班级ID") @PathVariable Long id) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         boolean ok = classesService.removeById(id);
-        return ok ? ApiResponse.success(null) : ApiResponse.failure(404, "班级不存在");
+        if (!ok) {
+            throw ApiException.notFound("班级不存在");
+        }
+        return ApiResponse.success(null);
     }
 }

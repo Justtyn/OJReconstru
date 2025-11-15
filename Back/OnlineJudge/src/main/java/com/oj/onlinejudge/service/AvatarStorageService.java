@@ -3,6 +3,7 @@ package com.oj.onlinejudge.service;
 // 头像存储服务：校验图片、保存文件并返回访问 URL
 
 import com.oj.onlinejudge.config.StorageProperties;
+import com.oj.onlinejudge.exception.ApiException;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,18 +28,18 @@ public class AvatarStorageService {
 
     public String storeAvatar(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("文件不能为空");
+            throw ApiException.badRequest("文件不能为空");
         }
         BufferedImage image = ImageIO.read(file.getInputStream());
         if (image == null) {
-            throw new IllegalArgumentException("文件不是有效的图片");
+            throw ApiException.badRequest("文件不是有效的图片");
         }
         if (image.getWidth() != image.getHeight()) {
-            throw new IllegalArgumentException("头像必须为正方形图片");
+            throw ApiException.badRequest("头像必须为正方形图片");
         }
         String extension = resolveExtension(file);
         if (!SUPPORTED_TYPES.contains(extension)) {
-            throw new IllegalArgumentException("暂不支持的图片格式：" + extension);
+            throw ApiException.badRequest("暂不支持的图片格式：" + extension);
         }
         Path avatarDir = Paths.get(storageProperties.getAvatarDir()).toAbsolutePath();
         Files.createDirectories(avatarDir);

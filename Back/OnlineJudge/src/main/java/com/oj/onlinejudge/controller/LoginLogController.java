@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.oj.onlinejudge.common.api.ApiResponse;
 import com.oj.onlinejudge.domain.entity.LoginLog;
+import com.oj.onlinejudge.exception.ApiException;
 import com.oj.onlinejudge.service.LoginLogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -33,7 +34,7 @@ public class LoginLogController {
             @Parameter(description = "角色过滤") @RequestParam(required = false) String role,
             @Parameter(description = "用户ID过滤") @RequestParam(required = false) Long userId) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         LambdaQueryWrapper<LoginLog> wrapper = new LambdaQueryWrapper<>();
         if (role != null && !role.isEmpty()) wrapper.eq(LoginLog::getRole, role);
@@ -51,10 +52,13 @@ public class LoginLogController {
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "日志ID") @PathVariable Long id) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         LoginLog log = loginLogService.getById(id);
-        return log == null ? ApiResponse.failure(404, "记录不存在") : ApiResponse.success(log);
+        if (log == null) {
+            throw ApiException.notFound("记录不存在");
+        }
+        return ApiResponse.success(log);
     }
 
     /**
@@ -66,11 +70,14 @@ public class LoginLogController {
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "日志实体") @RequestBody LoginLog body) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         body.setId(null);
         boolean ok = loginLogService.save(body);
-        return ok ? ApiResponse.success("创建成功", body) : ApiResponse.failure(500, "创建失败");
+        if (!ok) {
+            throw ApiException.internal("创建失败");
+        }
+        return ApiResponse.success("创建成功", body);
     }
 
     /**
@@ -83,11 +90,14 @@ public class LoginLogController {
             @Parameter(description = "日志ID") @PathVariable Long id,
             @Parameter(description = "日志实体") @RequestBody LoginLog body) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         body.setId(id);
         boolean ok = loginLogService.updateById(body);
-        return ok ? ApiResponse.success("更新成功", body) : ApiResponse.failure(404, "记录不存在");
+        if (!ok) {
+            throw ApiException.notFound("记录不存在");
+        }
+        return ApiResponse.success("更新成功", body);
     }
 
     /**
@@ -99,9 +109,12 @@ public class LoginLogController {
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "日志ID") @PathVariable Long id) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         boolean ok = loginLogService.removeById(id);
-        return ok ? ApiResponse.success(null) : ApiResponse.failure(404, "记录不存在");
+        if (!ok) {
+            throw ApiException.notFound("记录不存在");
+        }
+        return ApiResponse.success(null);
     }
 }

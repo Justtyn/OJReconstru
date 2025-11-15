@@ -12,6 +12,7 @@ import com.oj.onlinejudge.common.api.ApiResponse;
 import com.oj.onlinejudge.domain.entity.Teacher;
 import com.oj.onlinejudge.service.TeacherService;
 import com.oj.onlinejudge.security.PasswordService;
+import com.oj.onlinejudge.exception.ApiException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +38,7 @@ public class TeacherController {
             @Parameter(description = "页码") @RequestParam(defaultValue = "1") long page,
             @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") long size) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         Page<Teacher> p = teacherService.page(new Page<>(page, size));
         return ApiResponse.success(p);
@@ -52,10 +53,13 @@ public class TeacherController {
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "教师ID") @PathVariable Long id) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         Teacher teacher = teacherService.getById(id);
-        return teacher == null ? ApiResponse.failure(404, "教师不存在") : ApiResponse.success(teacher);
+        if (teacher == null) {
+            throw ApiException.notFound("教师不存在");
+        }
+        return ApiResponse.success(teacher);
     }
 
     /**
@@ -67,18 +71,21 @@ public class TeacherController {
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "教师实体") @RequestBody Teacher body) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         body.setId(null);
         // 强制要求密码必填
         if (!org.springframework.util.StringUtils.hasText(body.getPassword())) {
-            throw new IllegalArgumentException("密码不能为空");
+            throw ApiException.badRequest("密码不能为空");
         }
         if (StringUtils.hasText(body.getPassword())) {
             body.setPassword(passwordService.encode(body.getPassword()));
         }
         boolean ok = teacherService.save(body);
-        return ok ? ApiResponse.success("创建成功", body) : ApiResponse.failure(500, "创建失败");
+        if (!ok) {
+            throw ApiException.internal("创建失败");
+        }
+        return ApiResponse.success("创建成功", body);
     }
 
     /**
@@ -91,7 +98,7 @@ public class TeacherController {
             @Parameter(description = "教师ID") @PathVariable Long id,
             @Parameter(description = "教师实体") @RequestBody Teacher body) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         body.setId(id);
         if (StringUtils.hasText(body.getPassword())) {
@@ -99,12 +106,15 @@ public class TeacherController {
         } else {
             Teacher old = teacherService.getById(id);
             if (old == null) {
-                return ApiResponse.failure(404, "教师不存在");
+                throw ApiException.notFound("教师不存在");
             }
             body.setPassword(old.getPassword());
         }
         boolean ok = teacherService.updateById(body);
-        return ok ? ApiResponse.success("更新成功", body) : ApiResponse.failure(404, "教师不存在");
+        if (!ok) {
+            throw ApiException.notFound("教师不存在");
+        }
+        return ApiResponse.success("更新成功", body);
     }
 
     /**
@@ -116,9 +126,12 @@ public class TeacherController {
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "教师ID") @PathVariable Long id) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         boolean ok = teacherService.removeById(id);
-        return ok ? ApiResponse.success(null) : ApiResponse.failure(404, "教师不存在");
+        if (!ok) {
+            throw ApiException.notFound("教师不存在");
+        }
+        return ApiResponse.success(null);
     }
 }

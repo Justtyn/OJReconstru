@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.oj.onlinejudge.common.api.ApiResponse;
 import com.oj.onlinejudge.domain.entity.ClassesMember;
+import com.oj.onlinejudge.exception.ApiException;
 import com.oj.onlinejudge.service.ClassesMemberService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -32,7 +33,7 @@ public class ClassesMemberController {
             @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") long size,
             @Parameter(description = "班级ID过滤") @RequestParam(required = false) Long classId) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         LambdaQueryWrapper<ClassesMember> wrapper = new LambdaQueryWrapper<>();
         if (classId != null) {
@@ -51,10 +52,13 @@ public class ClassesMemberController {
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "记录ID") @PathVariable Long id) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         ClassesMember cm = classesMemberService.getById(id);
-        return cm == null ? ApiResponse.failure(404, "记录不存在") : ApiResponse.success(cm);
+        if (cm == null) {
+            throw ApiException.notFound("记录不存在");
+        }
+        return ApiResponse.success(cm);
     }
 
     /**
@@ -66,11 +70,14 @@ public class ClassesMemberController {
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "班级成员实体") @RequestBody ClassesMember body) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         body.setId(null);
         boolean ok = classesMemberService.save(body);
-        return ok ? ApiResponse.success("创建成功", body) : ApiResponse.failure(500, "创建失败");
+        if (!ok) {
+            throw ApiException.internal("创建失败");
+        }
+        return ApiResponse.success("创建成功", body);
     }
 
     /**
@@ -83,11 +90,14 @@ public class ClassesMemberController {
             @Parameter(description = "记录ID") @PathVariable Long id,
             @Parameter(description = "班级成员实体") @RequestBody ClassesMember body) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         body.setId(id);
         boolean ok = classesMemberService.updateById(body);
-        return ok ? ApiResponse.success("更新成功", body) : ApiResponse.failure(404, "记录不存在");
+        if (!ok) {
+            throw ApiException.notFound("记录不存在");
+        }
+        return ApiResponse.success("更新成功", body);
     }
 
     /**
@@ -99,9 +109,12 @@ public class ClassesMemberController {
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "记录ID") @PathVariable Long id) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         boolean ok = classesMemberService.removeById(id);
-        return ok ? ApiResponse.success(null) : ApiResponse.failure(404, "记录不存在");
+        if (!ok) {
+            throw ApiException.notFound("记录不存在");
+        }
+        return ApiResponse.success(null);
     }
 }

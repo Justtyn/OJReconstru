@@ -56,7 +56,7 @@ class ClassesControllerTest {
     void getClass_notFound() throws Exception {
         String tk = token();
         mockMvc.perform(get("/api/classes/{id}", 9999).header("Authorization", tk))
-            .andExpect(status().isOk())
+            .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.code", is(404)));
     }
 

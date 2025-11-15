@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.oj.onlinejudge.common.api.ApiResponse;
 import com.oj.onlinejudge.domain.entity.Student;
+import com.oj.onlinejudge.exception.ApiException;
 import com.oj.onlinejudge.security.PasswordService;
 import com.oj.onlinejudge.service.StudentService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,7 +38,7 @@ public class StudentController {
             @Parameter(description = "按邮箱模糊搜索") @RequestParam(required = false) String email,
             @Parameter(description = "页码") @RequestParam(defaultValue = "1") long page) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         LambdaQueryWrapper<Student> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(username)) {
@@ -59,10 +60,13 @@ public class StudentController {
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "学生ID") @PathVariable Long id) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         Student student = studentService.getById(id);
-        return student == null ? ApiResponse.failure(404, "学生不存在") : ApiResponse.success(student);
+        if (student == null) {
+            throw ApiException.notFound("学生不存在");
+        }
+        return ApiResponse.success(student);
     }
 
     /**
@@ -74,14 +78,17 @@ public class StudentController {
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "学生实体") @RequestBody Student body) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         body.setId(null);
         if (StringUtils.hasText(body.getPassword())) {
             body.setPassword(passwordService.encode(body.getPassword()));
         }
         boolean ok = studentService.save(body);
-        return ok ? ApiResponse.success("创建成功", body) : ApiResponse.failure(500, "创建失败");
+        if (!ok) {
+            throw ApiException.internal("创建失败");
+        }
+        return ApiResponse.success("创建成功", body);
     }
 
     /**
@@ -94,7 +101,7 @@ public class StudentController {
             @Parameter(description = "学生ID") @PathVariable Long id,
             @Parameter(description = "学生实体") @RequestBody Student body) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         body.setId(id);
         if (StringUtils.hasText(body.getPassword())) {
@@ -103,12 +110,15 @@ public class StudentController {
             // 不修改密码: 读取旧值保持
             Student old = studentService.getById(id);
             if (old == null) {
-                return ApiResponse.failure(404, "学生不存在");
+                throw ApiException.notFound("学生不存在");
             }
             body.setPassword(old.getPassword());
         }
         boolean ok = studentService.updateById(body);
-        return ok ? ApiResponse.success("更新成功", body) : ApiResponse.failure(404, "学生不存在");
+        if (!ok) {
+            throw ApiException.notFound("学生不存在");
+        }
+        return ApiResponse.success("更新成功", body);
     }
 
     /**
@@ -120,9 +130,12 @@ public class StudentController {
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "学生ID") @PathVariable Long id) {
         if (current == null) {
-            return ApiResponse.failure(401, "未登录或Token失效");
+            throw ApiException.unauthorized("未登录或Token失效");
         }
         boolean ok = studentService.removeById(id);
-        return ok ? ApiResponse.success(null) : ApiResponse.failure(404, "学生不存在");
+        if (!ok) {
+            throw ApiException.notFound("学生不存在");
+        }
+        return ApiResponse.success(null);
     }
 }

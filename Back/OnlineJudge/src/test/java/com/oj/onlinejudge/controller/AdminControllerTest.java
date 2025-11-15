@@ -69,7 +69,7 @@ class AdminControllerTest {
     void getAdmin_notFound() throws Exception {
         String tk = token();
         mockMvc.perform(get("/api/admins/{id}", 9999).header("Authorization", tk))
-            .andExpect(status().isOk())
+            .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.code", is(404)));
     }
 
@@ -122,7 +122,7 @@ class AdminControllerTest {
                 .header("Authorization", tk)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
-            .andExpect(status().isOk())
+            .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.code", is(404)));
     }
 
@@ -140,7 +140,7 @@ class AdminControllerTest {
     void deleteAdmin_notFound() throws Exception {
         String tk = token();
         mockMvc.perform(delete("/api/admins/{id}", 9999).header("Authorization", tk))
-            .andExpect(status().isOk())
+            .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.code", is(404)));
     }
 }

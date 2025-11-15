@@ -120,6 +120,7 @@ src/test/resources
 - DELETE /api/login-logs/{id}：删除日志。（src/main/java/com/oj/onlinejudge/controller/LoginLogController.java:89)
 
 所有业务接口均通过 ApiResponse 返回，成功时 code=200 且 data 为实体或分页对象，失败时返回对应状态码与错误信息。除注册/登录/找回密码外，其余接口都要求请求上下文存在 AuthenticatedUser（即需要携带有效 JWT Token）。
+
 ---
 ## 配置说明（节选）
 

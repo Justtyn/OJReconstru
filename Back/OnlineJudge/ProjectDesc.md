@@ -57,6 +57,70 @@ src/test/resources
 ```
 
 ---
+## 已开发接口
+• 认证模块（/api/auth）
+
+- POST /api/auth/register：注册学生账号。 Body 为 RegisterRequest{username,password,email?,name?}；当 app.auth.require-email-verify=false 时直接创建账号并返回 AuthUserVO + Bearer Token，否则写入待验证区并向邮箱发验证码，响应提示信
+  息。（src/main/java/com/oj/onlinejudge/controller/AuthController.java:57）
+- POST /api/auth/verifyEmail：提交 VerifyEmailRequest{username,code} 激活账号，校验验证码有效期/错误次数，通过后写入学生表、记录登录日志并返回登录态。（src/main/java/com/oj/onlinejudge/controller/AuthController.java:106）
+- POST /api/auth/login：Body LoginRequest{username,password,role?}，role 支持 student|teacher|admin。按角色查找用户、校验密码、更新最近登录信息、发送登录提醒并返回 AuthUserVO。（src/main/java/com/oj/onlinejudge/controller/
+  AuthController.java:148）
+- POST /api/auth/logout：需要请求属性 AuthenticatedUser（JWT 解析得到），查找最近一次成功登录日志写入登出时间，并向用户邮箱发送退出提醒，不接受 Body。（src/main/java/com/oj/onlinejudge/controller/AuthController.java:231）
+- GET /api/auth/users/me：读取当前登录者详情并组装 AuthUserVO，Token 前缀取自 JwtProperties。（src/main/java/com/oj/onlinejudge/controller/AuthController.java:269）
+- POST /api/auth/password/forgot/sendCode：仅学生找回密码，Body 为 ForgotPasswordSendCodeRequest{username}，向绑定邮箱发 6 位验证码并存储 Redis 待验证记录。（src/main/java/com/oj/onlinejudge/controller/AuthController.java:310）
+- POST /api/auth/password/forgot/verify：Body ForgotPasswordVerifyRequest{username,code,newPassword}，校验验证码与新旧密码，成功后加密更新密码并发通知。（src/main/java/com/oj/onlinejudge/controller/AuthController.java:325）
+- POST /api/auth/password/change：学生登录后自助改密，Body ChangePasswordRequest{oldPassword,newPassword}，需校验旧密与新旧不同。（src/main/java/com/oj/onlinejudge/controller/AuthController.java:354）
+
+学生接口（/api/students）
+
+- GET /api/students：分页 + 模糊查询（参数 page、size、username?、email?），返回 Page<Student>；缺少 AuthenticatedUser 时直接返回 401。（src/main/java/com/oj/onlinejudge/controller/StudentController.java:30)
+- GET /api/students/{id}：按 ID 查详情，未找到返回 404。（src/main/java/com/oj/onlinejudge/controller/StudentController.java:53)
+- POST /api/students：Body 为 Student，若带 password 会进行哈希；返回创建后的实体。（src/main/java/com/oj/onlinejudge/controller/StudentController.java:66)
+- PUT /api/students/{id}：Body 部分字段更新；未传密码时保留旧值，传入则重新加密。（src/main/java/com/oj/onlinejudge/controller/StudentController.java:83)
+- DELETE /api/students/{id}：删除学生记录，返回空数据或 404。（src/main/java/com/oj/onlinejudge/controller/StudentController.java:108)
+
+教师接口（/api/teachers）
+
+- GET /api/teachers：分页查询（page,size）；需要登录态。（src/main/java/com/oj/onlinejudge/controller/TeacherController.java:34)
+- GET /api/teachers/{id}：返回教师详情。（src/main/java/com/oj/onlinejudge/controller/TeacherController.java:50)
+- POST /api/teachers：Body 必须包含 password，创建时自动加密。（src/main/java/com/oj/onlinejudge/controller/TeacherController.java:65)
+- PUT /api/teachers/{id}：更新教师资料，密码为空则沿用旧值。（src/main/java/com/oj/onlinejudge/controller/TeacherController.java:88)
+- DELETE /api/teachers/{id}：删除教师记录。（src/main/java/com/oj/onlinejudge/controller/TeacherController.java:114)
+
+管理员接口（/api/admins）
+
+- GET /api/admins：分页查询管理员。（src/main/java/com/oj/onlinejudge/controller/AdminController.java:35)
+- GET /api/admins/{id}：管理员详情。（src/main/java/com/oj/onlinejudge/controller/AdminController.java:53)
+- POST /api/admins：Body 需包含密码，存储前加密。（src/main/java/com/oj/onlinejudge/controller/AdminController.java:70)
+- PUT /api/admins/{id}：更新管理员，密码留空则沿用旧值。（src/main/java/com/oj/onlinejudge/controller/AdminController.java:97)
+- DELETE /api/admins/{id}：删除管理员。（src/main/java/com/oj/onlinejudge/controller/AdminController.java:125)
+
+班级接口（/api/classes）
+
+- GET /api/classes：分页列表（page,size）。（src/main/java/com/oj/onlinejudge/controller/ClassesController.java:30)
+- GET /api/classes/{id}：班级详情。（src/main/java/com/oj/onlinejudge/controller/ClassesController.java:47)
+- POST /api/classes：创建班级，Body Classes。（src/main/java/com/oj/onlinejudge/controller/ClassesController.java:62)
+- PUT /api/classes/{id}：更新班级信息。（src/main/java/com/oj/onlinejudge/controller/ClassesController.java:78)
+- DELETE /api/classes/{id}：删除班级。（src/main/java/com/oj/onlinejudge/controller/ClassesController.java:95)
+
+班级成员接口（/api/classes-members）
+
+- GET /api/classes-members：分页并可按 classId 过滤，适合查看某班成员列表。（src/main/java/com/oj/onlinejudge/controller/ClassesMemberController.java:28)
+- GET /api/classes-members/{id}：单条成员关系详情。（src/main/java/com/oj/onlinejudge/controller/ClassesMemberController.java:47)
+- POST /api/classes-members：Body ClassesMember{classId,memberId,memberType...}，用于绑定成员。（src/main/java/com/oj/onlinejudge/controller/ClassesMemberController.java:60)
+- PUT /api/classes-members/{id}：更新成员关系（角色、备注等）。（src/main/java/com/oj/onlinejudge/controller/ClassesMemberController.java:74)
+- DELETE /api/classes-members/{id}：删除成员关系。（src/main/java/com/oj/onlinejudge/controller/ClassesMemberController.java:89)
+
+登录日志接口（/api/login-logs）
+
+- GET /api/login-logs：分页+条件查询（page,size,role?,userId?），返回 Page<LoginLog>。（src/main/java/com/oj/onlinejudge/controller/LoginLogController.java:27)
+- GET /api/login-logs/{id}：单条日志详情。（src/main/java/com/oj/onlinejudge/controller/LoginLogController.java:47)
+- POST /api/login-logs：手动写入日志记录（通常内部使用）。（src/main/java/com/oj/onlinejudge/controller/LoginLogController.java:60)
+- PUT /api/login-logs/{id}：更新登录日志（如补登登出时间）。（src/main/java/com/oj/onlinejudge/controller/LoginLogController.java:74)
+- DELETE /api/login-logs/{id}：删除日志。（src/main/java/com/oj/onlinejudge/controller/LoginLogController.java:89)
+
+所有业务接口均通过 ApiResponse 返回，成功时 code=200 且 data 为实体或分页对象，失败时返回对应状态码与错误信息。除注册/登录/找回密码外，其余接口都要求请求上下文存在 AuthenticatedUser（即需要携带有效 JWT Token）。
+---
 ## 配置说明（节选）
 
 见 `src/main/resources/application.yml`：

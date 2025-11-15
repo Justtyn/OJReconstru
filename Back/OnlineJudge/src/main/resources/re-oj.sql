@@ -11,7 +11,7 @@
  Target Server Version : 90200 (9.2.0)
  File Encoding         : 65001
 
- Date: 15/11/2025 22:33:49
+ Date: 15/11/2025 22:51:10
 */
 
 SET NAMES utf8mb4;
@@ -45,7 +45,7 @@ CREATE TABLE `admin` (
 -- Records of admin
 -- ----------------------------
 BEGIN;
-INSERT INTO `admin` (`id`, `username`, `password`, `name`, `sex`, `birth`, `phone`, `email`, `avatar`, `last_login_ip`, `last_login_time`, `created_at`, `updated_at`) VALUES (1988830930425188354, 'admin', '$2a$10$77L45bgkKqqf3tRXH590ne2ML2Pa5hgv0jaYXnt4NQaNcYvV.hP6.', 'admin', 'unknown', NULL, NULL, NULL, NULL, '0:0:0:0:0:0:0:1', '2025-11-13 15:10:00.256', '2025-11-13 12:46:59.197', '2025-11-13 15:18:25.741');
+INSERT INTO `admin` (`id`, `username`, `password`, `name`, `sex`, `birth`, `phone`, `email`, `avatar`, `last_login_ip`, `last_login_time`, `created_at`, `updated_at`) VALUES (1988830930425188354, 'admin', '$2a$10$77L45bgkKqqf3tRXH590ne2ML2Pa5hgv0jaYXnt4NQaNcYvV.hP6.', 'admin', 'male', '2003-05-28', '13850056409', '44739528@qq.com', NULL, '0:0:0:0:0:0:0:1', '2025-11-13 15:10:00.256', '2025-11-13 12:46:59.197', '2025-11-15 22:40:24.423');
 COMMIT;
 
 -- ----------------------------
@@ -78,7 +78,6 @@ CREATE TABLE `classes` (
   `id` bigint unsigned NOT NULL COMMENT '班级ID',
   `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '班级名称',
   `creator_id` bigint unsigned DEFAULT NULL COMMENT '创建者',
-  `homework_quantity` int NOT NULL DEFAULT '0' COMMENT '作业数量',
   `code` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '加入码',
   `start_date` date DEFAULT NULL COMMENT '开始日期',
   `end_date` date DEFAULT NULL COMMENT '结束日期',
@@ -95,7 +94,7 @@ CREATE TABLE `classes` (
 -- Records of classes
 -- ----------------------------
 BEGIN;
-INSERT INTO `classes` (`id`, `name`, `creator_id`, `homework_quantity`, `code`, `start_date`, `end_date`, `description`, `created_at`, `updated_at`) VALUES (1988870655198408706, '2024级-软件工程(专升本)-1班', 1988829934890356738, 0, 'SWEU2024', '2024-09-01', '2026-07-01', '2024级-软件工程(专升本)-1班', '2025-11-13 15:24:50.293', '2025-11-13 15:26:25.428');
+INSERT INTO `classes` (`id`, `name`, `creator_id`, `code`, `start_date`, `end_date`, `description`, `created_at`, `updated_at`) VALUES (1988870655198408706, '2024级-软件工程(专升本)-1班', 1988829934890356738, 'SWEU2024', '2024-09-01', '2026-07-01', '2024级-软件工程(专升本)-1班', '2025-11-13 15:24:50.293', '2025-11-13 15:26:25.428');
 COMMIT;
 
 -- ----------------------------

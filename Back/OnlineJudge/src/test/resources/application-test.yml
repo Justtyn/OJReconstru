@@ -32,6 +32,9 @@ app:
   logging:
     login:
       async: false
+  storage:
+    avatar-dir: ./build/test-avatars
+    avatar-url-prefix: /files/avatars
 
 jwt:
   whitelist:

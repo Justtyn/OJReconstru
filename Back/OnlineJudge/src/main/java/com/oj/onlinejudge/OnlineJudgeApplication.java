@@ -4,12 +4,13 @@ package com.oj.onlinejudge;
 
 import com.oj.onlinejudge.config.JwtProperties;
 import com.oj.onlinejudge.config.PasswordProperties;
+import com.oj.onlinejudge.config.StorageProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 @SpringBootApplication
-@EnableConfigurationProperties({JwtProperties.class, PasswordProperties.class})
+@EnableConfigurationProperties({JwtProperties.class, PasswordProperties.class, StorageProperties.class})
 public class OnlineJudgeApplication {
 
     public static void main(String[] args) {

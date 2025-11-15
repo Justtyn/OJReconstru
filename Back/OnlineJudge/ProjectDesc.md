@@ -1,407 +1,83 @@
-# Re-OnlineJudge Backend
+# Re-OnlineJudge Backend · 开发日志与项目说明
 
-一个基于 Spring Boot 的在线判题平台后端基础服务，当前聚焦于通用用户体系与教学教务域：注册 + 邮箱验证、登录 / 注销、角色管理（学生 / 教师 / 管理员）、班级与班级成员、登录日志、邮件通知、统一认证与分页查询能力。
+## 概览
+Spring Boot 2.6 + MyBatis-Plus 实现的在线判题/教学教务后端，当前提供用户体系、班级、日志、邮件、验证码等能力。数据源为 MySQL，测试场景使用 H2；认证基于 JWT，`ApiResponse{code,message,data}` 为统一返回结构。`re-oj.sql` 与 `schema-test.sql` 同步维护表结构，确保开发/测试一致。
 
----
-## 特性速览
+## 近期迭代
+- **2025-11-16**：新增本地头像上传能力（正方形图片校验、静态资源映射）、补充 `app.storage` 配置、完善测试覆盖；同步 H2 Schema 至最新数据库结构。
+- **2025-11-15**：完成数据库扩展（announcement、discussion、homework、problem、submission 等表）并生成实体，准备后续接口开发。
+- **2025-11-13**：实现注册 + 邮箱验证码、角色化登录、登录日志、学生/教师/管理员/班级/班级成员 CRUD 以及邮件通知。
 
-身份认证与安全
-- 支持注册（可选邮箱验证码激活）、邮箱验证、登录、注销、获取当前用户
-- 角色：`student | teacher | admin` 登录时可显式指定，默认 student
-- JWT 鉴权：HS256 签名（JJWT 0.11.x），请求头 `Authorization: Bearer <token>`；统一白名单路径配置
-- 登录日志：记录成功/失败、IP、UA、设备、时间，可分页筛选
-- 邮件通知：注册成功 / 登录提醒 / 注销提醒 / 邮箱验证码
-- 统一密码服务：BCrypt + 全局盐值（避免简单彩虹表）
+## 功能模块
+### 身份认证
+- `POST /api/auth/register`（含可选邮箱验证）
+- `POST /api/auth/login` / `POST /api/auth/logout`
+- `GET /api/auth/users/me`
+- 找回/修改密码：`/password/forgot/*`、`/password/change`
+- 登录日志：`/api/login-logs`
 
-教务与基础数据
-- 学生 / 教师 / 管理员 CRUD（创建/更新时自动对明文密码加密）
-- 班级 Classes 与班级成员 ClassesMember CRUD，支持按 `classId` 过滤
-- 分页查询：MyBatis-Plus + PageHelper（向后兼容）
+### 用户与教务数据
+- 学生、教师、管理员 CRUD：`/api/students | /api/teachers | /api/admins`
+- 班级与班级成员：`/api/classes`、`/api/classes-members`
+- 数据脚手架：`re-oj.sql` 含 announcement、discussion、homework、problem、submission 等新表，实体位于 `domain/entity`，待补业务接口。
 
-开发体验与运维
-- OpenAPI / Swagger UI（已集成 Bearer 鉴权按钮）
-- 统一响应结构 `ApiResponse`：`{ code, message, data }`，`code=0` 表示成功
-- 全局异常处理：参数校验 / 业务异常 / 未知异常 -> 标准 JSON 响应
-- 可通过 Redis 或内存存储待验证注册信息（验证码）
-- 测试环境使用 H2 内存库 + 关闭邮件与验证码要求，便于快速 CI
+### 文件服务（新增）
+- 接口：`POST /api/files/avatar`（需登录，`multipart/form-data`，字段 `file`）
+- 规则：只接受 `png/jpg/jpeg/gif/webp`，必须为正方形图片；使用 `UUID` 命名，保存于 `app.storage.avatar-dir`（默认 `./uploads/avatars`）
+- 访问：上传成功返回 `{"url":"/files/avatars/<name>.png"}`，通过 Spring MVC 静态资源映射直接访问
+- 校验：读取图片像素确认正方形，非图片或非正方形会返回 `400` 与失败原因
 
----
-## 技术栈
-
-后端框架：Spring Boot 2.6.13
-语言与环境：Java 8+（sourceCompatibility=1.8）
-持久化：MyBatis-Plus 3.5.x、PageHelper、MySQL 8+（可兼容 5.7）、H2（测试）
-缓存 & 临时存储：Redis 7+（验证码、可扩展会话/限流）
-认证与安全：JJWT、BCrypt（Spring Security Crypto）
-文档：springdoc-openapi-ui 1.6.x
-邮件：Spring Mail（SMTP）
-工具：Lombok（编译期）、Gradle Wrapper
-
----
-## 目录结构（简述）
-
+## 配置要点
 ```
-src/main/java/com/oj/onlinejudge
-  ├── controller        # REST 控制器（auth、student、teacher、admin、classes、classes-member、login-log）
-  ├── domain            # entity / dto / vo
-  ├── service (+impl)   # 业务服务、验证码存储、邮件发送、日志
-  ├── security          # JWT、过滤器、密码服务、已认证用户对象
-  ├── config            # CORS、Async、JWT、OpenAPI、Swagger、MyBatis-Plus 等配置
-  ├── common/api        # 统一响应模型 ApiResponse
-  ├── exception         # 全局异常处理 (GlobalExceptionHandler)
-src/main/resources
-  ├── application.yml   # 主配置
-  ├── re-oj.sql         # 初始化建表脚本
-src/test/resources
-  ├── application-test.yml  # 测试配置（H2 / 禁用邮件 / 内存验证码）
+app:
+  auth.require-email-verify: true|false
+  logging.login.async: true|false
+  storage:
+    avatar-dir: ./uploads/avatars      # 可改为绝对路径
+    avatar-url-prefix: /files/avatars  # 暴露的 URL 前缀
 ```
+测试环境 (`application-test.yml`) 将 `avatar-dir` 指向 `./build/test-avatars`，并关闭邮件/验证码依赖。若更换目录，确保部署机器具备写权限。
 
----
-## 已开发接口
-• 认证模块（/api/auth）
+## 测试
+- `./gradlew test`：H2 内存库 + MockMvc 覆盖认证/用户/头像上传用例
+- `FileControllerTest` 新增两个场景：上传正方形图片成功、非正方形返回 400，运行后可在 `build/test-avatars` 观察落盘文件
+- 生成报告：`build/reports/tests/test/index.html`
 
-- POST /api/auth/register：注册学生账号。 Body 为 RegisterRequest{username,password,email?,name?}；当 app.auth.require-email-verify=false 时直接创建账号并返回 AuthUserVO + Bearer Token，否则写入待验证区并向邮箱发验证码，响应提示信
-  息。（src/main/java/com/oj/onlinejudge/controller/AuthController.java:57）
-- POST /api/auth/verifyEmail：提交 VerifyEmailRequest{username,code} 激活账号，校验验证码有效期/错误次数，通过后写入学生表、记录登录日志并返回登录态。（src/main/java/com/oj/onlinejudge/controller/AuthController.java:106）
-- POST /api/auth/login：Body LoginRequest{username,password,role?}，role 支持 student|teacher|admin。按角色查找用户、校验密码、更新最近登录信息、发送登录提醒并返回 AuthUserVO。（src/main/java/com/oj/onlinejudge/controller/
-  AuthController.java:148）
-- POST /api/auth/logout：需要请求属性 AuthenticatedUser（JWT 解析得到），查找最近一次成功登录日志写入登出时间，并向用户邮箱发送退出提醒，不接受 Body。（src/main/java/com/oj/onlinejudge/controller/AuthController.java:231）
-- GET /api/auth/users/me：读取当前登录者详情并组装 AuthUserVO，Token 前缀取自 JwtProperties。（src/main/java/com/oj/onlinejudge/controller/AuthController.java:269）
-- POST /api/auth/password/forgot/sendCode：仅学生找回密码，Body 为 ForgotPasswordSendCodeRequest{username}，向绑定邮箱发 6 位验证码并存储 Redis 待验证记录。（src/main/java/com/oj/onlinejudge/controller/AuthController.java:310）
-- POST /api/auth/password/forgot/verify：Body ForgotPasswordVerifyRequest{username,code,newPassword}，校验验证码与新旧密码，成功后加密更新密码并发通知。（src/main/java/com/oj/onlinejudge/controller/AuthController.java:325）
-- POST /api/auth/password/change：学生登录后自助改密，Body ChangePasswordRequest{oldPassword,newPassword}，需校验旧密与新旧不同。（src/main/java/com/oj/onlinejudge/controller/AuthController.java:354）
+## API 速查
+| 模块 | 方法 & Path | 说明 |
+| --- | --- | --- |
+| 认证 | `POST /api/auth/register` | 注册学生账号（按配置决定是否需要邮箱激活） |
+| 认证 | `POST /api/auth/login` | 支持 `student/teacher/admin` 角色登录 |
+| 认证 | `GET /api/auth/users/me` | 返回 `AuthUserVO` |
+| 密码 | `POST /api/auth/password/forgot/sendCode` | 找回密码-发送验证码 |
+| 密码 | `POST /api/auth/password/forgot/verify` | 验证码 + 新密码 |
+| 密码 | `POST /api/auth/password/change` | 登录学生修改密码 |
+| 用户 | `GET/POST/PUT/DELETE /api/students` | 学生 CRUD（创建/更新自动哈希密码） |
+| 用户 | `GET/POST/PUT/DELETE /api/teachers` | 教师 CRUD |
+| 用户 | `GET/POST/PUT/DELETE /api/admins` | 管理员 CRUD |
+| 班级 | `GET/POST/PUT/DELETE /api/classes` | 班级基础信息 |
+| 班级成员 | `GET/POST/PUT/DELETE /api/classes-members` | 维护班级与学生/教师关系 |
+| 日志 | `GET /api/login-logs` | 支持按角色/用户过滤 |
+| 文件 | `POST /api/files/avatar` | 上传正方形头像，返回 URL |
 
-学生接口（/api/students）
+## 开发建议
+1. **新模块脚手架**：实体已就绪，后续添加 Mapper → Service → Controller → Test 即可；推荐通过 MP Generator 批量生成（可扩展 `AvatarStorageService` 的写法）。
+2. **数据库迁移**：长期建议引入 Flyway，将 `re-oj.sql` 拆分为版本化脚本；短期内修改结构请同步 `schema-test.sql`。
+3. **文件扩展**：若需公告/讨论贴图，可复用 `AvatarStorageService` 思路，抽象出 `FileCategory`，并对上传类型/目录做差异化配置。
+4. **安全**：虽然头像上传暂未限速，仍建议部署层添加基本防护（大小限制、WAF）；JWT 秘钥、邮件授权码等敏感配置请通过环境变量注入。
 
-- GET /api/students：分页 + 模糊查询（参数 page、size、username?、email?），返回 Page<Student>；缺少 AuthenticatedUser 时直接返回 401。（src/main/java/com/oj/onlinejudge/controller/StudentController.java:30)
-- GET /api/students/{id}：按 ID 查详情，未找到返回 404。（src/main/java/com/oj/onlinejudge/controller/StudentController.java:53)
-- POST /api/students：Body 为 Student，若带 password 会进行哈希；返回创建后的实体。（src/main/java/com/oj/onlinejudge/controller/StudentController.java:66)
-- PUT /api/students/{id}：Body 部分字段更新；未传密码时保留旧值，传入则重新加密。（src/main/java/com/oj/onlinejudge/controller/StudentController.java:83)
-- DELETE /api/students/{id}：删除学生记录，返回空数据或 404。（src/main/java/com/oj/onlinejudge/controller/StudentController.java:108)
+## 运行与部署提示
+1. 准备 MySQL / Redis，导入 `re-oj.sql`
+2. 配置 `application.yml` 或环境变量（包括 `app.storage` 目录）
+3. 启动：`./gradlew bootRun` 或 `./gradlew build` + `java -jar`
+4. 访问 Swagger UI：`http://localhost:8080/swagger-ui.html`，使用 `Authorize` 输入 `Bearer <token>`
+5. 静态资源：头像上传后可直接访问 `http://<host>:8080/files/avatars/<name>.png`
 
-教师接口（/api/teachers）
+## 路线图
+- 题目/讨论/作业/提交接口实现与前端联调
+- 文件服务扩展：通用附件上传、图片裁剪、CDN/对象存储切换
+- 判题任务管理：与 Judge0 或自研沙箱集成
+- 操作审计、风控与限流
+- CI/CD：自动执行测试 & 构建镜像
 
-- GET /api/teachers：分页查询（page,size）；需要登录态。（src/main/java/com/oj/onlinejudge/controller/TeacherController.java:34)
-- GET /api/teachers/{id}：返回教师详情。（src/main/java/com/oj/onlinejudge/controller/TeacherController.java:50)
-- POST /api/teachers：Body 必须包含 password，创建时自动加密。（src/main/java/com/oj/onlinejudge/controller/TeacherController.java:65)
-- PUT /api/teachers/{id}：更新教师资料，密码为空则沿用旧值。（src/main/java/com/oj/onlinejudge/controller/TeacherController.java:88)
-- DELETE /api/teachers/{id}：删除教师记录。（src/main/java/com/oj/onlinejudge/controller/TeacherController.java:114)
-
-管理员接口（/api/admins）
-
-- GET /api/admins：分页查询管理员。（src/main/java/com/oj/onlinejudge/controller/AdminController.java:35)
-- GET /api/admins/{id}：管理员详情。（src/main/java/com/oj/onlinejudge/controller/AdminController.java:53)
-- POST /api/admins：Body 需包含密码，存储前加密。（src/main/java/com/oj/onlinejudge/controller/AdminController.java:70)
-- PUT /api/admins/{id}：更新管理员，密码留空则沿用旧值。（src/main/java/com/oj/onlinejudge/controller/AdminController.java:97)
-- DELETE /api/admins/{id}：删除管理员。（src/main/java/com/oj/onlinejudge/controller/AdminController.java:125)
-
-班级接口（/api/classes）
-
-- GET /api/classes：分页列表（page,size）。（src/main/java/com/oj/onlinejudge/controller/ClassesController.java:30)
-- GET /api/classes/{id}：班级详情。（src/main/java/com/oj/onlinejudge/controller/ClassesController.java:47)
-- POST /api/classes：创建班级，Body Classes。（src/main/java/com/oj/onlinejudge/controller/ClassesController.java:62)
-- PUT /api/classes/{id}：更新班级信息。（src/main/java/com/oj/onlinejudge/controller/ClassesController.java:78)
-- DELETE /api/classes/{id}：删除班级。（src/main/java/com/oj/onlinejudge/controller/ClassesController.java:95)
-
-班级成员接口（/api/classes-members）
-
-- GET /api/classes-members：分页并可按 classId 过滤，适合查看某班成员列表。（src/main/java/com/oj/onlinejudge/controller/ClassesMemberController.java:28)
-- GET /api/classes-members/{id}：单条成员关系详情。（src/main/java/com/oj/onlinejudge/controller/ClassesMemberController.java:47)
-- POST /api/classes-members：Body ClassesMember{classId,memberId,memberType...}，用于绑定成员。（src/main/java/com/oj/onlinejudge/controller/ClassesMemberController.java:60)
-- PUT /api/classes-members/{id}：更新成员关系（角色、备注等）。（src/main/java/com/oj/onlinejudge/controller/ClassesMemberController.java:74)
-- DELETE /api/classes-members/{id}：删除成员关系。（src/main/java/com/oj/onlinejudge/controller/ClassesMemberController.java:89)
-
-登录日志接口（/api/login-logs）
-
-- GET /api/login-logs：分页+条件查询（page,size,role?,userId?），返回 Page<LoginLog>。（src/main/java/com/oj/onlinejudge/controller/LoginLogController.java:27)
-- GET /api/login-logs/{id}：单条日志详情。（src/main/java/com/oj/onlinejudge/controller/LoginLogController.java:47)
-- POST /api/login-logs：手动写入日志记录（通常内部使用）。（src/main/java/com/oj/onlinejudge/controller/LoginLogController.java:60)
-- PUT /api/login-logs/{id}：更新登录日志（如补登登出时间）。（src/main/java/com/oj/onlinejudge/controller/LoginLogController.java:74)
-- DELETE /api/login-logs/{id}：删除日志。（src/main/java/com/oj/onlinejudge/controller/LoginLogController.java:89)
-
-所有业务接口均通过 ApiResponse 返回，成功时 code=200 且 data 为实体或分页对象，失败时返回对应状态码与错误信息。除注册/登录/找回密码外，其余接口都要求请求上下文存在 AuthenticatedUser（即需要携带有效 JWT Token）。
-
----
-## 配置说明（节选）
-
-见 `src/main/resources/application.yml`：
-
-### MySQL
-```
-spring.datasource.url=jdbc:mysql://localhost:3306/re-oj
-spring.datasource.username=root
-spring.datasource.password=<你的密码>
-```
-
-### Redis
-```
-spring.redis.host=localhost
-spring.redis.port=6379
-```
-
-### JWT
-```
-jwt.header=Authorization
-jwt.prefix=Bearer
-jwt.secret=<一段足够长的随机字符串>
-jwt.expire-minutes=120
-jwt.whitelist:
-  - /api/auth/login
-  - /api/auth/register
-  - /api/auth/verifyEmail
-```
-
-### 验证码与注册
-```
-app.auth.require-email-verify=true   # 是否启用邮箱验证码激活
-app.auth.verify.store=redis          # redis | memory
-app.auth.verify-redis-prefix=verify:reg:
-```
-
-### 邮件
-```
-app.mail.enabled=true
-spring.mail.host=smtp.qq.com
-spring.mail.port=587
-spring.mail.username=<邮箱>@qq.com
-spring.mail.password=<授权码>
-```
-
-### 密码盐值
-```
-security.password.salt=change-this-salt
-```
-生产环境请通过环境变量或外部配置中心覆盖敏感信息，避免硬编码。
-
----
-## 响应结构
-
-统一使用：
-```
-{
-  "code": 0,
-  "message": "success",
-  "data": { ... }
-}
-```
-失败示例：
-```
-{
-  "code": 400,
-  "message": "参数不合法",
-  "data": null
-}
-```
-JWT 失败（401）：
-```
-{
-  "code": 401,
-  "message": "Token非法或已过期",
-  "data": null
-}
-```
-
----
-## 快速启动（macOS / zsh）
-
-前置要求：已安装 JDK 8+、Gradle Wrapper（仓库已附）、MySQL、Redis、可用 SMTP 邮箱。
-
-1. 安装 / 启动 Redis：（二选一）
-```zsh
-brew install redis
-brew services start redis
-redis-cli ping
-# 或 Docker
-# docker run -d --name redis -p 6379:6379 redis:7-alpine
-```
-2. 初始化数据库：创建库 `re-oj` 并导入 `src/main/resources/re-oj.sql`
-3. 配置环境变量（推荐替换 yml 中敏感项）：
-```zsh
-export SPRING_DATASOURCE_URL="jdbc:mysql://localhost:3306/re-oj?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false"
-export SPRING_DATASOURCE_USERNAME=root
-export SPRING_DATASOURCE_PASSWORD=<你的MySQL密码>
-export SPRING_MAIL_HOST=smtp.qq.com
-export SPRING_MAIL_PORT=587
-export SPRING_MAIL_USERNAME=<邮箱>@qq.com
-export SPRING_MAIL_PASSWORD=<授权码>
-export APP_MAIL_ENABLED=true
-export APP_AUTH_REQUIRE_EMAIL_VERIFY=true
-export APP_AUTH_VERIFY_STORE=redis
-export SECURITY_PASSWORD_SALT="change-this-salt"
-export JWT_SECRET="<至少32位随机字符串>"
-```
-4. 启动：
-```zsh
-./gradlew bootRun
-```
-访问：`http://localhost:8080`
-Swagger UI：
-- `http://localhost:8080/swagger-ui.html`
-- or `http://localhost:8080/swagger-ui/index.html`
-点击右上角 Authorize，填入：`Bearer <token>` 或只填原始 token（前缀由界面自动添加）。
-
----
-## Docker Compose（可选快速栈）
-
-示例（自行在根目录创建 `docker-compose.yml`）：
-```
-version: '3.9'
-services:
-  mysql:
-    image: mysql:8.0
-    container_name: reoj-mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: re-oj
-    command: ["--default-authentication-plugin=mysql_native_password"]
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ./src/main/resources/re-oj.sql:/docker-entrypoint-initdb.d/re-oj.sql
-  redis:
-    image: redis:7-alpine
-    container_name: reoj-redis
-    ports:
-      - "6379:6379"
-  app:
-    build: .
-    container_name: reoj-backend
-    depends_on:
-      - mysql
-      - redis
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/re-oj?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
-      SPRING_REDIS_HOST: redis
-      APP_AUTH_VERIFY_STORE: redis
-      APP_MAIL_ENABLED: "false"   # 初期可关闭邮件
-      JWT_SECRET: <请替换>
-      SECURITY_PASSWORD_SALT: <请替换>
-    ports:
-      - "8080:8080"
-volumes:
-  mysql_data:
-```
-然后：
-```zsh
-docker compose up -d --build
-```
-
----
-## 常用接口（curl 示例）
-
-注册（发送验证码或直接注册，取决于配置）
-```zsh
-curl -X POST http://localhost:8080/api/auth/register \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"alice","password":"P@ssw0rd","email":"alice@qq.com","name":"Alice"}'
-```
-读取验证码（Redis 模式）：
-```zsh
-redis-cli GET "verify:reg:alice"
-```
-邮箱激活：
-```zsh
-curl -X POST http://localhost:8080/api/auth/verifyEmail \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"alice","code":"123456"}'
-```
-登录（默认 student）：
-```zsh
-curl -X POST http://localhost:8080/api/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"alice","password":"P@ssw0rd"}'
-```
-携带 Token 获取当前用户：
-```zsh
-TOKEN=<登录返回的token(不含Bearer)>
-curl http://localhost:8080/api/auth/users/me -H "Authorization: Bearer ${TOKEN}"
-```
-注销：
-```zsh
-curl -X POST http://localhost:8080/api/auth/logout -H "Authorization: Bearer ${TOKEN}"
-```
-分页查询学生：
-```zsh
-curl "http://localhost:8080/api/students?page=1&size=10" -H "Authorization: Bearer ${TOKEN}"
-```
-
----
-## 认证流程简述
-1. 客户端调用注册：
-   - 如启用邮箱验证：生成验证码 + Redis 暂存 -> 发邮件 -> 返回“等待验证”
-   - 如未启用：直接创建用户并返回 Token
-2. 客户端提交验证码（启用时）：校验成功 -> 创建用户 -> 返回 Token
-3. 登录：账号密码 + 角色（可选） -> 验证密码 -> 生成 JWT -> 返回
-4. 后续请求：在请求头携带 `Authorization: Bearer <token>` -> 过滤器解析有效性 -> 在 `request.getAttribute("authenticatedUser")` 中放入用户对象
-5. 注销：记录登出时间，可选邮件提醒
-
-JWT 负载字段：`sub` (userId), `username`, `role`, `iat`, `exp`
-
----
-## 测试与构建
-
-运行全部测试：
-```zsh
-./gradlew clean test
-```
-测试特点：
-- 使用 H2 内存数据库（避免对真实 MySQL 写入）
-- 关闭邮件发送 `app.mail.enabled=false`
-- 验证码存储切换为 memory（无需 Redis）
-- 生成的测试报告：`build/reports/tests/test/index.html`
-
----
-## 故障排查 (Troubleshooting)
-
-1. 415 / MediaType 错误：缺少 `Content-Type: application/json` 或 JSON 语法错误
-2. 邮件未发送：确认 SMTP 主机、端口、授权码；可临时关闭邮件功能 `app.mail.enabled=false`
-3. Redis 连接失败：确认服务已启动；可改用 `app.auth.verify.store=memory`
-4. 401 未授权：检查 Token 是否携带、是否过期、前缀是否正确
-5. 表缺失或外键错误：是否已导入 `re-oj.sql`
-6. 密码不匹配：是否使用了创建后返回的加密密码；更新时未传 password 会保留旧值
-
----
-## 安全建议
-- 勿在公共仓库提交真实密码、JWT 密钥、邮件授权码
-- 更换默认盐值：`security.password.salt`
-- 生产环境使用 HTTPS，前置网关可做限流 / 防护
-- 考虑为登录增加频率限制与 IP 黑名单策略
-
----
-## 后续规划（Roadmap）
-- 题目 / 题库 / 提交记录 / 判题任务 模块
-- 代码沙箱集成（安全隔离执行用户代码）
-- 排名 / 统计 / 数据看板
-- 更细颗粒度权限（RBAC 或 ABAC）
-- 分布式会话与刷新 Token 机制
-- 操作审计与安全告警
-- Docker 镜像与 CI/CD 流程完善
-
----
-## 贡献指南（初稿）
-1. Fork & Clone
-2. 创建功能分支：`git checkout -b feature/<name>`
-3. 编码规范：保持统一响应结构；新增公共异常请在 `GlobalExceptionHandler` 映射
-4. 添加/更新测试：控制器新增接口务必补充对应测试类
-5. 提交信息：语义化（feat/fix/docs/refactor/test/chore）
-6. PR 描述：说明动机、变更点、回归影响、测试覆盖情况
-
----
-## 快速自检清单
-- [ ] 应用可启动：`./gradlew bootRun`
-- [ ] Swagger UI 可访问并能 Authorize 成功
-- [ ] 注册 + 验证码（或免验证模式）成功获取 Token
-- [ ] 至少一个受保护接口返回 200（携带 Token）
-- [ ] MySQL 表结构与实体字段一致，无运行期映射错误
-- [ ] Redis 验证码写入与读取正常（启用时）
-- [ ] 测试通过：`./gradlew test` code=0
-
----
-## License
-（未声明，可根据需要添加。例如：MIT / Apache-2.0）
-
----
-如需：自动化部署脚本、更多 CI 示例（GitHub Actions）、或判题执行沙箱的初步设计文档，可继续提出需求，我会补充。
+如需更多模块设计或环境脚本，请继续提出需求。

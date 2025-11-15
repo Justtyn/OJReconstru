@@ -79,3 +79,6 @@ app:
   logging:
     login:
       async: true
+  storage:
+    avatar-dir: ./uploads/avatars
+    avatar-url-prefix: /files/avatars

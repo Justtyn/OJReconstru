@@ -28,6 +28,7 @@ public class AdminController {
 
     /**
      * 分页查询管理员列表
+     *
      * @param page 第几页（从1开始）
      * @param size 每页数量
      * @return 分页数据
@@ -47,6 +48,7 @@ public class AdminController {
 
     /**
      * 根据ID查询管理员详情
+     *
      * @param id 管理员ID
      * @return 管理员信息
      */
@@ -64,6 +66,7 @@ public class AdminController {
 
     /**
      * 新增管理员（如包含明文密码，将进行哈希存储）
+     *
      * @param body 管理员实体
      * @return 新建结果
      */
@@ -89,7 +92,8 @@ public class AdminController {
 
     /**
      * 更新管理员（未提供 password 时保留原密码）
-     * @param id 管理员ID
+     *
+     * @param id   管理员ID
      * @param body 管理员实体（部分/全部字段）
      * @return 更新结果
      */
@@ -118,6 +122,7 @@ public class AdminController {
 
     /**
      * 删除管理员
+     *
      * @param id 管理员ID
      * @return 删除结果
      */

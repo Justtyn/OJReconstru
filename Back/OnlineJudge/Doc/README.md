@@ -276,6 +276,14 @@ curl "http://localhost:8080/api/students?page=1&size=10" -H "Authorization: Bear
 JWT 负载字段：`sub` (userId), `username`, `role`, `iat`, `exp`
 
 ---
+## 题库 & 测试用例接口
+
+- 公开题库：`GET /api/problems` 提供分页列表，支持关键字、难度（easy/medium/hard）、日常挑战标记过滤；`GET /api/problems/{id}` 返回完整题面及示例输入输出。匿名可访问，未启用题目仅对教师/管理员开放。
+- 后台管理：`POST/PUT/DELETE /api/admin/problems` CRUD，`GET/POST /api/admin/problems/{id}/testcases` 维护一题多测试用例，`PUT/DELETE /api/admin/problem-testcases/{testcaseId}` 编辑/删除单条用例；操作要求教师或管理员登录态。
+- 数据一致性：服务层 `ProblemService.removeProblemWithTestcases` 删除题目时显式清空 `problem_testcase` 记录，同时依赖数据库外键 `ON DELETE CASCADE` 兜底，确保一题多用例关系无脏数据。
+- 自动化测试：`ProblemControllerTest` 覆盖公开查询、测试用例 CRUD 以及删除题目后测试用例被清理的路径，复用 `ControllerTestSupport` 的注册/鉴权工具。
+
+---
 ## 测试与构建
 
 运行全部测试：
@@ -307,7 +315,7 @@ JWT 负载字段：`sub` (userId), `username`, `role`, `iat`, `exp`
 
 ---
 ## 后续规划（Roadmap）
-- 题目 / 题库 / 提交记录 / 判题任务 模块
+- 提交记录 / 判题任务模块（对接代码沙箱、结果汇总）
 - 代码沙箱集成（安全隔离执行用户代码）
 - 排名 / 统计 / 数据看板
 - 更细颗粒度权限（RBAC 或 ABAC）

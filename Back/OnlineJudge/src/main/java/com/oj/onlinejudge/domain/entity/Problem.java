@@ -29,7 +29,7 @@ public class Problem {
     @TableField("submit_count")
     @Schema(description = "提交次数")
     private Integer submitCount;
-    @TableField("desc")
+    @TableField("`desc`")
     @Schema(description = "题目描述")
     private String description;
     @TableField("desc_input")

@@ -77,11 +77,11 @@ public class StudentController {
     /**
      * 新增学生（如包含明文密码，将进行哈希存储）
      */
-    @Operation(summary = "学生-创建")
+    @Operation(summary = "学生-创建", description = "创建新学生并可选设置初始密码")
     @PostMapping
     public ApiResponse<Student> create(
-            @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
-            @Validated(CreateGroup.class) @RequestBody StudentUpsertRequest request) {
+            @Parameter(description = "当前认证用户", required = true) @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
+            @Parameter(description = "学生信息") @Validated(CreateGroup.class) @RequestBody StudentUpsertRequest request) {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
@@ -101,12 +101,12 @@ public class StudentController {
     /**
      * 更新学生（未提供 password 时保留原密码）
      */
-    @Operation(summary = "学生-更新")
+    @Operation(summary = "学生-更新", description = "根据ID更新学生信息，密码为空则保持原值")
     @PutMapping("/{id}")
     public ApiResponse<Student> update(
-            @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
-            @Parameter(description = "学生ID") @PathVariable Long id,
-            @Validated(UpdateGroup.class) @RequestBody StudentUpsertRequest request) {
+            @Parameter(description = "当前认证用户", required = true) @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
+            @Parameter(description = "学生ID", example = "123") @PathVariable Long id,
+            @Parameter(description = "学生信息") @Validated(UpdateGroup.class) @RequestBody StudentUpsertRequest request) {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }

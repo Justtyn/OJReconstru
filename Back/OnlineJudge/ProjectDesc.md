@@ -38,6 +38,15 @@ app:
 ```
 测试环境 (`application-test.yml`) 将 `avatar-dir` 指向 `./build/test-avatars`，并关闭邮件/验证码依赖。若更换目录，确保部署机器具备写权限。
 
+## API 文档与调试平台
+- **收益**：完善 Swagger/OpenAPI 注释后，可在 `/swagger-ui.html` 直接查看接口、字段与示例，配合 `Authorize` 按钮即可带 Bearer Token 调试；导出 `openapi.json`/Postman 集合可让前端和测试人员一键导入，减少手动拼接 curl。
+- **当前状态**：所有 Controller 已补上 `@Operation`、`@Parameter`、DTO `@Schema` 描述，springdoc 已依赖配置；仍需收敛接口说明（示例值、错误码说明）并生成共享的调试集合。
+- **下一步行动**：
+  1. 在 `Doc/` 下维护 `openapi.json` 快照和 Postman/Thunder 集合，随主要版本更新。
+  2. 对外发布实例时在网关限制 Swagger 访问，或仅保留 `/v3/api-docs` 供内部使用。
+  3. CI 中增加 `./gradlew bootRun --args='--springdoc.api-docs.enabled=true'` + `curl /v3/api-docs` 步骤，自动产出最新 OpenAPI，并在 PR 模板中提示同步文档。
+  4. 若前端需要快速体验，可在 README/HELP 中附 `swagger-ui` 路径与示例 Token 获取方式。
+
 ## 测试
 - `./gradlew test`：H2 内存库 + MockMvc 覆盖认证/用户/头像上传用例
 - `FileControllerTest` 新增两个场景：上传正方形图片成功、非正方形返回 400，运行后可在 `build/test-avatars` 观察落盘文件

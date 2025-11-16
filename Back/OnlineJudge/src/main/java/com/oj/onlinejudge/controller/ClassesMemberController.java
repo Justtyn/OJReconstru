@@ -6,12 +6,17 @@ package com.oj.onlinejudge.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.oj.onlinejudge.common.api.ApiResponse;
+import com.oj.onlinejudge.domain.dto.ClassesMemberRequest;
+import com.oj.onlinejudge.domain.dto.group.CreateGroup;
+import com.oj.onlinejudge.domain.dto.group.UpdateGroup;
 import com.oj.onlinejudge.domain.entity.ClassesMember;
 import com.oj.onlinejudge.exception.ApiException;
 import com.oj.onlinejudge.service.ClassesMemberService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import com.oj.onlinejudge.security.AuthenticatedUser;
 
@@ -68,10 +73,12 @@ public class ClassesMemberController {
     @PostMapping
     public ApiResponse<ClassesMember> create(
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
-            @Parameter(description = "班级成员实体") @RequestBody ClassesMember body) {
+            @Validated(CreateGroup.class) @RequestBody ClassesMemberRequest request) {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
+        ClassesMember body = new ClassesMember();
+        BeanUtils.copyProperties(request, body);
         body.setId(null);
         boolean ok = classesMemberService.save(body);
         if (!ok) {
@@ -88,10 +95,12 @@ public class ClassesMemberController {
     public ApiResponse<ClassesMember> update(
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "记录ID") @PathVariable Long id,
-            @Parameter(description = "班级成员实体") @RequestBody ClassesMember body) {
+            @Validated(UpdateGroup.class) @RequestBody ClassesMemberRequest request) {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
+        ClassesMember body = new ClassesMember();
+        BeanUtils.copyProperties(request, body);
         body.setId(id);
         boolean ok = classesMemberService.updateById(body);
         if (!ok) {

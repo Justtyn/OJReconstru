@@ -6,12 +6,17 @@ package com.oj.onlinejudge.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.oj.onlinejudge.common.api.ApiResponse;
+import com.oj.onlinejudge.domain.dto.LoginLogRequest;
+import com.oj.onlinejudge.domain.dto.group.CreateGroup;
+import com.oj.onlinejudge.domain.dto.group.UpdateGroup;
 import com.oj.onlinejudge.domain.entity.LoginLog;
 import com.oj.onlinejudge.exception.ApiException;
 import com.oj.onlinejudge.service.LoginLogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import com.oj.onlinejudge.security.AuthenticatedUser;
 
@@ -68,10 +73,12 @@ public class LoginLogController {
     @PostMapping
     public ApiResponse<LoginLog> create(
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
-            @Parameter(description = "日志实体") @RequestBody LoginLog body) {
+            @Validated(CreateGroup.class) @RequestBody LoginLogRequest request) {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
+        LoginLog body = new LoginLog();
+        BeanUtils.copyProperties(request, body);
         body.setId(null);
         boolean ok = loginLogService.save(body);
         if (!ok) {
@@ -88,10 +95,12 @@ public class LoginLogController {
     public ApiResponse<LoginLog> update(
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "日志ID") @PathVariable Long id,
-            @Parameter(description = "日志实体") @RequestBody LoginLog body) {
+            @Validated(UpdateGroup.class) @RequestBody LoginLogRequest request) {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
+        LoginLog body = new LoginLog();
+        BeanUtils.copyProperties(request, body);
         body.setId(id);
         boolean ok = loginLogService.updateById(body);
         if (!ok) {

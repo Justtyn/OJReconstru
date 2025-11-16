@@ -9,6 +9,9 @@ package com.oj.onlinejudge.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.oj.onlinejudge.common.api.ApiResponse;
+import com.oj.onlinejudge.domain.dto.TeacherUpsertRequest;
+import com.oj.onlinejudge.domain.dto.group.CreateGroup;
+import com.oj.onlinejudge.domain.dto.group.UpdateGroup;
 import com.oj.onlinejudge.domain.entity.Teacher;
 import com.oj.onlinejudge.service.TeacherService;
 import com.oj.onlinejudge.security.PasswordService;
@@ -16,7 +19,9 @@ import com.oj.onlinejudge.exception.ApiException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import com.oj.onlinejudge.security.AuthenticatedUser;
 
@@ -69,10 +74,12 @@ public class TeacherController {
     @PostMapping
     public ApiResponse<Teacher> create(
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
-            @Parameter(description = "教师实体") @RequestBody Teacher body) {
+            @Validated(CreateGroup.class) @RequestBody TeacherUpsertRequest request) {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
+        Teacher body = new Teacher();
+        BeanUtils.copyProperties(request, body);
         body.setId(null);
         // 强制要求密码必填
         if (!org.springframework.util.StringUtils.hasText(body.getPassword())) {
@@ -96,10 +103,12 @@ public class TeacherController {
     public ApiResponse<Teacher> update(
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "教师ID") @PathVariable Long id,
-            @Parameter(description = "教师实体") @RequestBody Teacher body) {
+            @Validated(UpdateGroup.class) @RequestBody TeacherUpsertRequest request) {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
+        Teacher body = new Teacher();
+        BeanUtils.copyProperties(request, body);
         body.setId(id);
         if (StringUtils.hasText(body.getPassword())) {
             body.setPassword(passwordService.encode(body.getPassword()));

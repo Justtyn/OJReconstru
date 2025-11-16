@@ -6,6 +6,9 @@ package com.oj.onlinejudge.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.oj.onlinejudge.common.api.ApiResponse;
+import com.oj.onlinejudge.domain.dto.StudentUpsertRequest;
+import com.oj.onlinejudge.domain.dto.group.CreateGroup;
+import com.oj.onlinejudge.domain.dto.group.UpdateGroup;
 import com.oj.onlinejudge.domain.entity.Student;
 import com.oj.onlinejudge.exception.ApiException;
 import com.oj.onlinejudge.security.PasswordService;
@@ -13,7 +16,9 @@ import com.oj.onlinejudge.service.StudentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import com.oj.onlinejudge.security.AuthenticatedUser;
@@ -76,10 +81,12 @@ public class StudentController {
     @PostMapping
     public ApiResponse<Student> create(
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
-            @Parameter(description = "学生实体") @RequestBody Student body) {
+            @Validated(CreateGroup.class) @RequestBody StudentUpsertRequest request) {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
+        Student body = new Student();
+        BeanUtils.copyProperties(request, body);
         body.setId(null);
         if (StringUtils.hasText(body.getPassword())) {
             body.setPassword(passwordService.encode(body.getPassword()));
@@ -99,10 +106,12 @@ public class StudentController {
     public ApiResponse<Student> update(
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "学生ID") @PathVariable Long id,
-            @Parameter(description = "学生实体") @RequestBody Student body) {
+            @Validated(UpdateGroup.class) @RequestBody StudentUpsertRequest request) {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
+        Student body = new Student();
+        BeanUtils.copyProperties(request, body);
         body.setId(id);
         if (StringUtils.hasText(body.getPassword())) {
             body.setPassword(passwordService.encode(body.getPassword()));

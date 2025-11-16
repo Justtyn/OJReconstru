@@ -4,7 +4,7 @@
 Spring Boot 2.6 + MyBatis-Plus 实现的在线判题/教学教务后端，当前提供用户体系、班级、日志、邮件、验证码等能力。数据源为 MySQL，测试场景使用 H2；认证基于 JWT，`ApiResponse{code,message,data}` 为统一返回结构。`re-oj.sql` 与 `schema-test.sql` 同步维护表结构，确保开发/测试一致。
 
 ## 近期迭代
-- **2025-11-16**：新增本地头像上传能力（正方形图片校验、静态资源映射）、补充 `app.storage` 配置、完善测试覆盖；同步 H2 Schema 至最新数据库结构；引入 `ApiException` + `ApiErrorCode`，统一业务异常返回，并在 `GlobalExceptionHandler` 中扩展数据库/权限/认证异常映射；所有基础 CRUD 接口改为抛出 `ApiException`（401/404 等主动返回 HTTP 状态），测试同步校验。
+- **2025-11-16**：新增本地头像上传能力（正方形图片校验、静态资源映射）、补充 `app.storage` 配置、完善测试覆盖；同步 H2 Schema 至最新数据库结构；引入 `ApiException` + `ApiErrorCode`，统一业务异常返回，并在 `GlobalExceptionHandler` 中扩展数据库/权限/认证异常映射；所有基础 CRUD 接口改为抛出 `ApiException`（401/404 等主动返回 HTTP 状态），并新增了一套 DTO + `@Validated` 分组校验（Create/Update），实体不再直接承载请求校验逻辑；测试同步校验。
 - **2025-11-15**：完成数据库扩展（announcement、discussion、homework、problem、submission 等表）并生成实体，准备后续接口开发。
 - **2025-11-13**：实现注册 + 邮箱验证码、角色化登录、登录日志、学生/教师/管理员/班级/班级成员 CRUD 以及邮件通知。
 
@@ -65,7 +65,7 @@ app:
 2. **数据库迁移**：长期建议引入 Flyway，将 `re-oj.sql` 拆分为版本化脚本；短期内修改结构请同步 `schema-test.sql`。
 3. **文件扩展**：若需公告/讨论贴图，可复用 `AvatarStorageService` 思路，抽象出 `FileCategory`，并对上传类型/目录做差异化配置。
 4. **安全**：虽然头像上传暂未限速，仍建议部署层添加基本防护（大小限制、WAF）；JWT 秘钥、邮件授权码等敏感配置请通过环境变量注入。
-5. **异常与校验推广**：目前已启用 `ApiException` 体系，但部分老接口仍直接返回 `ApiResponse.failure` 或缺少 `@Valid` 注解，后续在批量补充时需统一改造以避免风格漂移。
+5. **异常与校验推广**：目前所有 CRUD 已迁移至 `ApiException` + DTO + `@Validated`，后续新增模块需维持同一规范；如引入更复杂的规则（例如成员类型与 studentId/teacherId 互斥），可在 DTO 层增加自定义校验器。
 
 ## 运行与部署提示
 1. 准备 MySQL / Redis，导入 `re-oj.sql`

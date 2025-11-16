@@ -9,12 +9,17 @@ package com.oj.onlinejudge.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.oj.onlinejudge.common.api.ApiResponse;
+import com.oj.onlinejudge.domain.dto.ClassesRequest;
+import com.oj.onlinejudge.domain.dto.group.CreateGroup;
+import com.oj.onlinejudge.domain.dto.group.UpdateGroup;
 import com.oj.onlinejudge.domain.entity.Classes;
 import com.oj.onlinejudge.exception.ApiException;
 import com.oj.onlinejudge.service.ClassesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import com.oj.onlinejudge.security.AuthenticatedUser;
 
@@ -66,10 +71,12 @@ public class ClassesController {
     @PostMapping
     public ApiResponse<Classes> create(
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
-            @Parameter(description = "班级实体") @RequestBody Classes body) {
+            @Validated(CreateGroup.class) @RequestBody ClassesRequest request) {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
+        Classes body = new Classes();
+        BeanUtils.copyProperties(request, body);
         body.setId(null);
         boolean ok = classesService.save(body);
         if (!ok) {
@@ -86,10 +93,12 @@ public class ClassesController {
     public ApiResponse<Classes> update(
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "班级ID") @PathVariable Long id,
-            @Parameter(description = "班级实体") @RequestBody Classes body) {
+            @Validated(UpdateGroup.class) @RequestBody ClassesRequest request) {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
+        Classes body = new Classes();
+        BeanUtils.copyProperties(request, body);
         body.setId(id);
         boolean ok = classesService.updateById(body);
         if (!ok) {

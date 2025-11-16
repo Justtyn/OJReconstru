@@ -36,6 +36,10 @@ app:
     avatar-dir: ./build/test-avatars
     avatar-url-prefix: /files/avatars
 
+judge0:
+  base-url: http://localhost:2358
+  timeout-ms: 3000
+
 jwt:
   whitelist:
     - /api/auth/login

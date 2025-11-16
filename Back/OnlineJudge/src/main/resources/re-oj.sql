@@ -11,7 +11,7 @@
  Target Server Version : 90200 (9.2.0)
  File Encoding         : 65001
 
- Date: 16/11/2025 16:17:07
+ Date: 16/11/2025 18:42:34
 */
 
 SET NAMES utf8mb4;
@@ -45,7 +45,7 @@ CREATE TABLE `admin` (
 -- Records of admin
 -- ----------------------------
 BEGIN;
-INSERT INTO `admin` (`id`, `username`, `password`, `name`, `sex`, `birth`, `phone`, `email`, `avatar`, `last_login_ip`, `last_login_time`, `created_at`, `updated_at`) VALUES (1988830930425188354, 'admin', '$2a$10$77L45bgkKqqf3tRXH590ne2ML2Pa5hgv0jaYXnt4NQaNcYvV.hP6.', 'admin', 'male', '2003-05-28', '13850056409', '44739528@qq.com', NULL, '0:0:0:0:0:0:0:1', '2025-11-13 15:10:00.256', '2025-11-13 12:46:59.197', '2025-11-15 22:40:24.423');
+INSERT INTO `admin` (`id`, `username`, `password`, `name`, `sex`, `birth`, `phone`, `email`, `avatar`, `last_login_ip`, `last_login_time`, `created_at`, `updated_at`) VALUES (1988830930425188354, 'admin', '$2a$10$77L45bgkKqqf3tRXH590ne2ML2Pa5hgv0jaYXnt4NQaNcYvV.hP6.', 'admin', 'male', '2003-05-28', '13850056409', '44739528@qq.com', NULL, '0:0:0:0:0:0:0:1', '2025-11-16 18:22:54.885', '2025-11-13 12:46:59.197', '2025-11-15 22:40:24.423');
 COMMIT;
 
 -- ----------------------------
@@ -328,6 +328,7 @@ INSERT INTO `login_log` (`id`, `role`, `user_id`, `username`, `ip_address`, `loc
 INSERT INTO `login_log` (`id`, `role`, `user_id`, `username`, `ip_address`, `location`, `user_agent`, `device`, `login_time`, `logout_time`, `success`, `fail_reason`, `created_at`, `updated_at`) VALUES (1989938697621848065, 'student', 1988863371948896258, 'test02', '0:0:0:0:0:0:0:1', NULL, 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', 'Other', '2025-11-16 14:08:51.439', NULL, 1, NULL, '2025-11-16 14:08:51.444', '2025-11-16 14:08:51.444');
 INSERT INTO `login_log` (`id`, `role`, `user_id`, `username`, `ip_address`, `location`, `user_agent`, `device`, `login_time`, `logout_time`, `success`, `fail_reason`, `created_at`, `updated_at`) VALUES (1989940547901313025, 'student', 1988863371948896258, 'test02', '0:0:0:0:0:0:0:1', NULL, 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', 'Other', '2025-11-16 14:16:12.579', NULL, 1, NULL, '2025-11-16 14:16:12.586', '2025-11-16 14:16:12.586');
 INSERT INTO `login_log` (`id`, `role`, `user_id`, `username`, `ip_address`, `location`, `user_agent`, `device`, `login_time`, `logout_time`, `success`, `fail_reason`, `created_at`, `updated_at`) VALUES (1989970255288332290, 'student', 1988863371948896258, 'test02', '0:0:0:0:0:0:0:1', NULL, 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', 'Other', '2025-11-16 16:14:15.373', NULL, 1, NULL, '2025-11-16 16:14:15.378', '2025-11-16 16:14:15.378');
+INSERT INTO `login_log` (`id`, `role`, `user_id`, `username`, `ip_address`, `location`, `user_agent`, `device`, `login_time`, `logout_time`, `success`, `fail_reason`, `created_at`, `updated_at`) VALUES (1990002633561972738, 'admin', 1988830930425188354, 'admin', '0:0:0:0:0:0:0:1', NULL, 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', 'Other', '2025-11-16 18:22:54.954', NULL, 1, NULL, '2025-11-16 18:22:54.961', '2025-11-16 18:22:54.961');
 COMMIT;
 
 -- ----------------------------
@@ -362,6 +363,8 @@ CREATE TABLE `problem` (
 -- Records of problem
 -- ----------------------------
 BEGIN;
+INSERT INTO `problem` (`id`, `name`, `create_time`, `ac_count`, `submit_count`, `desc`, `desc_input`, `desc_output`, `sample_input`, `sample_output`, `hint`, `daily_challenge`, `difficulty`, `time_limit_ms`, `memory_limit_kb`, `source`, `is_active`, `updated_at`) VALUES (1990004201912795138, '测试题目', '2025-11-16 18:29:09.029', 0, 0, '测试', '测试', '测试', '测试', '测试', '测试', '0', 'hard', 1, 1, '测试', 1, '2025-11-16 18:39:30.048');
+INSERT INTO `problem` (`id`, `name`, `create_time`, `ac_count`, `submit_count`, `desc`, `desc_input`, `desc_output`, `sample_input`, `sample_output`, `hint`, `daily_challenge`, `difficulty`, `time_limit_ms`, `memory_limit_kb`, `source`, `is_active`, `updated_at`) VALUES (1990006600094187521, '测试题目', '2025-11-16 18:38:40.660', 0, 0, '测试题目', '测试输入描述', '测试输出描述', '输入样例', '输出样例', '测试提示说明', '1', 'easy', 1000, 131072, 'Letcode', 1, '2025-11-16 18:38:40.660');
 COMMIT;
 
 -- ----------------------------
@@ -382,6 +385,8 @@ CREATE TABLE `problem_testcase` (
 -- Records of problem_testcase
 -- ----------------------------
 BEGIN;
+INSERT INTO `problem_testcase` (`id`, `problem_id`, `input_data`, `output_data`) VALUES (1990004840713682946, 1990004201912795138, '1 2 3', '3 2 1');
+INSERT INTO `problem_testcase` (`id`, `problem_id`, `input_data`, `output_data`) VALUES (1990004907193401346, 1990004201912795138, '1 2 3', '3 2 1');
 COMMIT;
 
 -- ----------------------------

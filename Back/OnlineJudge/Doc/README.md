@@ -284,6 +284,16 @@ JWT 负载字段：`sub` (userId), `username`, `role`, `iat`, `exp`
 - 自动化测试：`ProblemControllerTest` 覆盖公开查询、测试用例 CRUD 以及删除题目后测试用例被清理的路径，复用 `ControllerTestSupport` 的注册/鉴权工具。
 
 ---
+## 公告 & 题解
+
+- 公告查询：学生/教师/管理员可通过 `GET /api/announcements`（支持置顶、关键字过滤）和 `GET /api/announcements/{id}` 查看，仅返回启用状态；未启用公告仅管理员可见。
+- 公告管理：`POST/PUT/DELETE /api/admin/announcements` 仅管理员可调用，可设置发布时间、置顶与上下线状态。
+- 题解查询：`GET /api/solutions`、`GET /api/problems/{problemId}/solutions`、`GET /api/solutions/{id}` 面向学生/教师/管理员；管理员可追加 `includeInactive=true` 查看下线题解。
+- 题解创作：学生在 `POST /api/problems/{problemId}/solutions` 下发题解，作者或管理员可 `PUT/DELETE /api/solutions/{id}` 维护；管理员可跨作者删除。
+- 行为校验：创建题解时校验题目存在、强制绑定当前学生；详情/列表自动过滤 `is_active=0` 数据（管理员/作者除外）。
+- 自动化测试：`AnnouncementControllerTest` 与 `SolutionControllerTest` 覆盖管理员 CRUD、学生/教师查看、题解作者权限、管理员兜底删除等路径。
+
+---
 ## 测试与构建
 
 运行全部测试：

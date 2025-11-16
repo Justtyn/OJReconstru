@@ -3,7 +3,7 @@
 ## 概览
 Spring Boot 2.6 + MyBatis-Plus 实现的在线判题/教学教务后端，当前提供用户体系、班级、日志、邮件、验证码等能力。数据源为 MySQL，测试场景使用 H2；认证基于 JWT，`ApiResponse{code,message,data}` 为统一返回结构。`re-oj.sql` 与 `schema-test.sql` 同步维护表结构，确保开发/测试一致。
 
-## 近期迭代
+- **2025-11-20**：补全“公告 + 题解”模块：管理员独占 `/api/admin/announcements` 的新增/更新/删除，学生/教师可经 `/api/announcements` 查看列表和详情；题解模块提供 `/api/solutions`/`/api/problems/{id}/solutions` 查询、学生 `/api/problems/{id}/solutions` 发布、作者或管理员 `PUT/DELETE /api/solutions/{id}` 维护，创建时校验题目存在并绑定作者；新增 `AnnouncementControllerTest`、`SolutionControllerTest` 覆盖关键信道与权限分支。
 - **2025-11-19**：落地题库 & 测试用例模块：新增公开的 `GET /api/problems`、`GET /api/problems/{id}` 列表/详情，后台教师&管理员可通过 `/api/admin/problems` 进行 CRUD，并管理 `/api/admin/problems/{id}/testcases` 及 `/api/admin/problem-testcases/{testcaseId}`；删除题目会同步清理由 `problem_testcase` 表维护的真实评测数据；补充 `ProblemControllerTest` 覆盖公开查询、测试用例 CRUD 与级联删除。
 - **2025-11-18**：完成“学生-班级绑定”链路：新增 `POST /api/student/classes/join`、`GET /api/student/classes`，学生必须凭邀请码加入且仅限一班；教师端 `/api/classes`、`/api/classes-members` 增加角色/归属校验，可移除班级成员；同步 `StudentClassControllerTest` 及相关控制器测试。
 - **2025-11-17**：补充《Doc/测试规范》，沉淀 `ControllerTestSupport` 统一 MockMvc 场景、鉴权 Token 与 JSON 工具，所有控制器集成测试均迁移到该基类并去除固定种子依赖；扩展 `AuthControllerTest` 覆盖 `/auth/users/me`、注销、三角色登录、学生改/找回密码等路径，确保核心认证链路可验证；`./gradlew test` 在 JDK 11 下跑通（或升级 Gradle 以兼容更高版本 JDK）。
@@ -36,6 +36,12 @@ Spring Boot 2.6 + MyBatis-Plus 实现的在线判题/教学教务后端，当前
 - 后台管理：教师或管理员通过 `POST/PUT/DELETE /api/admin/problems` 维护题干信息，并可在 `/api/admin/problems/{id}/testcases` 下维护一题多测试用例，对单个用例提供 `PUT/DELETE /api/admin/problem-testcases/{testcaseId}`。
 - 级联清理：`ProblemService.removeProblemWithTestcases` 在删除题目时会显式清理 `problem_testcase` 中的关联数据，数据库层仍保留外键 `ON DELETE CASCADE` 作为兜底。
 - 测试：`ProblemControllerTest` 覆盖公开查询、测试用例 CRUD 以及删除题目后测试用例被清空的场景。
+
+### 公告 & 题解（新增）
+- 公告：学生/教师/管理员可调用 `GET /api/announcements`、`GET /api/announcements/{id}` 浏览启用公告，仅管理员可通过 `/api/admin/announcements` 创建/更新/删除并设置置顶、上下线与发布时间。
+- 题解：学生/教师/管理员可使用 `GET /api/solutions`、`GET /api/problems/{problemId}/solutions`、`GET /api/solutions/{id}` 查询；学生通过 `POST /api/problems/{problemId}/solutions` 发布题解，作者或管理员 `PUT/DELETE /api/solutions/{id}` 维护，创建前校验题目存在。
+- 权限：题解仅作者或管理员可改删，未启用题解对普通用户隐藏；公告写操作限定管理员。
+- 测试：`AnnouncementControllerTest`、`SolutionControllerTest` 覆盖管理员 CRUD、师生只读、题解作者权限、管理员兜底删除。
 
 ## 模块化开发流程
 > 老项目功能全面、耦合度高，重构版按“身份 → 班级 → 课程作业 → 题目/讨论”等纵向切片推进，确保每条业务链都能单独上线。

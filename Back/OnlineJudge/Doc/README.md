@@ -294,6 +294,15 @@ JWT 负载字段：`sub` (userId), `username`, `role`, `iat`, `exp`
 - 自动化测试：`AnnouncementControllerTest` 与 `SolutionControllerTest` 覆盖管理员 CRUD、学生/教师查看、题解作者权限、管理员兜底删除等路径。
 
 ---
+## 作业 & 作业题
+
+- 作业查询：`GET /api/homeworks` 支持班级过滤及启用过滤，学生只能看到启用作业；`GET /api/homeworks/{id}` 和 `GET /api/homeworks/{id}/problems` 提供详情与题目列表。
+- 作业管理：教师/管理员通过 `POST /api/homeworks` 创建作业（必须附 `problemIds`），`PUT /api/homeworks/{id}` 更新字段并可替换整套题目，`DELETE /api/homeworks/{id}` 删除。教师仅能管理自己创建的班级。
+- 作业题目维护：`POST /api/homeworks/{id}/problems` 批量追加题目（自动去重），`DELETE /api/homeworks/{id}/problems/{problemId}` 移除题目。
+- 校验：创建/更新校验班级存在与时间区间合法，并确认题目 ID 真实存在；删除作业后 `homework_problem` 通过事务和外键自动清理。
+- 自动化测试：`HomeworkControllerTest` 模拟教师创建/更新/删除、学生查看以及题目维护的权限分支。
+
+---
 ## 测试与构建
 
 运行全部测试：

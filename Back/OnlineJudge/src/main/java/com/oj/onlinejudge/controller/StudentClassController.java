@@ -45,6 +45,16 @@ public class StudentClassController {
         return ApiResponse.success(classes);
     }
 
+    @Operation(summary = "学生退出班级", description = "退出当前班级，释放一生一班约束")
+    @PostMapping("/leave")
+    public ApiResponse<Void> leaveClass(
+            @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false)
+            @Parameter(description = "当前认证学生") AuthenticatedUser current) {
+        ensureStudent(current);
+        studentService.leaveClass(current.getUserId());
+        return ApiResponse.success("已退出班级", null);
+    }
+
     private void ensureStudent(AuthenticatedUser current) {
         if (current == null || !"student".equalsIgnoreCase(current.getRole())) {
             throw ApiException.unauthorized("仅学生可访问该接口");

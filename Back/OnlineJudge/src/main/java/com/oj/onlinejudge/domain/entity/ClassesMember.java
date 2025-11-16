@@ -2,6 +2,7 @@ package com.oj.onlinejudge.domain.entity;
 
 // 班级成员关联实体：映射表 classes_member，关联学生/教师与班级
 
+import com.baomidou.mybatisplus.annotation.FieldStrategy;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -33,7 +34,7 @@ public class ClassesMember {
     @TableField("joined_at")
     @Schema(description = "加入时间")
     private LocalDateTime joinedAt;
-    @TableField("left_at")
+    @TableField(value = "left_at", updateStrategy = FieldStrategy.IGNORED)
     @Schema(description = "离开时间")
     private LocalDateTime leftAt;
 }

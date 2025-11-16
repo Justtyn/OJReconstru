@@ -61,6 +61,58 @@ class StudentClassControllerTest extends ControllerTestSupport {
             .andExpect(jsonPath("$.code", is(409)));
     }
 
+    @Test
+    @DisplayName("学生退出班级后可重新加入")
+    void leaveAndRejoin() throws Exception {
+        TestUser teacher = createTeacherUser();
+        JsonNode clazz = createClass(teacher.token());
+
+        TestUser student = registerStudent();
+        StudentJoinClassRequest req = new StudentJoinClassRequest();
+        req.setCode(clazz.get("code").asText());
+        authed(post("/api/student/classes/join")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(req)), student.token())
+            .andExpect(status().isOk());
+
+        authed(post("/api/student/classes/leave"), student.token())
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code", is(0)));
+
+        authed(post("/api/student/classes/join")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(req)), student.token())
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code", is(0)));
+    }
+
+    @Test
+    @DisplayName("学生退出后可加入其他班级")
+    void leaveAndJoinAnother() throws Exception {
+        TestUser teacher = createTeacherUser();
+        JsonNode classA = createClass(teacher.token());
+        JsonNode classB = createClass(teacher.token());
+
+        TestUser student = registerStudent();
+        StudentJoinClassRequest reqA = new StudentJoinClassRequest();
+        reqA.setCode(classA.get("code").asText());
+        authed(post("/api/student/classes/join")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(reqA)), student.token())
+            .andExpect(status().isOk());
+
+        authed(post("/api/student/classes/leave"), student.token())
+            .andExpect(status().isOk());
+
+        StudentJoinClassRequest reqB = new StudentJoinClassRequest();
+        reqB.setCode(classB.get("code").asText());
+        authed(post("/api/student/classes/join")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(reqB)), student.token())
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.id").value(classB.get("id").asLong()));
+    }
+
     private JsonNode createClass(String token) throws Exception {
         Classes c = new Classes();
         c.setName("StuClass-" + uniqueLabel("clazz"));

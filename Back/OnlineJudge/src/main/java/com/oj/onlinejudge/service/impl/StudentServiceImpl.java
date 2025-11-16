@@ -55,17 +55,30 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student> impl
         if (target == null) {
             throw ApiException.notFound("班级不存在或邀请码无效");
         }
-        ClassesMember existingMember = classesMemberService.lambdaQuery()
+        ClassesMember active = classesMemberService.lambdaQuery()
                 .eq(ClassesMember::getStudentId, studentId)
                 .eq(ClassesMember::getMemberType, "student")
                 .isNull(ClassesMember::getLeftAt)
                 .last("limit 1")
                 .one();
-        if (existingMember != null) {
-            if (existingMember.getClassId() != null && existingMember.getClassId().equals(target.getId())) {
+        if (active != null) {
+            if (active.getClassId() != null && active.getClassId().equals(target.getId())) {
                 return target;
             }
             throw ApiException.conflict("已加入其他班级");
+        }
+        ClassesMember history = classesMemberService.lambdaQuery()
+                .eq(ClassesMember::getStudentId, studentId)
+                .eq(ClassesMember::getMemberType, "student")
+                .orderByDesc(ClassesMember::getJoinedAt)
+                .last("limit 1")
+                .one();
+        if (history != null) {
+            history.setClassId(target.getId());
+            history.setJoinedAt(LocalDateTime.now());
+            history.setLeftAt(null);
+            classesMemberService.updateById(history);
+            return target;
         }
         ClassesMember cm = new ClassesMember();
         cm.setClassId(target.getId());
@@ -99,5 +112,24 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student> impl
             throw ApiException.notFound("班级不存在");
         }
         return classes;
+    }
+
+    @Override
+    @Transactional
+    public void leaveClass(Long studentId) {
+        if (studentId == null) {
+            throw ApiException.badRequest("学生ID不能为空");
+        }
+        ClassesMember member = classesMemberService.lambdaQuery()
+                .eq(ClassesMember::getStudentId, studentId)
+                .eq(ClassesMember::getMemberType, "student")
+                .isNull(ClassesMember::getLeftAt)
+                .last("limit 1")
+                .one();
+        if (member == null) {
+            throw ApiException.notFound("尚未加入班级");
+        }
+        member.setLeftAt(LocalDateTime.now());
+        classesMemberService.updateById(member);
     }
 }

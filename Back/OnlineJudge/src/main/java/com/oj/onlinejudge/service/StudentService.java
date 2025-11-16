@@ -14,4 +14,6 @@ public interface StudentService extends IService<Student> {
     Classes joinClass(Long studentId, String classCode);
 
     Classes getJoinedClass(Long studentId);
+
+    void leaveClass(Long studentId);
 }

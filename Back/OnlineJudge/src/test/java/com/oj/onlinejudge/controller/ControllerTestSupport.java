@@ -4,6 +4,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.oj.onlinejudge.domain.entity.Teacher;
+import com.oj.onlinejudge.security.PasswordService;
+import com.oj.onlinejudge.service.TeacherService;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.assertj.core.api.Assertions;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +30,9 @@ abstract class ControllerTestSupport {
 
     @Autowired
     protected ObjectMapper objectMapper;
+
+    @Autowired protected TeacherService teacherService;
+    @Autowired protected PasswordService passwordService;
 
     private static final AtomicInteger SEQ = new AtomicInteger();
 
@@ -63,6 +69,17 @@ abstract class ControllerTestSupport {
                 data.get("token").asText(),
                 data.get("role").asText(),
                 email);
+    }
+
+    protected TestUser createTeacherUser() throws Exception {
+        String username = uniqueUsername("teacher");
+        String rawPassword = "Pwd12345!";
+        Teacher teacher = new Teacher();
+        teacher.setUsername(username);
+        teacher.setPassword(passwordService.encode(rawPassword));
+        teacherService.save(teacher);
+        String token = login(username, rawPassword, "teacher");
+        return new TestUser(teacher.getId(), username, rawPassword, token, "teacher", teacher.getEmail());
     }
 
     protected String login(String username, String password) throws Exception {

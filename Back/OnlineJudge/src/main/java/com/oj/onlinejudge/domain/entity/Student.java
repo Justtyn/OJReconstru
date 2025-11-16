@@ -57,9 +57,6 @@ public class Student {
     @TableField("last_visit_time")
     @Schema(description = "最近访问时间")
     private LocalDateTime lastVisitTime;
-    @TableField("class_id")
-    @Schema(description = "所属班级ID")
-    private Long classId;
     @TableField("daily_challenge")
     @Schema(description = "今日挑战标识")
     private String dailyChallenge;

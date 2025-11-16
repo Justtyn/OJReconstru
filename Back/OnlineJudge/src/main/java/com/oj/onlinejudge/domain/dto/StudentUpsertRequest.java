@@ -39,7 +39,5 @@ public class StudentUpsertRequest {
 
     private Integer score;
 
-    private Long classId;
-
     private String bio;
 }

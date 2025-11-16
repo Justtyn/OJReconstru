@@ -27,7 +27,5 @@ public class TeacherUpsertRequest {
 
     private String avatar;
 
-    private Long classId;
-
     private String title;
 }

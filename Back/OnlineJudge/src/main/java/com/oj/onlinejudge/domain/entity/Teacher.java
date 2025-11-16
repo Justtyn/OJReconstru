@@ -32,9 +32,6 @@ public class Teacher {
     private String email;
     @Schema(description = "头像URL")
     private String avatar;
-    @TableField("class_id")
-    @Schema(description = "主班级ID")
-    private Long classId;
     @Schema(description = "职称")
     private String title;
     @Schema(description = "最近登录时间")

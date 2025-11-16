@@ -9,16 +9,18 @@ import com.oj.onlinejudge.common.api.ApiResponse;
 import com.oj.onlinejudge.domain.dto.ClassesMemberRequest;
 import com.oj.onlinejudge.domain.dto.group.CreateGroup;
 import com.oj.onlinejudge.domain.dto.group.UpdateGroup;
+import com.oj.onlinejudge.domain.entity.Classes;
 import com.oj.onlinejudge.domain.entity.ClassesMember;
 import com.oj.onlinejudge.exception.ApiException;
+import com.oj.onlinejudge.security.AuthenticatedUser;
 import com.oj.onlinejudge.service.ClassesMemberService;
+import com.oj.onlinejudge.service.ClassesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import com.oj.onlinejudge.security.AuthenticatedUser;
 
 @RestController
 @RequestMapping("/api/classes-members")
@@ -26,6 +28,7 @@ import com.oj.onlinejudge.security.AuthenticatedUser;
 public class ClassesMemberController {
 
     private final ClassesMemberService classesMemberService;
+    private final ClassesService classesService;
 
     /**
      * 分页查询班级成员（可选按classId过滤）
@@ -39,6 +42,13 @@ public class ClassesMemberController {
             @Parameter(description = "班级ID过滤") @RequestParam(required = false) Long classId) {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
+        }
+        requireTeacherOrAdmin(current);
+        if (isTeacher(current)) {
+            if (classId == null) {
+                throw ApiException.badRequest("教师查询班级成员必须提供班级ID");
+            }
+            ensureTeacherOwnsClass(current, classId);
         }
         LambdaQueryWrapper<ClassesMember> wrapper = new LambdaQueryWrapper<>();
         if (classId != null) {
@@ -59,9 +69,13 @@ public class ClassesMemberController {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
+        requireTeacherOrAdmin(current);
         ClassesMember cm = classesMemberService.getById(id);
         if (cm == null) {
             throw ApiException.notFound("记录不存在");
+        }
+        if (isTeacher(current)) {
+            ensureTeacherOwnsClass(current, cm.getClassId());
         }
         return ApiResponse.success(cm);
     }
@@ -76,6 +90,13 @@ public class ClassesMemberController {
             @Validated(CreateGroup.class) @RequestBody ClassesMemberRequest request) {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
+        }
+        requireTeacherOrAdmin(current);
+        if (request.getClassId() == null) {
+            throw ApiException.badRequest("班级ID不能为空");
+        }
+        if (isTeacher(current)) {
+            ensureTeacherOwnsClass(current, request.getClassId());
         }
         ClassesMember body = new ClassesMember();
         BeanUtils.copyProperties(request, body);
@@ -99,9 +120,22 @@ public class ClassesMemberController {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
+        requireTeacherOrAdmin(current);
+        ClassesMember existing = classesMemberService.getById(id);
+        if (existing == null) {
+            throw ApiException.notFound("记录不存在");
+        }
+        if (isTeacher(current)) {
+            ensureTeacherOwnsClass(current, existing.getClassId());
+        }
         ClassesMember body = new ClassesMember();
         BeanUtils.copyProperties(request, body);
         body.setId(id);
+        if (body.getClassId() == null) {
+            body.setClassId(existing.getClassId());
+        } else if (isTeacher(current)) {
+            ensureTeacherOwnsClass(current, body.getClassId());
+        }
         boolean ok = classesMemberService.updateById(body);
         if (!ok) {
             throw ApiException.notFound("记录不存在");
@@ -120,10 +154,47 @@ public class ClassesMemberController {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
+        requireTeacherOrAdmin(current);
+        ClassesMember existing = classesMemberService.getById(id);
+        if (existing == null) {
+            throw ApiException.notFound("记录不存在");
+        }
+        if (isTeacher(current)) {
+            ensureTeacherOwnsClass(current, existing.getClassId());
+        }
         boolean ok = classesMemberService.removeById(id);
         if (!ok) {
             throw ApiException.notFound("记录不存在");
         }
         return ApiResponse.success(null);
+    }
+
+    private boolean isTeacher(AuthenticatedUser current) {
+        return current != null && "teacher".equalsIgnoreCase(current.getRole());
+    }
+
+    private boolean isAdmin(AuthenticatedUser current) {
+        return current != null && "admin".equalsIgnoreCase(current.getRole());
+    }
+
+    private void requireTeacherOrAdmin(AuthenticatedUser current) {
+        if (!(isTeacher(current) || isAdmin(current))) {
+            throw ApiException.forbidden("仅教师或管理员可操作班级成员");
+        }
+    }
+
+    private void ensureTeacherOwnsClass(AuthenticatedUser current, Long classId) {
+        if (classId == null) {
+            throw ApiException.badRequest("班级ID不能为空");
+        }
+        Classes target = classesService.getById(classId);
+        if (target == null) {
+            throw ApiException.notFound("班级不存在");
+        }
+        if (isTeacher(current)) {
+            if (target.getCreatorId() != null && !target.getCreatorId().equals(current.getUserId())) {
+                throw ApiException.forbidden("只能管理自己创建的班级");
+            }
+        }
     }
 }

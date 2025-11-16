@@ -7,6 +7,7 @@ package com.oj.onlinejudge.controller;
 // - PUT /api/classes/{id} 更新
 // - DELETE /api/classes/{id} 删除
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.oj.onlinejudge.common.api.ApiResponse;
 import com.oj.onlinejudge.domain.dto.ClassesRequest;
@@ -14,14 +15,25 @@ import com.oj.onlinejudge.domain.dto.group.CreateGroup;
 import com.oj.onlinejudge.domain.dto.group.UpdateGroup;
 import com.oj.onlinejudge.domain.entity.Classes;
 import com.oj.onlinejudge.exception.ApiException;
+import com.oj.onlinejudge.security.AuthenticatedUser;
+import com.oj.onlinejudge.domain.entity.ClassesMember;
+import com.oj.onlinejudge.service.ClassesMemberService;
 import com.oj.onlinejudge.service.ClassesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
-import com.oj.onlinejudge.security.AuthenticatedUser;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/classes")
@@ -29,6 +41,7 @@ import com.oj.onlinejudge.security.AuthenticatedUser;
 public class ClassesController {
 
     private final ClassesService classesService;
+    private final ClassesMemberService classesMemberService;
 
     /**
      * 分页查询班级列表
@@ -42,7 +55,14 @@ public class ClassesController {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
-        Page<Classes> p = classesService.page(new Page<>(page, size));
+        Page<Classes> p;
+        if (isTeacher(current)) {
+            LambdaQueryWrapper<Classes> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(Classes::getCreatorId, current.getUserId());
+            p = classesService.page(new Page<>(page, size), wrapper);
+        } else {
+            p = classesService.page(new Page<>(page, size));
+        }
         return ApiResponse.success(p);
     }
 
@@ -78,9 +98,16 @@ public class ClassesController {
         Classes body = new Classes();
         BeanUtils.copyProperties(request, body);
         body.setId(null);
+        if (isTeacher(current)) {
+            body.setCreatorId(current.getUserId());
+        }
+        ensureTeacherOrAdmin(current);
         boolean ok = classesService.save(body);
         if (!ok) {
             throw ApiException.internal("创建失败");
+        }
+        if (isTeacher(current)) {
+            ensureTeacherMembership(current, body);
         }
         return ApiResponse.success("创建成功", body);
     }
@@ -97,9 +124,17 @@ public class ClassesController {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
+        Classes existing = classesService.getById(id);
+        if (existing == null) {
+            throw ApiException.notFound("班级不存在");
+        }
+        ensureCanManageClass(current, existing);
         Classes body = new Classes();
         BeanUtils.copyProperties(request, body);
         body.setId(id);
+        if (body.getCreatorId() == null) {
+            body.setCreatorId(existing.getCreatorId());
+        }
         boolean ok = classesService.updateById(body);
         if (!ok) {
             throw ApiException.notFound("班级不存在");
@@ -118,10 +153,54 @@ public class ClassesController {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
+        Classes existing = classesService.getById(id);
+        if (existing == null) {
+            throw ApiException.notFound("班级不存在");
+        }
+        ensureCanManageClass(current, existing);
         boolean ok = classesService.removeById(id);
         if (!ok) {
             throw ApiException.notFound("班级不存在");
         }
         return ApiResponse.success(null);
+    }
+
+    private boolean isTeacher(AuthenticatedUser current) {
+        return current != null && "teacher".equalsIgnoreCase(current.getRole());
+    }
+
+    private boolean isAdmin(AuthenticatedUser current) {
+        return current != null && "admin".equalsIgnoreCase(current.getRole());
+    }
+
+    private void ensureTeacherOrAdmin(AuthenticatedUser current) {
+        if (!(isTeacher(current) || isAdmin(current))) {
+            throw ApiException.forbidden("仅教师或管理员可执行此操作");
+        }
+    }
+
+    private void ensureCanManageClass(AuthenticatedUser current, Classes target) {
+        ensureTeacherOrAdmin(current);
+        if (isTeacher(current)) {
+            if (target.getCreatorId() != null && !target.getCreatorId().equals(current.getUserId())) {
+                throw ApiException.forbidden("只能管理自己创建的班级");
+            }
+        }
+    }
+
+    private void ensureTeacherMembership(AuthenticatedUser current, Classes clazz) {
+        boolean exists = classesMemberService.lambdaQuery()
+                .eq(ClassesMember::getClassId, clazz.getId())
+                .eq(ClassesMember::getMemberType, "teacher")
+                .eq(ClassesMember::getTeacherId, current.getUserId())
+                .count() > 0;
+        if (!exists) {
+            ClassesMember member = new ClassesMember();
+            member.setClassId(clazz.getId());
+            member.setMemberType("teacher");
+            member.setTeacherId(current.getUserId());
+            member.setJoinedAt(java.time.LocalDateTime.now());
+            classesMemberService.save(member);
+        }
     }
 }

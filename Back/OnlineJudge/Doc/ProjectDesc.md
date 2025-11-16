@@ -148,3 +148,14 @@ app:
 - CI/CD：自动执行测试 & 构建镜像
 
 如需更多模块设计或环境脚本，请继续提出需求。
+## 待办
+- 学生头像上传：复用现有 FileController + AvatarStorageService 能力，新增一个“学生更换头像”接口即可。上传成功后把返回的 URL 写入 student.avatar 字段，必要时校验图片尺寸/格式（已有校验逻辑可以直接复用）。
+- 操作留痕（管理员/教师/学生）：可以在现有 LoginLog 之外再建一张 “操作日志表”，字段覆盖 userId/role/ip/ipLocation/device/action/path/payload/时间。通过 Spring HandlerInterceptor 或 AOP 切入器统一记录（只记录需要审计的接口即可）。
+  IP 地理位置可以延用登录时的 Ip2Region/IP API，设备来自请求头 UA。
+- 消息通知系统：短期可以先做“站内通知表 + 轮询接口”，把重要事件（例如管理员审批、作业发布、讨论回复）写成通知，学生/教师通过 GET /api/notifications 拉取；远期可加 WebSocket/长轮询推送，也可与邮箱/短信对接。
+
+待办（写入 ProjectDesc）：
+
+1. 学生头像更新接口：在 FileController 中新增 PUT /api/students/me/avatar，上传后更新 student.avatar，复用头像存储/校验逻辑。
+2. 操作审计日志：设计 operation_log 表及 Service，在关键 Controller 上通过拦截器记录 role/userId/ip/位置/设备/操作路径/参数摘要，并提供管理员查询接口。
+3. 消息通知系统：落地站内通知表、推送规则及查询接口（后续可扩展实时推送），作为作业/讨论等模块的统一通知渠道。

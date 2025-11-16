@@ -2,6 +2,8 @@ package com.oj.onlinejudge.domain.entity;
 
 // 提交单测试点结果实体：映射 submission_testcase_result 表
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -16,7 +18,7 @@ import lombok.Data;
 @TableName("submission_testcase_result")
 @Schema(name = "SubmissionTestcaseResult", description = "提交-测试用例判题结果实体")
 public class SubmissionTestcaseResult {
-    @TableId
+    @TableId(type = IdType.ASSIGN_ID)
     @Schema(description = "记录ID")
     private Long id;
     @TableField("submission_id")

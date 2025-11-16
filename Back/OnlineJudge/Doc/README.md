@@ -313,6 +313,15 @@ JWT 负载字段：`sub` (userId), `username`, `role`, `iat`, `exp`
 - 自动化测试：`DiscussionControllerTest` 覆盖学生发帖/评论、跨用户权限与管理员兜底删除场景。
 
 ---
+## 判题 & 提交
+
+- 接口：`POST /api/submissions`（学生提交）、`GET /api/submissions`（分页查询，可按题目/作业/状态过滤）、`GET /api/submissions/{id}`（详情 + 用例结果）。学生只能查看自己的提交，教师/管理员可按学号过滤。
+- 判题：根据题目的 `problem_testcase` 列表逐个调用 Judge0（`POST /submissions?base64_encoded=false&wait=true`），获得 `token/status/stdout/stderr/time/memory`，写入 `submission_testcase_result`。
+- 汇总：统计 AC 数、总数并计算得分，写入 `submission` 的 `overall_status_id/passed_case_count/total_case_count/score`；状态值映射 `submission_overall_status`（PENDING/RUNNING/ACCEPTED/PARTIAL_WRONG/WRONG/SYSTEM_ERROR）。
+- 配置：`judge0.base-url`、`judge0.timeout-ms` 控制判题机连接；测试 Profile 注入 Stub，不依赖外部 Judge0。
+- 自动化测试：`SubmissionControllerTest` 复盘学生提交、详情查看、列表筛选，确保判题逻辑可在 H2 + Stub 环境下自洽。
+
+---
 ## 测试与构建
 
 运行全部测试：

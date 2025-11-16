@@ -3,7 +3,7 @@
 ## 概览
 Spring Boot 2.6 + MyBatis-Plus 实现的在线判题/教学教务后端，当前提供用户体系、班级、日志、邮件、验证码等能力。数据源为 MySQL，测试场景使用 H2；认证基于 JWT，`ApiResponse{code,message,data}` 为统一返回结构。`re-oj.sql` 与 `schema-test.sql` 同步维护表结构，确保开发/测试一致。
 
-- **2025-11-20**：补全“公告 + 题解 + 作业 + 讨论”模块：管理员独占 `/api/admin/announcements` 的新增/更新/删除，学生/教师可经 `/api/announcements` 查看列表和详情；题解模块提供 `/api/solutions`/`/api/problems/{id}/solutions` 查询、学生 `/api/problems/{id}/solutions` 发布、作者或管理员 `PUT/DELETE /api/solutions/{id}` 维护；实现 `/api/homeworks` 作业 CRUD 与题目管理（创建时必须携带 `problemIds`，教师限管自己班级）；讨论支持学生发帖/评论、作者或管理员维护；新增 `AnnouncementControllerTest`、`SolutionControllerTest`、`HomeworkControllerTest`、`DiscussionControllerTest` 覆盖关键信道与权限分支。
+- **2025-11-20**：补全“公告 + 题解 + 作业 + 讨论 + 判题”模块：管理员独占 `/api/admin/announcements` 的新增/更新/删除，学生/教师可经 `/api/announcements` 查看列表和详情；题解模块提供 `/api/solutions`/`/api/problems/{id}/solutions` 查询、学生 `/api/problems/{id}/solutions` 发布、作者或管理员 `PUT/DELETE /api/solutions/{id}` 维护；实现 `/api/homeworks` 作业 CRUD 与题目管理（创建时必须携带 `problemIds`，教师限管自己班级）；讨论支持学生发帖/评论、作者或管理员维护；提交模块 `/api/submissions` 对接 Judge0，按测试用例采集结果并汇总整体状态；新增 `AnnouncementControllerTest`、`SolutionControllerTest`、`HomeworkControllerTest`、`DiscussionControllerTest`、`SubmissionControllerTest` 覆盖关键信道与权限分支。
 - **2025-11-19**：落地题库 & 测试用例模块：新增公开的 `GET /api/problems`、`GET /api/problems/{id}` 列表/详情，后台教师&管理员可通过 `/api/admin/problems` 进行 CRUD，并管理 `/api/admin/problems/{id}/testcases` 及 `/api/admin/problem-testcases/{testcaseId}`；删除题目会同步清理由 `problem_testcase` 表维护的真实评测数据；补充 `ProblemControllerTest` 覆盖公开查询、测试用例 CRUD 与级联删除。
 - **2025-11-18**：完成“学生-班级绑定”链路：新增 `POST /api/student/classes/join`、`GET /api/student/classes`，学生必须凭邀请码加入且仅限一班；教师端 `/api/classes`、`/api/classes-members` 增加角色/归属校验，可移除班级成员；同步 `StudentClassControllerTest` 及相关控制器测试。
 - **2025-11-17**：补充《Doc/测试规范》，沉淀 `ControllerTestSupport` 统一 MockMvc 场景、鉴权 Token 与 JSON 工具，所有控制器集成测试均迁移到该基类并去除固定种子依赖；扩展 `AuthControllerTest` 覆盖 `/auth/users/me`、注销、三角色登录、学生改/找回密码等路径，确保核心认证链路可验证；`./gradlew test` 在 JDK 11 下跑通（或升级 Gradle 以兼容更高版本 JDK）。
@@ -55,6 +55,14 @@ Spring Boot 2.6 + MyBatis-Plus 实现的在线判题/教学教务后端，当前
 - 评论：`GET /api/discussions/{id}/comments` 浏览、`POST /api/discussions/{id}/comments`（学生发布）、`DELETE /api/discussions/comments/{commentId}`（作者或管理员删除），当前不支持楼中楼。
 - 校验：讨论/评论发布时校验题目和讨论存在性，未启用讨论对普通学生隐藏。
 - 测试：`DiscussionControllerTest` 验证学生/管理员在发帖、评论与删除流程中的权限分支。
+
+### 判题 & 提交（新增）
+- `POST /api/submissions`：学生提交 `problemId/homeworkId?/languageId/sourceCode`，系统读取题目的所有测试用例逐个请求 Judge0（`wait=true`），写入 `submission` 与 `submission_testcase_result`。
+- `GET /api/submissions`：分页查询，可按题目/作业/学生/状态过滤；学生只能查看自己的提交。
+- `GET /api/submissions/{id}`：返回提交摘要、源代码（非作者隐藏）与所有测试用例的运行结果（stdout/stderr/耗时/内存/状态）。
+- 状态与得分：通过 `submission_overall_status` 维护整体状态（ACCEPTED/PARTIAL_WRONG/WRONG/SYSTEM_ERROR），按通过率计算分数；底层记录 Judge0 `status_id` 并映射 `judge_status` 字典。
+- 配置：`judge0.base-url` + `judge0.timeout-ms` 控制判题机连接，测试 Profile 下提供 Stub 实现，避免访问真实 Judge0。
+- 测试：`SubmissionControllerTest` 模拟学生提交、详情查看与列表筛选，验证判题逻辑与权限控制。
 
 ## 模块化开发流程
 > 老项目功能全面、耦合度高，重构版按“身份 → 班级 → 课程作业 → 题目/讨论”等纵向切片推进，确保每条业务链都能单独上线。

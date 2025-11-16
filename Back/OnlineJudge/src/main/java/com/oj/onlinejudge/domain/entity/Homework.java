@@ -2,20 +2,19 @@ package com.oj.onlinejudge.domain.entity;
 
 // 作业实体：对应 homework 表
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import java.time.LocalDateTime;
-
 import lombok.Data;
 
 @Data
 @TableName("homework")
 @Schema(name = "Homework", description = "作业实体")
 public class Homework {
-    @TableId
+    @TableId(type = IdType.ASSIGN_ID)
     @Schema(description = "作业ID")
     private Long id;
     @Schema(description = "标题")

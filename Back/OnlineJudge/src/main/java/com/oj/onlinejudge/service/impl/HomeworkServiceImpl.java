@@ -39,6 +39,9 @@ public class HomeworkServiceImpl extends ServiceImpl<HomeworkMapper, Homework> i
             homework.setIsActive(true);
         }
         this.save(homework);
+        if (homework.getId() == null) {
+            throw ApiException.internal("作业ID生成失败");
+        }
         if (!CollectionUtils.isEmpty(problemIds)) {
             validateProblems(problemIds);
             replaceHomeworkProblemsInternal(homework.getId(), new LinkedHashSet<>(problemIds));

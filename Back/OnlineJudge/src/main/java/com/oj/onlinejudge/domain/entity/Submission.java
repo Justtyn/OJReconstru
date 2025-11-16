@@ -2,6 +2,7 @@ package com.oj.onlinejudge.domain.entity;
 
 // 提交实体：映射 submission 表
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -15,7 +16,7 @@ import lombok.Data;
 @TableName("submission")
 @Schema(name = "Submission", description = "提交实体")
 public class Submission {
-    @TableId
+    @TableId(type = IdType.ASSIGN_ID)
     @Schema(description = "提交ID")
     private Long id;
     @TableField("student_id")

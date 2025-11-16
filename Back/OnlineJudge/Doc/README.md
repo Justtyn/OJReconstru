@@ -303,6 +303,16 @@ JWT 负载字段：`sub` (userId), `username`, `role`, `iat`, `exp`
 - 自动化测试：`HomeworkControllerTest` 模拟教师创建/更新/删除、学生查看以及题目维护的权限分支。
 
 ---
+## 讨论 & 评论
+
+- 讨论查询：`GET /api/discussions`（支持题目/作者筛选、管理员可查看未启用讨论）、`GET /api/discussions/{id}`，面向学生/教师/管理员。学生只能看到启用讨论。
+- 学生发帖：`POST /api/discussions`，body 含 `title/content/(problemId?)`；作者或管理员可通过 `PUT /api/discussions/{id}` 更新，管理员可额外切换 `isActive`。
+- 删除：作者或管理员 `DELETE /api/discussions/{id}`。
+- 评论：`GET /api/discussions/{id}/comments`、`POST /api/discussions/{id}/comments`（学生创建）、`DELETE /api/discussions/comments/{commentId}`（作者或管理员删除），当前版本不做楼中楼。
+- 校验：创建/更新讨论会检查题目是否存在；未启用讨论对普通学生隐藏。
+- 自动化测试：`DiscussionControllerTest` 覆盖学生发帖/评论、跨用户权限与管理员兜底删除场景。
+
+---
 ## 测试与构建
 
 运行全部测试：

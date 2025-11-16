@@ -34,9 +34,6 @@ public class Discussion {
     private LocalDateTime updateTime;
     @Schema(description = "讨论内容")
     private String content;
-    @TableField("view_num")
-    @Schema(description = "浏览量")
-    private Integer viewNum;
     @TableField("is_active")
     @Schema(description = "是否启用")
     private Boolean isActive;

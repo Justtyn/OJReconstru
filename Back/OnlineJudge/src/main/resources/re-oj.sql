@@ -11,7 +11,7 @@
  Target Server Version : 90200 (9.2.0)
  File Encoding         : 65001
 
- Date: 16/11/2025 18:42:34
+ Date: 16/11/2025 19:57:09
 */
 
 SET NAMES utf8mb4;
@@ -45,7 +45,7 @@ CREATE TABLE `admin` (
 -- Records of admin
 -- ----------------------------
 BEGIN;
-INSERT INTO `admin` (`id`, `username`, `password`, `name`, `sex`, `birth`, `phone`, `email`, `avatar`, `last_login_ip`, `last_login_time`, `created_at`, `updated_at`) VALUES (1988830930425188354, 'admin', '$2a$10$77L45bgkKqqf3tRXH590ne2ML2Pa5hgv0jaYXnt4NQaNcYvV.hP6.', 'admin', 'male', '2003-05-28', '13850056409', '44739528@qq.com', NULL, '0:0:0:0:0:0:0:1', '2025-11-16 18:22:54.885', '2025-11-13 12:46:59.197', '2025-11-15 22:40:24.423');
+INSERT INTO `admin` (`id`, `username`, `password`, `name`, `sex`, `birth`, `phone`, `email`, `avatar`, `last_login_ip`, `last_login_time`, `created_at`, `updated_at`) VALUES (1988830930425188354, 'admin', '$2a$10$77L45bgkKqqf3tRXH590ne2ML2Pa5hgv0jaYXnt4NQaNcYvV.hP6.', 'admin', 'male', '2003-05-28', '13850056409', '44739528@qq.com', NULL, '0:0:0:0:0:0:0:1', '2025-11-16 19:14:20.423', '2025-11-13 12:46:59.197', '2025-11-15 22:40:24.423');
 COMMIT;
 
 -- ----------------------------
@@ -68,6 +68,7 @@ CREATE TABLE `announcement` (
 -- Records of announcement
 -- ----------------------------
 BEGIN;
+INSERT INTO `announcement` (`id`, `title`, `content`, `time`, `is_pinned`, `updated_at`, `is_active`) VALUES (1990015761142116354, '测试', '测试', '2025-11-16 11:13:46.318', 0, '2025-11-16 19:15:04.854', 1);
 COMMIT;
 
 -- ----------------------------
@@ -144,7 +145,6 @@ CREATE TABLE `discussion` (
   `create_time` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '发布时间',
   `update_time` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '最后修改时间',
   `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '讨论内容',
-  `view_num` int unsigned NOT NULL DEFAULT '0' COMMENT '浏览量',
   `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '是否启用',
   PRIMARY KEY (`id`),
   KEY `idx_discuss_user` (`user_id`) USING BTREE,
@@ -168,18 +168,12 @@ CREATE TABLE `discussion_comment` (
   `id` bigint unsigned NOT NULL COMMENT '评论ID',
   `discuss_id` bigint unsigned NOT NULL COMMENT '所属讨论ID',
   `user_id` bigint unsigned DEFAULT NULL COMMENT '评论者ID',
-  `parent_comment_id` bigint unsigned DEFAULT NULL COMMENT '父评论ID',
-  `reply_to_user_id` bigint unsigned DEFAULT NULL COMMENT '回复给的用户ID',
   `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '评论内容',
   `create_time` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '发布时间',
   PRIMARY KEY (`id`),
   KEY `idx_comment_discuss` (`discuss_id`) USING BTREE,
   KEY `idx_comment_user` (`user_id`) USING BTREE,
-  KEY `idx_comment_parent` (`parent_comment_id`) USING BTREE,
-  KEY `idx_comment_reply_to_user` (`reply_to_user_id`) USING BTREE,
   CONSTRAINT `fk_comment_discuss` FOREIGN KEY (`discuss_id`) REFERENCES `discussion` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_comment_parent` FOREIGN KEY (`parent_comment_id`) REFERENCES `discussion_comment` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_comment_reply_to_user` FOREIGN KEY (`reply_to_user_id`) REFERENCES `student` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_comment_user` FOREIGN KEY (`user_id`) REFERENCES `student` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='讨论评论表';
 
@@ -212,6 +206,7 @@ CREATE TABLE `homework` (
 -- Records of homework
 -- ----------------------------
 BEGIN;
+INSERT INTO `homework` (`id`, `title`, `class_id`, `start_time`, `end_time`, `description`, `created_at`, `updated_at`, `is_active`) VALUES (1990023587017089025, '测试', 1988870655198408706, '2025-11-16 11:45:02.328', '2025-11-29 11:45:02.328', '测试', '2025-11-16 19:46:10.645', '2025-11-16 19:46:10.645', 1);
 COMMIT;
 
 -- ----------------------------
@@ -233,6 +228,8 @@ CREATE TABLE `homework_problem` (
 -- Records of homework_problem
 -- ----------------------------
 BEGIN;
+INSERT INTO `homework_problem` (`homework_id`, `problem_id`, `ac_count`, `submit_count`) VALUES (1990023587017089025, 1990004201912795138, 0, 0);
+INSERT INTO `homework_problem` (`homework_id`, `problem_id`, `ac_count`, `submit_count`) VALUES (1990023587017089025, 1990006600094187521, 0, 0);
 COMMIT;
 
 -- ----------------------------
@@ -329,6 +326,9 @@ INSERT INTO `login_log` (`id`, `role`, `user_id`, `username`, `ip_address`, `loc
 INSERT INTO `login_log` (`id`, `role`, `user_id`, `username`, `ip_address`, `location`, `user_agent`, `device`, `login_time`, `logout_time`, `success`, `fail_reason`, `created_at`, `updated_at`) VALUES (1989940547901313025, 'student', 1988863371948896258, 'test02', '0:0:0:0:0:0:0:1', NULL, 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', 'Other', '2025-11-16 14:16:12.579', NULL, 1, NULL, '2025-11-16 14:16:12.586', '2025-11-16 14:16:12.586');
 INSERT INTO `login_log` (`id`, `role`, `user_id`, `username`, `ip_address`, `location`, `user_agent`, `device`, `login_time`, `logout_time`, `success`, `fail_reason`, `created_at`, `updated_at`) VALUES (1989970255288332290, 'student', 1988863371948896258, 'test02', '0:0:0:0:0:0:0:1', NULL, 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', 'Other', '2025-11-16 16:14:15.373', NULL, 1, NULL, '2025-11-16 16:14:15.378', '2025-11-16 16:14:15.378');
 INSERT INTO `login_log` (`id`, `role`, `user_id`, `username`, `ip_address`, `location`, `user_agent`, `device`, `login_time`, `logout_time`, `success`, `fail_reason`, `created_at`, `updated_at`) VALUES (1990002633561972738, 'admin', 1988830930425188354, 'admin', '0:0:0:0:0:0:0:1', NULL, 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', 'Other', '2025-11-16 18:22:54.954', NULL, 1, NULL, '2025-11-16 18:22:54.961', '2025-11-16 18:22:54.961');
+INSERT INTO `login_log` (`id`, `role`, `user_id`, `username`, `ip_address`, `location`, `user_agent`, `device`, `login_time`, `logout_time`, `success`, `fail_reason`, `created_at`, `updated_at`) VALUES (1990014314493112322, 'student', 1988863371948896258, 'test02', '0:0:0:0:0:0:0:1', NULL, 'PostmanRuntime/7.49.1', 'Other', '2025-11-16 19:09:19.905', NULL, 0, '密码错误', '2025-11-16 19:09:19.913', '2025-11-16 19:09:19.913');
+INSERT INTO `login_log` (`id`, `role`, `user_id`, `username`, `ip_address`, `location`, `user_agent`, `device`, `login_time`, `logout_time`, `success`, `fail_reason`, `created_at`, `updated_at`) VALUES (1990014332633477121, 'student', 1988863371948896258, 'test02', '0:0:0:0:0:0:0:1', NULL, 'PostmanRuntime/7.49.1', 'Other', '2025-11-16 19:09:24.235', NULL, 1, NULL, '2025-11-16 19:09:24.236', '2025-11-16 19:09:24.236');
+INSERT INTO `login_log` (`id`, `role`, `user_id`, `username`, `ip_address`, `location`, `user_agent`, `device`, `login_time`, `logout_time`, `success`, `fail_reason`, `created_at`, `updated_at`) VALUES (1990015575066013697, 'admin', 1988830930425188354, 'admin', '0:0:0:0:0:0:0:1', NULL, 'PostmanRuntime/7.49.1', 'Other', '2025-11-16 19:14:20.455', NULL, 1, NULL, '2025-11-16 19:14:20.455', '2025-11-16 19:14:20.455');
 COMMIT;
 
 -- ----------------------------
@@ -414,6 +414,7 @@ CREATE TABLE `solution` (
 -- Records of solution
 -- ----------------------------
 BEGIN;
+INSERT INTO `solution` (`id`, `user_id`, `problem_id`, `title`, `content`, `language`, `create_time`, `updated_at`, `is_active`) VALUES (1990014727229403137, 1988863371948896258, 1990006600094187521, '测试测试', '测试', 'python', '2025-11-16 19:10:58.311', '2025-11-16 19:10:58.316', 1);
 COMMIT;
 
 -- ----------------------------
@@ -455,7 +456,7 @@ CREATE TABLE `student` (
 -- Records of student
 -- ----------------------------
 BEGIN;
-INSERT INTO `student` (`id`, `username`, `password`, `name`, `sex`, `birth`, `phone`, `email`, `avatar`, `background`, `ac`, `submit`, `school`, `score`, `last_login_time`, `last_language`, `create_time`, `last_visit_time`, `daily_challenge`, `register_ip`, `last_login_ip`, `bio`, `is_verified`, `updated_at`) VALUES (1988863371948896258, 'test02', '$2a$10$5YPTC3K7jV/aISHoKQG9A.wbvoMk9ca.PXF4My1K5bzLpaopX7kS6', 'test02', 'unknown', NULL, NULL, 'togjustyn@gmail.com', NULL, NULL, 0, 0, NULL, 0, '2025-11-16 16:14:15.298', NULL, '2025-11-13 14:55:53.871', '2025-11-13 14:55:53.871', '0', NULL, '0:0:0:0:0:0:0:1', NULL, 1, '2025-11-13 14:55:53.871');
+INSERT INTO `student` (`id`, `username`, `password`, `name`, `sex`, `birth`, `phone`, `email`, `avatar`, `background`, `ac`, `submit`, `school`, `score`, `last_login_time`, `last_language`, `create_time`, `last_visit_time`, `daily_challenge`, `register_ip`, `last_login_ip`, `bio`, `is_verified`, `updated_at`) VALUES (1988863371948896258, 'test02', '$2a$10$5YPTC3K7jV/aISHoKQG9A.wbvoMk9ca.PXF4My1K5bzLpaopX7kS6', 'test02', 'unknown', NULL, NULL, 'togjustyn@gmail.com', NULL, NULL, 0, 0, NULL, 0, '2025-11-16 19:09:24.194', NULL, '2025-11-13 14:55:53.871', '2025-11-13 14:55:53.871', '0', NULL, '0:0:0:0:0:0:0:1', NULL, 1, '2025-11-13 14:55:53.871');
 INSERT INTO `student` (`id`, `username`, `password`, `name`, `sex`, `birth`, `phone`, `email`, `avatar`, `background`, `ac`, `submit`, `school`, `score`, `last_login_time`, `last_language`, `create_time`, `last_visit_time`, `daily_challenge`, `register_ip`, `last_login_ip`, `bio`, `is_verified`, `updated_at`) VALUES (1988867822453567489, 'test01', '$2a$10$SiePywtYR3kK6MbCtDFFJOvOzJrEeSWdDQvN5tJMyRZbtUzsuiYMi', 'test01', 'unknown', NULL, NULL, '1046220903@qq.com', NULL, NULL, 0, 0, NULL, 0, '2025-11-16 13:44:24.355', NULL, '2025-11-13 15:13:34.917', '2025-11-13 15:13:34.917', '0', NULL, '0:0:0:0:0:0:0:1', NULL, 1, '2025-11-13 15:13:34.917');
 COMMIT;
 

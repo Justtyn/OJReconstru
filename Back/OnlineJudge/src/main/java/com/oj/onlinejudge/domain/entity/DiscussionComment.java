@@ -24,12 +24,6 @@ public class DiscussionComment {
     @TableField("user_id")
     @Schema(description = "评论者学生ID")
     private Long userId;
-    @TableField("parent_comment_id")
-    @Schema(description = "父评论ID")
-    private Long parentCommentId;
-    @TableField("reply_to_user_id")
-    @Schema(description = "被回复的用户ID")
-    private Long replyToUserId;
     @Schema(description = "评论内容")
     private String content;
     @TableField("create_time")

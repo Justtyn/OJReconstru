@@ -3,7 +3,7 @@
 ## 概览
 Spring Boot 2.6 + MyBatis-Plus 实现的在线判题/教学教务后端，当前提供用户体系、班级、日志、邮件、验证码等能力。数据源为 MySQL，测试场景使用 H2；认证基于 JWT，`ApiResponse{code,message,data}` 为统一返回结构。`re-oj.sql` 与 `schema-test.sql` 同步维护表结构，确保开发/测试一致。
 
-- **2025-11-20**：补全“公告 + 题解 + 作业”模块：管理员独占 `/api/admin/announcements` 的新增/更新/删除，学生/教师可经 `/api/announcements` 查看列表和详情；题解模块提供 `/api/solutions`/`/api/problems/{id}/solutions` 查询、学生 `/api/problems/{id}/solutions` 发布、作者或管理员 `PUT/DELETE /api/solutions/{id}` 维护；同时实现 `/api/homeworks` 作业 CRUD 与题目管理（创建时必须携带 `problemIds`，教师限管自己班级），学生仅可查看列表/题目；新增 `AnnouncementControllerTest`、`SolutionControllerTest`、`HomeworkControllerTest` 覆盖关键信道与权限分支。
+- **2025-11-20**：补全“公告 + 题解 + 作业 + 讨论”模块：管理员独占 `/api/admin/announcements` 的新增/更新/删除，学生/教师可经 `/api/announcements` 查看列表和详情；题解模块提供 `/api/solutions`/`/api/problems/{id}/solutions` 查询、学生 `/api/problems/{id}/solutions` 发布、作者或管理员 `PUT/DELETE /api/solutions/{id}` 维护；实现 `/api/homeworks` 作业 CRUD 与题目管理（创建时必须携带 `problemIds`，教师限管自己班级）；讨论支持学生发帖/评论、作者或管理员维护；新增 `AnnouncementControllerTest`、`SolutionControllerTest`、`HomeworkControllerTest`、`DiscussionControllerTest` 覆盖关键信道与权限分支。
 - **2025-11-19**：落地题库 & 测试用例模块：新增公开的 `GET /api/problems`、`GET /api/problems/{id}` 列表/详情，后台教师&管理员可通过 `/api/admin/problems` 进行 CRUD，并管理 `/api/admin/problems/{id}/testcases` 及 `/api/admin/problem-testcases/{testcaseId}`；删除题目会同步清理由 `problem_testcase` 表维护的真实评测数据；补充 `ProblemControllerTest` 覆盖公开查询、测试用例 CRUD 与级联删除。
 - **2025-11-18**：完成“学生-班级绑定”链路：新增 `POST /api/student/classes/join`、`GET /api/student/classes`，学生必须凭邀请码加入且仅限一班；教师端 `/api/classes`、`/api/classes-members` 增加角色/归属校验，可移除班级成员；同步 `StudentClassControllerTest` 及相关控制器测试。
 - **2025-11-17**：补充《Doc/测试规范》，沉淀 `ControllerTestSupport` 统一 MockMvc 场景、鉴权 Token 与 JSON 工具，所有控制器集成测试均迁移到该基类并去除固定种子依赖；扩展 `AuthControllerTest` 覆盖 `/auth/users/me`、注销、三角色登录、学生改/找回密码等路径，确保核心认证链路可验证；`./gradlew test` 在 JDK 11 下跑通（或升级 Gradle 以兼容更高版本 JDK）。
@@ -48,6 +48,13 @@ Spring Boot 2.6 + MyBatis-Plus 实现的在线判题/教学教务后端，当前
 - 管理：教师/管理员通过 `POST /api/homeworks` 创建（必须附 `problemIds`）、`PUT /api/homeworks/{id}` 更新（可替换题目列表）、`DELETE /api/homeworks/{id}` 删除；教师只能操作自己创建的班级。`POST /api/homeworks/{id}/problems` 与 `DELETE /api/homeworks/{id}/problems/{problemId}` 维护作业题目。
 - 校验：创建/更新校验班级存在、起止时间合法、题目 ID 真实存在，删除作业自动清理 `homework_problem`；题目批量新增会自动去重并忽略已存在记录。
 - 测试：`HomeworkControllerTest` 覆盖教师全链路、学生只读与权限阻断。
+
+### 讨论 & 评论（新增）
+- 查询：`GET /api/discussions`、`GET /api/discussions/{id}` 面向学生/教师/管理员，支持按题目/作者筛选；学生只能看到启用讨论。
+- 学生创作：`POST /api/discussions` 发表讨论，作者或管理员 `PUT/DELETE /api/discussions/{id}` 维护；管理员可切换 `isActive`。
+- 评论：`GET /api/discussions/{id}/comments` 浏览、`POST /api/discussions/{id}/comments`（学生发布）、`DELETE /api/discussions/comments/{commentId}`（作者或管理员删除），当前不支持楼中楼。
+- 校验：讨论/评论发布时校验题目和讨论存在性，未启用讨论对普通学生隐藏。
+- 测试：`DiscussionControllerTest` 验证学生/管理员在发帖、评论与删除流程中的权限分支。
 
 ## 模块化开发流程
 > 老项目功能全面、耦合度高，重构版按“身份 → 班级 → 课程作业 → 题目/讨论”等纵向切片推进，确保每条业务链都能单独上线。

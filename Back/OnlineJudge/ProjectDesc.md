@@ -4,6 +4,7 @@
 Spring Boot 2.6 + MyBatis-Plus 实现的在线判题/教学教务后端，当前提供用户体系、班级、日志、邮件、验证码等能力。数据源为 MySQL，测试场景使用 H2；认证基于 JWT，`ApiResponse{code,message,data}` 为统一返回结构。`re-oj.sql` 与 `schema-test.sql` 同步维护表结构，确保开发/测试一致。
 
 ## 近期迭代
+- **2025-11-17**：补充《Doc/测试规范》，沉淀 `ControllerTestSupport` 统一 MockMvc 场景、鉴权 Token 与 JSON 工具，所有控制器集成测试均迁移到该基类并去除固定种子依赖；扩展 `AuthControllerTest` 覆盖 `/auth/users/me`、注销、三角色登录、学生改/找回密码等路径，确保核心认证链路可验证；`./gradlew test` 在 JDK 11 下跑通（或升级 Gradle 以兼容更高版本 JDK）。
 - **2025-11-16**：新增本地头像上传能力（正方形图片校验、静态资源映射）、补充 `app.storage` 配置、完善测试覆盖；同步 H2 Schema 至最新数据库结构；引入 `ApiException` + `ApiErrorCode`，统一业务异常返回，并在 `GlobalExceptionHandler` 中扩展数据库/权限/认证异常映射；所有基础 CRUD 接口改为抛出 `ApiException`（401/404 等主动返回 HTTP 状态），并新增了一套 DTO + `@Validated` 分组校验（Create/Update），实体不再直接承载请求校验逻辑；测试同步校验。
 - **2025-11-15**：完成数据库扩展（announcement、discussion、homework、problem、submission 等表）并生成实体，准备后续接口开发。
 - **2025-11-13**：实现注册 + 邮箱验证码、角色化登录、登录日志、学生/教师/管理员/班级/班级成员 CRUD 以及邮件通知。
@@ -48,9 +49,10 @@ app:
   4. 若前端需要快速体验，可在 README/HELP 中附 `swagger-ui` 路径与示例 Token 获取方式。
 
 ## 测试
-- `./gradlew test`：H2 内存库 + MockMvc 覆盖认证/用户/头像上传用例
-- `FileControllerTest` 新增两个场景：上传正方形图片成功、非正方形返回 400，运行后可在 `build/test-avatars` 观察落盘文件
-- 生成报告：`build/reports/tests/test/index.html`
+- 流程指南：详见 `Doc/测试规范.md`，涵盖数据隔离、鉴权约束、断言规则；所有控制器测试继承 `ControllerTestSupport` 并通过统一注册/登录辅助方法生成唯一账号。
+- `./gradlew test`：H2 + MockMvc 覆盖认证、用户/班级 CRUD、登录日志、头像上传、学生改/找回密码等流程；在当前 Gradle 版本下需使用 JDK 11（示例：`JAVA_HOME=/opt/homebrew/Cellar/openjdk@11/...`）。
+- `FileControllerTest` 校验正方形成功、非正方形拒绝，运行后可在 `build/test-avatars` 查看落盘文件。
+- 报告：`build/reports/tests/test/index.html`
 
 ## API 速查
 | 模块 | 方法 & Path | 说明 |

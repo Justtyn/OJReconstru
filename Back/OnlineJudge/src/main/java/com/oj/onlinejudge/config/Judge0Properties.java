@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class Judge0Properties {
 
     /**
-     * Judge0 服务基础地址，例如：http://138.68.59.41:2358
+     * Judge0 服务基础地址，例如：http://139.59.227.54:2358
      */
     private String baseUrl;
 

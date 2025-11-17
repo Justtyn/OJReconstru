@@ -11,7 +11,7 @@
  Target Server Version : 90200 (9.2.0)
  File Encoding         : 65001
 
- Date: 16/11/2025 19:57:09
+ Date: 17/11/2025 13:36:00
 */
 
 SET NAMES utf8mb4;
@@ -45,7 +45,7 @@ CREATE TABLE `admin` (
 -- Records of admin
 -- ----------------------------
 BEGIN;
-INSERT INTO `admin` (`id`, `username`, `password`, `name`, `sex`, `birth`, `phone`, `email`, `avatar`, `last_login_ip`, `last_login_time`, `created_at`, `updated_at`) VALUES (1988830930425188354, 'admin', '$2a$10$77L45bgkKqqf3tRXH590ne2ML2Pa5hgv0jaYXnt4NQaNcYvV.hP6.', 'admin', 'male', '2003-05-28', '13850056409', '44739528@qq.com', NULL, '0:0:0:0:0:0:0:1', '2025-11-16 19:14:20.423', '2025-11-13 12:46:59.197', '2025-11-15 22:40:24.423');
+INSERT INTO `admin` (`id`, `username`, `password`, `name`, `sex`, `birth`, `phone`, `email`, `avatar`, `last_login_ip`, `last_login_time`, `created_at`, `updated_at`) VALUES (1988830930425188354, 'admin', '$2a$10$77L45bgkKqqf3tRXH590ne2ML2Pa5hgv0jaYXnt4NQaNcYvV.hP6.', 'admin', 'male', '2003-05-28', '13850056409', '44739528@qq.com', NULL, '0:0:0:0:0:0:0:1', '2025-11-16 21:55:07.127', '2025-11-13 12:46:59.197', '2025-11-15 22:40:24.423');
 COMMIT;
 
 -- ----------------------------
@@ -158,6 +158,7 @@ CREATE TABLE `discussion` (
 -- Records of discussion
 -- ----------------------------
 BEGIN;
+INSERT INTO `discussion` (`id`, `user_id`, `problem_id`, `title`, `create_time`, `update_time`, `content`, `is_active`) VALUES (1990039251433902081, 1988867822453567489, 1990004201912795138, '测试', '2025-11-16 20:48:25.324', '2025-11-16 20:48:25.324', '测试', 1);
 COMMIT;
 
 -- ----------------------------
@@ -181,6 +182,7 @@ CREATE TABLE `discussion_comment` (
 -- Records of discussion_comment
 -- ----------------------------
 BEGIN;
+INSERT INTO `discussion_comment` (`id`, `discuss_id`, `user_id`, `content`, `create_time`) VALUES (1990039442346037249, 1990039251433902081, 1988867822453567489, '测试', '2025-11-16 20:49:10.852');
 COMMIT;
 
 -- ----------------------------
@@ -207,6 +209,7 @@ CREATE TABLE `homework` (
 -- ----------------------------
 BEGIN;
 INSERT INTO `homework` (`id`, `title`, `class_id`, `start_time`, `end_time`, `description`, `created_at`, `updated_at`, `is_active`) VALUES (1990023587017089025, '测试', 1988870655198408706, '2025-11-16 11:45:02.328', '2025-11-29 11:45:02.328', '测试', '2025-11-16 19:46:10.645', '2025-11-16 19:46:10.645', 1);
+INSERT INTO `homework` (`id`, `title`, `class_id`, `start_time`, `end_time`, `description`, `created_at`, `updated_at`, `is_active`) VALUES (1990058570796498946, 'A+B测试', 1988870655198408706, '2025-11-16 14:04:21.625', '2025-11-28 14:04:21.625', 'A+B测试', '2025-11-16 22:05:11.432', '2025-11-16 22:05:11.432', 1);
 COMMIT;
 
 -- ----------------------------
@@ -230,6 +233,7 @@ CREATE TABLE `homework_problem` (
 BEGIN;
 INSERT INTO `homework_problem` (`homework_id`, `problem_id`, `ac_count`, `submit_count`) VALUES (1990023587017089025, 1990004201912795138, 0, 0);
 INSERT INTO `homework_problem` (`homework_id`, `problem_id`, `ac_count`, `submit_count`) VALUES (1990023587017089025, 1990006600094187521, 0, 0);
+INSERT INTO `homework_problem` (`homework_id`, `problem_id`, `ac_count`, `submit_count`) VALUES (1990058570796498946, 1990057328703700994, 0, 0);
 COMMIT;
 
 -- ----------------------------
@@ -329,6 +333,12 @@ INSERT INTO `login_log` (`id`, `role`, `user_id`, `username`, `ip_address`, `loc
 INSERT INTO `login_log` (`id`, `role`, `user_id`, `username`, `ip_address`, `location`, `user_agent`, `device`, `login_time`, `logout_time`, `success`, `fail_reason`, `created_at`, `updated_at`) VALUES (1990014314493112322, 'student', 1988863371948896258, 'test02', '0:0:0:0:0:0:0:1', NULL, 'PostmanRuntime/7.49.1', 'Other', '2025-11-16 19:09:19.905', NULL, 0, '密码错误', '2025-11-16 19:09:19.913', '2025-11-16 19:09:19.913');
 INSERT INTO `login_log` (`id`, `role`, `user_id`, `username`, `ip_address`, `location`, `user_agent`, `device`, `login_time`, `logout_time`, `success`, `fail_reason`, `created_at`, `updated_at`) VALUES (1990014332633477121, 'student', 1988863371948896258, 'test02', '0:0:0:0:0:0:0:1', NULL, 'PostmanRuntime/7.49.1', 'Other', '2025-11-16 19:09:24.235', NULL, 1, NULL, '2025-11-16 19:09:24.236', '2025-11-16 19:09:24.236');
 INSERT INTO `login_log` (`id`, `role`, `user_id`, `username`, `ip_address`, `location`, `user_agent`, `device`, `login_time`, `logout_time`, `success`, `fail_reason`, `created_at`, `updated_at`) VALUES (1990015575066013697, 'admin', 1988830930425188354, 'admin', '0:0:0:0:0:0:0:1', NULL, 'PostmanRuntime/7.49.1', 'Other', '2025-11-16 19:14:20.455', NULL, 1, NULL, '2025-11-16 19:14:20.455', '2025-11-16 19:14:20.455');
+INSERT INTO `login_log` (`id`, `role`, `user_id`, `username`, `ip_address`, `location`, `user_agent`, `device`, `login_time`, `logout_time`, `success`, `fail_reason`, `created_at`, `updated_at`) VALUES (1990038930473177089, 'student', 1988867822453567489, 'test01', '0:0:0:0:0:0:0:1', NULL, 'PostmanRuntime/7.49.1', 'Other', '2025-11-16 20:47:08.814', NULL, 1, NULL, '2025-11-16 20:47:08.818', '2025-11-16 20:47:08.818');
+INSERT INTO `login_log` (`id`, `role`, `user_id`, `username`, `ip_address`, `location`, `user_agent`, `device`, `login_time`, `logout_time`, `success`, `fail_reason`, `created_at`, `updated_at`) VALUES (1990056036371529729, 'admin', 1988830930425188354, 'admin', '0:0:0:0:0:0:0:1', NULL, 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36', 'Other', '2025-11-16 21:55:07.176', NULL, 1, NULL, '2025-11-16 21:55:07.182', '2025-11-16 21:55:07.182');
+INSERT INTO `login_log` (`id`, `role`, `user_id`, `username`, `ip_address`, `location`, `user_agent`, `device`, `login_time`, `logout_time`, `success`, `fail_reason`, `created_at`, `updated_at`) VALUES (1990058853232541698, 'student', 1988867822453567489, 'test01', '0:0:0:0:0:0:0:1', NULL, 'PostmanRuntime/7.49.1', 'Other', '2025-11-16 22:06:18.774', NULL, 1, NULL, '2025-11-16 22:06:18.774', '2025-11-16 22:06:18.774');
+INSERT INTO `login_log` (`id`, `role`, `user_id`, `username`, `ip_address`, `location`, `user_agent`, `device`, `login_time`, `logout_time`, `success`, `fail_reason`, `created_at`, `updated_at`) VALUES (1990077305179705346, 'student', 1988867822453567489, 'test01', '0:0:0:0:0:0:0:1', NULL, 'PostmanRuntime/7.49.1', 'Other', '2025-11-16 23:19:38.052', NULL, 1, NULL, '2025-11-16 23:19:38.062', '2025-11-16 23:19:38.062');
+INSERT INTO `login_log` (`id`, `role`, `user_id`, `username`, `ip_address`, `location`, `user_agent`, `device`, `login_time`, `logout_time`, `success`, `fail_reason`, `created_at`, `updated_at`) VALUES (1990228026201284610, 'student', 1988867822453567489, 'test01', '0:0:0:0:0:0:0:1', NULL, 'PostmanRuntime/7.49.1', 'Other', '2025-11-17 09:18:32.748', NULL, 1, NULL, '2025-11-17 09:18:32.753', '2025-11-17 09:18:32.753');
+INSERT INTO `login_log` (`id`, `role`, `user_id`, `username`, `ip_address`, `location`, `user_agent`, `device`, `login_time`, `logout_time`, `success`, `fail_reason`, `created_at`, `updated_at`) VALUES (1990232411950145537, 'student', 1988867822453567489, 'test01', '0:0:0:0:0:0:0:1', NULL, 'PostmanRuntime/7.49.1', 'Other', '2025-11-17 09:35:58.392', NULL, 1, NULL, '2025-11-17 09:35:58.397', '2025-11-17 09:35:58.397');
 COMMIT;
 
 -- ----------------------------
@@ -365,6 +375,7 @@ CREATE TABLE `problem` (
 BEGIN;
 INSERT INTO `problem` (`id`, `name`, `create_time`, `ac_count`, `submit_count`, `desc`, `desc_input`, `desc_output`, `sample_input`, `sample_output`, `hint`, `daily_challenge`, `difficulty`, `time_limit_ms`, `memory_limit_kb`, `source`, `is_active`, `updated_at`) VALUES (1990004201912795138, '测试题目', '2025-11-16 18:29:09.029', 0, 0, '测试', '测试', '测试', '测试', '测试', '测试', '0', 'hard', 1, 1, '测试', 1, '2025-11-16 18:39:30.048');
 INSERT INTO `problem` (`id`, `name`, `create_time`, `ac_count`, `submit_count`, `desc`, `desc_input`, `desc_output`, `sample_input`, `sample_output`, `hint`, `daily_challenge`, `difficulty`, `time_limit_ms`, `memory_limit_kb`, `source`, `is_active`, `updated_at`) VALUES (1990006600094187521, '测试题目', '2025-11-16 18:38:40.660', 0, 0, '测试题目', '测试输入描述', '测试输出描述', '输入样例', '输出样例', '测试提示说明', '1', 'easy', 1000, 131072, 'Letcode', 1, '2025-11-16 18:38:40.660');
+INSERT INTO `problem` (`id`, `name`, `create_time`, `ac_count`, `submit_count`, `desc`, `desc_input`, `desc_output`, `sample_input`, `sample_output`, `hint`, `daily_challenge`, `difficulty`, `time_limit_ms`, `memory_limit_kb`, `source`, `is_active`, `updated_at`) VALUES (1990057328703700994, 'A+B输入输出练习', '2025-11-16 22:00:15.333', 0, 0, '你的任务是计算a+b。', '输入包含一系列的a和b对，通过空格隔开。一对a和b占一行。', '对于输入的每对a和b，你需要依次输出a、b的和。如对于输入中的第二对a和b，在输出中它们的和应该也在第二行。', '1 5\n10 20', '6\n30', '你的任务是计算a+b。', '0', 'easy', 1000, 131072, NULL, 1, '2025-11-16 22:00:15.333');
 COMMIT;
 
 -- ----------------------------
@@ -387,6 +398,9 @@ CREATE TABLE `problem_testcase` (
 BEGIN;
 INSERT INTO `problem_testcase` (`id`, `problem_id`, `input_data`, `output_data`) VALUES (1990004840713682946, 1990004201912795138, '1 2 3', '3 2 1');
 INSERT INTO `problem_testcase` (`id`, `problem_id`, `input_data`, `output_data`) VALUES (1990004907193401346, 1990004201912795138, '1 2 3', '3 2 1');
+INSERT INTO `problem_testcase` (`id`, `problem_id`, `input_data`, `output_data`) VALUES (1990057904959127554, 1990057328703700994, '2 8\n1 29', '10\n30');
+INSERT INTO `problem_testcase` (`id`, `problem_id`, `input_data`, `output_data`) VALUES (1990057993433776129, 1990057328703700994, '2 1\n10 29', '3\n39');
+INSERT INTO `problem_testcase` (`id`, `problem_id`, `input_data`, `output_data`) VALUES (1990058053865308162, 1990057328703700994, '2 11\n10 9', '13\n19');
 COMMIT;
 
 -- ----------------------------
@@ -457,7 +471,7 @@ CREATE TABLE `student` (
 -- ----------------------------
 BEGIN;
 INSERT INTO `student` (`id`, `username`, `password`, `name`, `sex`, `birth`, `phone`, `email`, `avatar`, `background`, `ac`, `submit`, `school`, `score`, `last_login_time`, `last_language`, `create_time`, `last_visit_time`, `daily_challenge`, `register_ip`, `last_login_ip`, `bio`, `is_verified`, `updated_at`) VALUES (1988863371948896258, 'test02', '$2a$10$5YPTC3K7jV/aISHoKQG9A.wbvoMk9ca.PXF4My1K5bzLpaopX7kS6', 'test02', 'unknown', NULL, NULL, 'togjustyn@gmail.com', NULL, NULL, 0, 0, NULL, 0, '2025-11-16 19:09:24.194', NULL, '2025-11-13 14:55:53.871', '2025-11-13 14:55:53.871', '0', NULL, '0:0:0:0:0:0:0:1', NULL, 1, '2025-11-13 14:55:53.871');
-INSERT INTO `student` (`id`, `username`, `password`, `name`, `sex`, `birth`, `phone`, `email`, `avatar`, `background`, `ac`, `submit`, `school`, `score`, `last_login_time`, `last_language`, `create_time`, `last_visit_time`, `daily_challenge`, `register_ip`, `last_login_ip`, `bio`, `is_verified`, `updated_at`) VALUES (1988867822453567489, 'test01', '$2a$10$SiePywtYR3kK6MbCtDFFJOvOzJrEeSWdDQvN5tJMyRZbtUzsuiYMi', 'test01', 'unknown', NULL, NULL, '1046220903@qq.com', NULL, NULL, 0, 0, NULL, 0, '2025-11-16 13:44:24.355', NULL, '2025-11-13 15:13:34.917', '2025-11-13 15:13:34.917', '0', NULL, '0:0:0:0:0:0:0:1', NULL, 1, '2025-11-13 15:13:34.917');
+INSERT INTO `student` (`id`, `username`, `password`, `name`, `sex`, `birth`, `phone`, `email`, `avatar`, `background`, `ac`, `submit`, `school`, `score`, `last_login_time`, `last_language`, `create_time`, `last_visit_time`, `daily_challenge`, `register_ip`, `last_login_ip`, `bio`, `is_verified`, `updated_at`) VALUES (1988867822453567489, 'test01', '$2a$10$SiePywtYR3kK6MbCtDFFJOvOzJrEeSWdDQvN5tJMyRZbtUzsuiYMi', 'test01', 'unknown', NULL, NULL, '1046220903@qq.com', NULL, NULL, 0, 0, NULL, 0, '2025-11-17 09:35:58.335', NULL, '2025-11-13 15:13:34.917', '2025-11-13 15:13:34.917', '0', NULL, '0:0:0:0:0:0:0:1', NULL, 1, '2025-11-13 15:13:34.917');
 COMMIT;
 
 -- ----------------------------
@@ -492,6 +506,12 @@ CREATE TABLE `submission` (
 -- Records of submission
 -- ----------------------------
 BEGIN;
+INSERT INTO `submission` (`id`, `student_id`, `problem_id`, `homework_id`, `language_id`, `source_code`, `overall_status_id`, `passed_case_count`, `total_case_count`, `score`, `created_at`, `updated_at`) VALUES (1990066985769893889, 1988867822453567489, 1990057328703700994, NULL, 2, '#include <iostream>\nusing namespace std;\n\nint main() {\n    int a, b;\n    while (cin >> a >> b) {\n        cout << a + b << endl;\n    }\n    return 0;\n}\n', 5, 0, 3, 0, '2025-11-16 22:38:37.662', '2025-11-16 22:38:39.442');
+INSERT INTO `submission` (`id`, `student_id`, `problem_id`, `homework_id`, `language_id`, `source_code`, `overall_status_id`, `passed_case_count`, `total_case_count`, `score`, `created_at`, `updated_at`) VALUES (1990074497445396481, 1988867822453567489, 1990057328703700994, NULL, 2, '#include <iostream>\nusing namespace std;\n\nint main() {\n    int a, b;\n    while (cin >> a >> b) {\n        cout << a + b << endl;\n    }\n    return 0;\n}\n', 5, 0, 3, 0, '2025-11-16 23:08:28.641', '2025-11-16 23:08:30.381');
+INSERT INTO `submission` (`id`, `student_id`, `problem_id`, `homework_id`, `language_id`, `source_code`, `overall_status_id`, `passed_case_count`, `total_case_count`, `score`, `created_at`, `updated_at`) VALUES (1990074676894498818, 1988867822453567489, 1990057328703700994, NULL, 2, '#include <iostream>\nusing namespace std;\n\nint main() {\n    int a, b;\n    while (cin >> a >> b) {\n        cout << a + b << endl;\n    }\n    return 0;\n}\n', 5, 0, 3, 0, '2025-11-16 23:09:11.428', '2025-11-16 23:09:13.244');
+INSERT INTO `submission` (`id`, `student_id`, `problem_id`, `homework_id`, `language_id`, `source_code`, `overall_status_id`, `passed_case_count`, `total_case_count`, `score`, `created_at`, `updated_at`) VALUES (1990079709690302465, 1988867822453567489, 1990057328703700994, NULL, 2, '#include <iostream>\nusing namespace std;\n\nint main() {\n    int a, b;\n    while (cin >> a >> b) {\n        cout << a + b << endl;\n    }\n    return 0;\n}\n', 3, 3, 3, 100, '2025-11-16 23:29:11.339', '2025-11-16 23:29:19.921');
+INSERT INTO `submission` (`id`, `student_id`, `problem_id`, `homework_id`, `language_id`, `source_code`, `overall_status_id`, `passed_case_count`, `total_case_count`, `score`, `created_at`, `updated_at`) VALUES (1990229838228738049, 1988867822453567489, 1990057328703700994, NULL, 2, '#include <iostream> \nusing namespace std;\n\nint main()\n{\n    int a;\n    std::cin >> a;\n    std::cout << a << endl;\n    return 0;\n}', 5, 0, 3, 0, '2025-11-17 09:25:44.770', '2025-11-17 09:25:47.034');
+INSERT INTO `submission` (`id`, `student_id`, `problem_id`, `homework_id`, `language_id`, `source_code`, `overall_status_id`, `passed_case_count`, `total_case_count`, `score`, `created_at`, `updated_at`) VALUES (1990231710884700161, 1988867822453567489, 1990057328703700994, NULL, 2, '#include <iostream>\nusing namespace std;\n\nint main() {\n    long long a, b;\n    // 按行读入直到 EOF（输入结束）\n    while (cin >> a >> b) {\n        cout << a + b << endl;\n    }\n    return 0;\n}', 3, 3, 3, 100, '2025-11-17 09:33:11.247', '2025-11-17 09:33:13.818');
 COMMIT;
 
 -- ----------------------------
@@ -552,6 +572,24 @@ CREATE TABLE `submission_testcase_result` (
 -- Records of submission_testcase_result
 -- ----------------------------
 BEGIN;
+INSERT INTO `submission_testcase_result` (`id`, `submission_id`, `testcase_id`, `judge0_token`, `status_id`, `time_used`, `memory_used`, `stdout`, `stderr`, `compile_output`, `message`, `created_at`, `updated_at`) VALUES (1990066992925376514, 1990066985769893889, 1990057904959127554, 'ddc77e68-749b-4d11-9531-f12096251723', 13, NULL, NULL, NULL, NULL, NULL, 'No such file or directory @ rb_sysopen - /box/main.cpp', '2025-11-16 22:38:38.666', '2025-11-16 22:38:38.666');
+INSERT INTO `submission_testcase_result` (`id`, `submission_id`, `testcase_id`, `judge0_token`, `status_id`, `time_used`, `memory_used`, `stdout`, `stderr`, `compile_output`, `message`, `created_at`, `updated_at`) VALUES (1990066992929570818, 1990066985769893889, 1990057993433776129, '41bffd72-b7ec-4ece-89af-47378e5a6309', 13, NULL, NULL, NULL, NULL, NULL, 'No such file or directory @ rb_sysopen - /box/main.cpp', '2025-11-16 22:38:39.040', '2025-11-16 22:38:39.040');
+INSERT INTO `submission_testcase_result` (`id`, `submission_id`, `testcase_id`, `judge0_token`, `status_id`, `time_used`, `memory_used`, `stdout`, `stderr`, `compile_output`, `message`, `created_at`, `updated_at`) VALUES (1990066992933765121, 1990066985769893889, 1990058053865308162, 'ffa11cef-db50-4c88-9f3b-4fb66c33bf5a', 13, NULL, NULL, NULL, NULL, NULL, 'No such file or directory @ rb_sysopen - /box/main.cpp', '2025-11-16 22:38:39.398', '2025-11-16 22:38:39.398');
+INSERT INTO `submission_testcase_result` (`id`, `submission_id`, `testcase_id`, `judge0_token`, `status_id`, `time_used`, `memory_used`, `stdout`, `stderr`, `compile_output`, `message`, `created_at`, `updated_at`) VALUES (1990074504697348097, 1990074497445396481, 1990057904959127554, 'cb377f44-f267-4a66-95ee-3e152fe91ac9', 6, NULL, NULL, NULL, NULL, NULL, NULL, '2025-11-16 23:08:29.482', '2025-11-16 23:08:29.482');
+INSERT INTO `submission_testcase_result` (`id`, `submission_id`, `testcase_id`, `judge0_token`, `status_id`, `time_used`, `memory_used`, `stdout`, `stderr`, `compile_output`, `message`, `created_at`, `updated_at`) VALUES (1990074504701542401, 1990074497445396481, 1990057993433776129, 'e30fbc8f-f525-430d-850c-d26df4db248e', 6, NULL, NULL, NULL, NULL, NULL, NULL, '2025-11-16 23:08:29.921', '2025-11-16 23:08:29.921');
+INSERT INTO `submission_testcase_result` (`id`, `submission_id`, `testcase_id`, `judge0_token`, `status_id`, `time_used`, `memory_used`, `stdout`, `stderr`, `compile_output`, `message`, `created_at`, `updated_at`) VALUES (1990074504705736706, 1990074497445396481, 1990058053865308162, '5dde02bb-9388-4fa8-9ba0-c269293f04c8', 6, NULL, NULL, NULL, NULL, NULL, NULL, '2025-11-16 23:08:30.365', '2025-11-16 23:08:30.365');
+INSERT INTO `submission_testcase_result` (`id`, `submission_id`, `testcase_id`, `judge0_token`, `status_id`, `time_used`, `memory_used`, `stdout`, `stderr`, `compile_output`, `message`, `created_at`, `updated_at`) VALUES (1990074684465217538, 1990074676894498818, 1990057904959127554, '8752b757-3187-4158-9c76-e8f11e9e0e78', 6, NULL, NULL, NULL, NULL, NULL, NULL, '2025-11-16 23:09:12.186', '2025-11-16 23:09:12.186');
+INSERT INTO `submission_testcase_result` (`id`, `submission_id`, `testcase_id`, `judge0_token`, `status_id`, `time_used`, `memory_used`, `stdout`, `stderr`, `compile_output`, `message`, `created_at`, `updated_at`) VALUES (1990074684473606146, 1990074676894498818, 1990057993433776129, '26ac238b-dbd4-4f12-8d07-e28ff0da55c0', 6, NULL, NULL, NULL, NULL, NULL, NULL, '2025-11-16 23:09:12.609', '2025-11-16 23:09:12.609');
+INSERT INTO `submission_testcase_result` (`id`, `submission_id`, `testcase_id`, `judge0_token`, `status_id`, `time_used`, `memory_used`, `stdout`, `stderr`, `compile_output`, `message`, `created_at`, `updated_at`) VALUES (1990074684481994753, 1990074676894498818, 1990058053865308162, '910796ed-3e48-4d57-bfd8-80eb4ec613b3', 6, NULL, NULL, NULL, NULL, NULL, NULL, '2025-11-16 23:09:13.234', '2025-11-16 23:09:13.234');
+INSERT INTO `submission_testcase_result` (`id`, `submission_id`, `testcase_id`, `judge0_token`, `status_id`, `time_used`, `memory_used`, `stdout`, `stderr`, `compile_output`, `message`, `created_at`, `updated_at`) VALUES (1990079745534824450, 1990079709690302465, 1990057904959127554, '4dbe094d-6209-4b78-a668-3a02a4a5093a', 3, 0.036, 4104, '10\n30\n', NULL, NULL, NULL, '2025-11-16 23:29:14.556', '2025-11-16 23:29:14.556');
+INSERT INTO `submission_testcase_result` (`id`, `submission_id`, `testcase_id`, `judge0_token`, `status_id`, `time_used`, `memory_used`, `stdout`, `stderr`, `compile_output`, `message`, `created_at`, `updated_at`) VALUES (1990079745580961794, 1990079709690302465, 1990057993433776129, '2080eda2-b7fb-41cd-a7ca-ba3716005427', 3, 0.040, 3692, '3\n39\n', NULL, NULL, NULL, '2025-11-16 23:29:17.207', '2025-11-16 23:29:17.207');
+INSERT INTO `submission_testcase_result` (`id`, `submission_id`, `testcase_id`, `judge0_token`, `status_id`, `time_used`, `memory_used`, `stdout`, `stderr`, `compile_output`, `message`, `created_at`, `updated_at`) VALUES (1990079745589350402, 1990079709690302465, 1990058053865308162, 'dd825c3b-e54e-495f-b86b-ce9655a59794', 3, 0.035, 3892, '13\n19\n', NULL, NULL, NULL, '2025-11-16 23:29:19.879', '2025-11-16 23:29:19.879');
+INSERT INTO `submission_testcase_result` (`id`, `submission_id`, `testcase_id`, `judge0_token`, `status_id`, `time_used`, `memory_used`, `stdout`, `stderr`, `compile_output`, `message`, `created_at`, `updated_at`) VALUES (1990229847665922049, 1990229838228738049, 1990057904959127554, 'ecfab2c3-095c-4b90-a90c-9d405d26f432', 4, 0.003, 816, '2\n', NULL, NULL, NULL, '2025-11-17 09:25:45.695', '2025-11-17 09:25:45.695');
+INSERT INTO `submission_testcase_result` (`id`, `submission_id`, `testcase_id`, `judge0_token`, `status_id`, `time_used`, `memory_used`, `stdout`, `stderr`, `compile_output`, `message`, `created_at`, `updated_at`) VALUES (1990229847670116354, 1990229838228738049, 1990057993433776129, 'b27783cf-fcb7-420b-bafc-5fad6a718e94', 4, 0.002, 732, '2\n', NULL, NULL, NULL, '2025-11-17 09:25:46.330', '2025-11-17 09:25:46.330');
+INSERT INTO `submission_testcase_result` (`id`, `submission_id`, `testcase_id`, `judge0_token`, `status_id`, `time_used`, `memory_used`, `stdout`, `stderr`, `compile_output`, `message`, `created_at`, `updated_at`) VALUES (1990229847674310658, 1990229838228738049, 1990058053865308162, 'fb5da541-7d35-44eb-bc05-ba717329aeb0', 4, 0.003, 772, '2\n', NULL, NULL, NULL, '2025-11-17 09:25:47.018', '2025-11-17 09:25:47.018');
+INSERT INTO `submission_testcase_result` (`id`, `submission_id`, `testcase_id`, `judge0_token`, `status_id`, `time_used`, `memory_used`, `stdout`, `stderr`, `compile_output`, `message`, `created_at`, `updated_at`) VALUES (1990231721622118401, 1990231710884700161, 1990057904959127554, '7b908bbe-f422-41a2-9c67-f879c6bc5dd9', 3, 0.003, 924, '10\n30\n', NULL, NULL, NULL, '2025-11-17 09:33:12.188', '2025-11-17 09:33:12.188');
+INSERT INTO `submission_testcase_result` (`id`, `submission_id`, `testcase_id`, `judge0_token`, `status_id`, `time_used`, `memory_used`, `stdout`, `stderr`, `compile_output`, `message`, `created_at`, `updated_at`) VALUES (1990231721626312706, 1990231710884700161, 1990057993433776129, '59a5b63c-fada-4279-a4fb-b0dfcd1ec653', 3, 0.003, 732, '3\n39\n', NULL, NULL, NULL, '2025-11-17 09:33:12.869', '2025-11-17 09:33:12.869');
+INSERT INTO `submission_testcase_result` (`id`, `submission_id`, `testcase_id`, `judge0_token`, `status_id`, `time_used`, `memory_used`, `stdout`, `stderr`, `compile_output`, `message`, `created_at`, `updated_at`) VALUES (1990231721630507009, 1990231710884700161, 1990058053865308162, 'edc89652-74ea-47eb-b553-d7925d4fc026', 3, 0.004, 732, '13\n19\n', NULL, NULL, NULL, '2025-11-17 09:33:13.796', '2025-11-17 09:33:13.796');
 COMMIT;
 
 -- ----------------------------

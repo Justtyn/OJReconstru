@@ -3,10 +3,8 @@ package com.oj.onlinejudge.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oj.onlinejudge.service.VerificationCodeService;
-
 import java.time.Duration;
 import java.util.Optional;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -19,7 +17,7 @@ import org.springframework.stereotype.Service;
 public class VerificationCodeServiceRedisImpl implements VerificationCodeService {
 
     private final StringRedisTemplate redis;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     @Value("${app.auth.verify-redis-prefix:verify:reg:}")
     private String prefix;

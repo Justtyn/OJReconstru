@@ -1,5 +1,6 @@
 package com.oj.onlinejudge.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oj.onlinejudge.security.JwtAuthenticationFilter;
 import com.oj.onlinejudge.security.JwtTokenProvider;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -27,10 +28,11 @@ public class FilterConfig {
     @Bean
     public FilterRegistrationBean<JwtAuthenticationFilter> jwtFilterRegistration(
             JwtTokenProvider jwtTokenProvider,
-            JwtProperties jwtProperties) {
+            JwtProperties jwtProperties,
+            ObjectMapper objectMapper) {
 
         FilterRegistrationBean<JwtAuthenticationFilter> registration = new FilterRegistrationBean<>();
-        registration.setFilter(new JwtAuthenticationFilter(jwtTokenProvider, jwtProperties));
+        registration.setFilter(new JwtAuthenticationFilter(jwtTokenProvider, jwtProperties, objectMapper));
         registration.addUrlPatterns("/api/*");
         registration.setOrder(1);
         return registration;

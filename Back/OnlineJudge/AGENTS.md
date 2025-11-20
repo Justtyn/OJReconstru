@@ -21,3 +21,4 @@ Commits use short, imperative subjects (English or Chinese) typical of `git log`
 
 ## Security & Configuration Tips
 Mask real SMTP/Redis/MySQL credentials; production deploys should use Vault/Secrets Manager/ConfigMap. Ensure SQL DDL is idempotent (`IF NOT EXISTS`) so `re-oj.sql` can be rerun. Sensitive flows (token issuance, file upload) belong in dedicated services with audit-friendly logs. The avatar upload module enforces square images and serves them via `/files/avatars/**`; adjust `app.storage` in `application.yml` when relocating storage.
+

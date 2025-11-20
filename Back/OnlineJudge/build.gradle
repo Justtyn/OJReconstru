@@ -38,4 +38,6 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    // Force the lightweight test profile unless explicitly overridden via -Dspring.profiles.active
+    systemProperty "spring.profiles.active", System.getProperty("spring.profiles.active", "test")
 }

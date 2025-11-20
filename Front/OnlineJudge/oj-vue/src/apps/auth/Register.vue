@@ -43,11 +43,12 @@
 import { reactive, ref } from 'vue';
 import { useRouter, RouterLink } from 'vue-router';
 import { message } from 'ant-design-vue';
-import type { FormInstance, FormRules } from 'ant-design-vue';
+import type { FormInstance, FormProps } from 'ant-design-vue';
 import { useAuthStore } from '@/stores/auth';
 import type { RegisterRequest, UserRole } from '@/types';
 import AuthLayout from './components/AuthLayout.vue';
 import { resolveDefaultRoute } from '@/utils/navigation';
+import { extractErrorMessage } from '@/utils/error';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -62,13 +63,13 @@ const formState = reactive<Omit<RegisterRequest, 'role'> & { confirmPassword: st
   name: '',
 });
 
-const rules: FormRules = {
+const rules: FormProps['rules'] = {
   username: [{ required: true, message: '请输入用户名' }],
   password: [{ required: true, message: '请输入密码' }],
   confirmPassword: [
     { required: true, message: '请再次输入密码' },
     {
-      validator: (_rule, value) => {
+      validator: (_rule: unknown, value: string) => {
         if (value !== formState.password) {
           return Promise.reject('两次输入的密码不一致');
         }
@@ -99,10 +100,7 @@ const handleSubmit = async () => {
       router.replace({ path: '/verify-email', query: { username: formState.username } });
     }
   } catch (error: any) {
-    const backendMsg = error?.message || error?.response?.data?.message;
-    if (backendMsg) {
-      message.error(backendMsg);
-    }
+    message.error(extractErrorMessage(error, '注册失败'));
   } finally {
     submitting.value = false;
   }

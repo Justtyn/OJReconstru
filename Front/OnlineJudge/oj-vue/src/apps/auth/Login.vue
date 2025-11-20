@@ -39,13 +39,14 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue';
-import type { FormInstance, FormRules } from 'ant-design-vue';
+import type { FormInstance, FormProps } from 'ant-design-vue';
 import { message } from 'ant-design-vue';
 import { useRouter, useRoute, RouterLink } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import type { LoginRequest, UserRole } from '@/types';
 import AuthLayout from './components/AuthLayout.vue';
 import { resolveDefaultRoute } from '@/utils/navigation';
+import { extractErrorMessage } from '@/utils/error';
 
 const router = useRouter();
 const route = useRoute();
@@ -65,7 +66,7 @@ const formState = reactive<LoginRequest>({
   role: 'student',
 });
 
-const rules: FormRules = {
+const rules: FormProps['rules'] = {
   username: [{ required: true, message: '请输入用户名' }],
   password: [{ required: true, message: '请输入密码' }],
   role: [{ required: true }],
@@ -81,10 +82,7 @@ const handleSubmit = async () => {
       (route.query.redirect as string) || resolveDefaultRoute(authStore.role as UserRole);
     router.replace(redirect);
   } catch (error: any) {
-    const backendMsg = error?.message || error?.response?.data?.message;
-    if (backendMsg) {
-      message.error(backendMsg);
-    }
+    message.error(extractErrorMessage(error, '登录失败'));
   } finally {
     submitting.value = false;
   }

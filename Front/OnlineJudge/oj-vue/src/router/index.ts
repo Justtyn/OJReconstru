@@ -54,7 +54,7 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 }),
 });
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore(pinia);
   if (!authStore.initialized) {
     await authStore.restore();
@@ -73,15 +73,11 @@ router.beforeEach(async (to, from, next) => {
     return next({ path: '/login', query: { redirect: to.fullPath } });
   }
 
-  if (to.meta.roles && authStore.role && !to.meta.roles.includes(authStore.role)) {
+  if (Array.isArray(to.meta.roles) && authStore.role && !to.meta.roles.includes(authStore.role)) {
     return next('/403');
   }
 
   const targetApp = to.meta.app;
-  if (targetApp === 'client' && authStore.role && authStore.role !== 'student') {
-    return next(resolveDefaultRoute(authStore.role));
-  }
-
   if (targetApp === 'admin' && authStore.role === 'student') {
     return next('/403');
   }

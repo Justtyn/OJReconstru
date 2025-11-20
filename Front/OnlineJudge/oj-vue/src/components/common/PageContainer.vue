@@ -25,7 +25,8 @@ defineProps<{
 <style scoped lang="less">
 .page-container {
   padding: 24px;
-  background-color: #fff;
+  background-color: var(--card-bg);
+  border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
   min-height: calc(100vh - 160px);
@@ -41,7 +42,12 @@ defineProps<{
     margin: 0;
     font-size: 20px;
     font-weight: 600;
-    color: #0f172a;
+    color: var(--text-color);
   }
+}
+
+:global(.page-container__body) {
+  color: var(--text-color);
+  background: var(--card-bg);
 }
 </style>

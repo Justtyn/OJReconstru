@@ -23,25 +23,47 @@
         </a-row>
         <a-row :gutter="16">
           <a-col :xs="24" :md="12">
-            <a-form-item label="姓名" name="name">
-              <a-input v-model:value="formState.name" placeholder="请输入姓名" />
-            </a-form-item>
-          </a-col>
-          <a-col :xs="24" :md="12">
-            <a-form-item label="邮箱" name="email">
-              <a-input v-model:value="formState.email" placeholder="请输入邮箱" />
+            <a-form-item label="确认密码" name="confirmPassword">
+              <a-input-password v-model:value="formState.confirmPassword" placeholder="请再次输入密码" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :xs="24" :md="12">
+            <a-form-item label="姓名" name="name">
+              <a-input v-model:value="formState.name" placeholder="请输入姓名" />
+            </a-form-item>
+          </a-col>
+          <a-col :xs="24" :md="12">
+            <a-form-item label="性别" name="sex">
+              <a-select v-model:value="formState.sex" placeholder="请选择性别" allow-clear>
+                <a-select-option value="male">男</a-select-option>
+                <a-select-option value="female">女</a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+        </a-row>
+        <a-row :gutter="16">
+          <a-col :xs="24" :md="12">
+            <a-form-item label="邮箱" name="email">
+              <a-input v-model:value="formState.email" placeholder="请输入邮箱" />
+            </a-form-item>
+          </a-col>
+          <a-col :xs="24" :md="12">
             <a-form-item label="手机号" name="phone">
               <a-input v-model:value="formState.phone" placeholder="请输入手机号" />
             </a-form-item>
           </a-col>
+        </a-row>
+        <a-row :gutter="16">
           <a-col :xs="24" :md="12">
-            <a-form-item label="状态" name="isActive">
-              <a-switch v-model:checked="formState.isActive" checked-children="启用" un-checked-children="禁用" />
+            <a-form-item label="出生日期" name="birth">
+              <a-date-picker
+                v-model:value="formState.birth"
+                placeholder="选择出生日期"
+                value-format="YYYY-MM-DD"
+                style="width: 100%"
+              />
             </a-form-item>
           </a-col>
         </a-row>
@@ -59,11 +81,12 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import type { FormInstance, FormRules } from 'ant-design-vue';
+import type { FormInstance, FormProps } from 'ant-design-vue';
 import { message } from 'ant-design-vue';
 import PageContainer from '@/components/common/PageContainer.vue';
 import { adminUserService } from '@/services/modules/adminUser';
-import type { AdminUpsertRequest, AdminUser } from '@/types';
+import type { AdminUpsertRequest } from '@/types';
+import { extractErrorMessage } from '@/utils/error';
 
 const router = useRouter();
 const route = useRoute();
@@ -72,20 +95,24 @@ const submitting = ref(false);
 const isEdit = computed(() => Boolean(route.params.id));
 const recordId = computed(() => route.params.id as string | undefined);
 
-const formState = reactive<AdminUpsertRequest>({
+type AdminFormState = AdminUpsertRequest & { confirmPassword?: string };
+
+const formState = reactive<AdminFormState>({
   username: '',
   password: '',
   name: '',
   email: '',
   phone: '',
-  isActive: true,
+  sex: '',
+  birth: '',
+  confirmPassword: '',
 });
 
-const rules: FormRules = {
+const rules: FormProps['rules'] = {
   username: [{ required: true, message: '请输入用户名' }],
   password: [
     {
-      validator: (_rule, value) => {
+      validator: (_rule: unknown, value: string) => {
         if (!isEdit.value && !value) return Promise.reject('请输入密码');
         if (value && (value.length < 6 || value.length > 100)) {
           return Promise.reject('密码长度需在 6-100 之间');
@@ -108,6 +135,17 @@ const rules: FormRules = {
       trigger: 'blur',
     },
   ],
+  confirmPassword: [
+    {
+      validator: (_rule: unknown, value: string) => {
+        if (!formState.password && !value) return Promise.resolve();
+        if (!value) return Promise.reject('请再次输入密码');
+        if (value !== formState.password) return Promise.reject('两次输入的密码不一致');
+        return Promise.resolve();
+      },
+      trigger: 'blur',
+    },
+  ],
 };
 
 const passwordLabel = computed(() => (isEdit.value ? '密码（留空表示不修改）' : '密码'));
@@ -121,12 +159,14 @@ const loadDetail = async () => {
     const data = await adminUserService.fetchDetail(recordId.value);
     formState.username = data.username;
     formState.name = data.name ?? '';
+    formState.sex = data.sex ?? '';
     formState.email = data.email ?? '';
     formState.phone = data.phone ?? '';
-    formState.isActive = data.isActive ?? true;
+    formState.birth = data.birth ?? '';
     formState.password = '';
+    formState.confirmPassword = '';
   } catch (error: any) {
-    message.error(error?.message || '获取详情失败');
+    message.error(extractErrorMessage(error, '获取详情失败'));
   }
 };
 
@@ -137,12 +177,20 @@ const handleSubmit = async () => {
     const payload: AdminUpsertRequest = {
       username: formState.username,
       name: formState.name,
+      sex: formState.sex,
       email: formState.email,
       phone: formState.phone,
-      isActive: formState.isActive,
+      birth: formState.birth || undefined,
     };
-    if (formState.password) {
-      payload.password = formState.password;
+    if (formState.password || formState.confirmPassword) {
+      if (formState.password !== formState.confirmPassword) {
+        message.error('两次输入的密码不一致');
+        submitting.value = false;
+        return;
+      }
+      if (formState.password) {
+        payload.password = formState.password;
+      }
     }
     if (isEdit.value) {
       await adminUserService.update(recordId.value!, payload);
@@ -159,10 +207,7 @@ const handleSubmit = async () => {
     }
     router.push('/admin/users');
   } catch (error: any) {
-    const backendMsg = error?.message || error?.response?.data?.message;
-    if (backendMsg) {
-      message.error(backendMsg);
-    }
+    message.error(extractErrorMessage(error, '提交失败'));
   } finally {
     submitting.value = false;
   }

@@ -5,11 +5,13 @@ export interface AdminUser {
   username: string;
   password: string;
   name?: string | null;
+  sex?: string | null;
+  birth?: string | null;
   email?: string | null;
   phone?: string | null;
   avatar?: string | null;
-  isActive?: boolean;
   lastLoginTime?: string | null;
+  lastLoginIp?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -24,7 +26,6 @@ export interface Teacher {
   email?: string | null;
   avatar?: string | null;
   title?: string | null;
-  isActive?: boolean;
   lastLoginTime?: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -35,19 +36,18 @@ export type AdminQuery = PageQuery & {
 };
 
 export type TeacherQuery = PageQuery & {
-  name?: string;
-  username?: string;
-  title?: string;
+  keyword?: string;
 };
 
 export interface AdminUpsertRequest {
   username: string;
   password?: string;
   name?: string;
+  sex?: string;
+  birth?: string;
   email?: string;
   phone?: string;
   avatar?: string;
-  isActive?: boolean;
 }
 
 export interface TeacherUpsertRequest {
@@ -59,5 +59,4 @@ export interface TeacherUpsertRequest {
   email?: string;
   avatar?: string;
   title?: string;
-  isActive?: boolean;
 }

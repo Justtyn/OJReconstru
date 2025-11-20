@@ -1,5 +1,5 @@
 <template>
-  <PageContainer title="教师管理">
+  <PageContainer title="学生管理">
     <a-card>
       <a-form layout="inline" :model="query">
         <a-form-item label="关键词">
@@ -15,7 +15,7 @@
           <a-button style="margin-left: 8px" @click="resetQuery">重置</a-button>
         </a-form-item>
         <a-form-item v-if="canCreate" style="margin-left:auto;">
-          <a-button type="primary" @click="goCreate">新建教师</a-button>
+          <a-button type="primary" @click="goCreate">新建学生</a-button>
         </a-form-item>
       </a-form>
     </a-card>
@@ -28,8 +28,16 @@
         :loading="loading"
         :pagination="paginationConfig"
       >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'actions'">
+        <template #bodyCell="{ column, record, text }">
+          <template v-if="column.key === 'lastLoginTime'">
+            {{ text ? format(new Date(text), 'yyyy-MM-dd HH:mm') : '-' }}
+          </template>
+          <template v-else-if="column.key === 'isVerified'">
+            <a-tag :color="record.isVerified ? 'green' : 'orange'">
+              {{ record.isVerified ? '已验证' : '未验证' }}
+            </a-tag>
+          </template>
+          <template v-else-if="column.key === 'actions'">
             <a-space>
               <a-button type="link" size="small" @click="edit(record)">编辑</a-button>
               <template v-if="authStore.role === 'admin'">
@@ -50,8 +58,8 @@ import { useRouter } from 'vue-router';
 import { format } from 'date-fns';
 import { message, Modal } from 'ant-design-vue';
 import PageContainer from '@/components/common/PageContainer.vue';
-import { teacherService } from '@/services/modules/teacher';
-import type { Teacher, TeacherQuery } from '@/types';
+import { studentService } from '@/services/modules/student';
+import type { Student, StudentQuery } from '@/types';
 import { useAuthStore } from '@/stores/auth';
 import type { TableColumnType } from 'ant-design-vue';
 import { extractErrorMessage } from '@/utils/error';
@@ -59,37 +67,33 @@ import { extractErrorMessage } from '@/utils/error';
 const router = useRouter();
 const authStore = useAuthStore();
 
-const query = reactive<TeacherQuery>({ page: 1, size: 10, keyword: '' });
-const list = ref<Teacher[]>([]);
+const query = reactive<StudentQuery>({ page: 1, size: 10, keyword: '' });
+const list = ref<Student[]>([]);
 const total = ref(0);
 const loading = ref(false);
 
 const canCreate = computed(() => authStore.role === 'admin');
 
-const columns: TableColumnType<Teacher>[] = [
+const columns: TableColumnType<Student>[] = [
   { title: '用户名', dataIndex: 'username', key: 'username' },
   { title: '姓名', dataIndex: 'name', key: 'name' },
-  { title: '职称', dataIndex: 'title', key: 'title' },
   { title: '邮箱', dataIndex: 'email', key: 'email' },
   { title: '手机号', dataIndex: 'phone', key: 'phone' },
-  {
-    title: '最近登录',
-    dataIndex: 'lastLoginTime',
-    key: 'lastLoginTime',
-    customRender: ({ text }) => (text ? format(new Date(text), 'yyyy-MM-dd HH:mm') : '-'),
-    width: 180,
-  },
+  { title: '学校', dataIndex: 'school', key: 'school' },
+  { title: '积分', dataIndex: 'score', key: 'score', width: 80 },
+  { title: '邮箱状态', dataIndex: 'isVerified', key: 'isVerified', width: 100 },
+  { title: '最近登录', dataIndex: 'lastLoginTime', key: 'lastLoginTime', width: 180 },
   { title: '操作', key: 'actions', width: 160 },
 ];
 
 const loadData = async () => {
   loading.value = true;
   try {
-    const data = await teacherService.fetchList(query);
+    const data = await studentService.fetchList(query);
     list.value = data.records;
     total.value = data.total;
   } catch (error: any) {
-    message.error(extractErrorMessage(error, '获取教师列表失败'));
+    message.error(extractErrorMessage(error, '获取学生列表失败'));
   } finally {
     loading.value = false;
   }
@@ -106,16 +110,16 @@ const resetQuery = () => {
 };
 
 const goCreate = () => {
-  router.push('/admin/teachers/create');
+  router.push('/admin/students/create');
 };
 
-const edit = (record: Teacher) => {
-  router.push(`/admin/teachers/${record.id}/edit`);
+const edit = (record: Student) => {
+  router.push(`/admin/students/${record.id}/edit`);
 };
 
-const remove = async (record: Teacher) => {
+const remove = async (record: Student) => {
   try {
-    await teacherService.remove(record.id);
+    await studentService.remove(record.id);
     message.success('删除成功');
     loadData();
   } catch (error: any) {
@@ -123,10 +127,10 @@ const remove = async (record: Teacher) => {
   }
 };
 
-const confirmRemove = (record: Teacher) => {
+const confirmRemove = (record: Student) => {
   Modal.confirm({
-    title: '删除教师',
-    content: `确认删除教师「${record.name || record.username}」？`,
+    title: '删除学生',
+    content: `确认删除学生「${record.name || record.username}」？`,
     okText: '确定',
     cancelText: '取消',
     onOk: () => remove(record),

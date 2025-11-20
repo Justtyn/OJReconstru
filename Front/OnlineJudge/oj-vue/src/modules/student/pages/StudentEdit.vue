@@ -6,7 +6,7 @@
         :model="formState"
         :rules="rules"
         ref="formRef"
-        class="admin-edit-form"
+        class="student-edit-form"
       >
         <a-row :gutter="16">
           <a-col :xs="24" :md="12">
@@ -34,13 +34,6 @@
             </a-form-item>
           </a-col>
           <a-col :xs="24" :md="12">
-            <a-form-item label="职称" name="title">
-              <a-input v-model:value="formState.title" placeholder="请输入职称" />
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row :gutter="16">
-          <a-col :xs="24" :md="12">
             <a-form-item label="性别" name="sex">
               <a-select v-model:value="formState.sex" placeholder="请选择性别" allow-clear>
                 <a-select-option value="male">男</a-select-option>
@@ -48,16 +41,45 @@
               </a-select>
             </a-form-item>
           </a-col>
+        </a-row>
+        <a-row :gutter="16">
           <a-col :xs="24" :md="12">
-            <a-form-item label="邮箱" name="email">
-              <a-input v-model:value="formState.email" placeholder="请输入邮箱" />
+            <a-form-item label="出生日期" name="birth">
+              <a-date-picker
+                v-model:value="formState.birth"
+                placeholder="选择出生日期"
+                value-format="YYYY-MM-DD"
+                style="width: 100%"
+              />
+            </a-form-item>
+          </a-col>
+          <a-col :xs="24" :md="12">
+            <a-form-item label="学校" name="school">
+              <a-input v-model:value="formState.school" placeholder="请输入学校" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :xs="24" :md="12">
+            <a-form-item label="邮箱" name="email">
+              <a-input v-model:value="formState.email" placeholder="请输入邮箱" />
+            </a-form-item>
+          </a-col>
+          <a-col :xs="24" :md="12">
             <a-form-item label="手机号" name="phone">
               <a-input v-model:value="formState.phone" placeholder="请输入手机号" />
+            </a-form-item>
+          </a-col>
+        </a-row>
+        <a-row :gutter="16">
+          <a-col :xs="24" :md="12">
+            <a-form-item label="积分" name="score">
+              <a-input-number v-model:value="formState.score" style="width: 100%" :min="0" />
+            </a-form-item>
+          </a-col>
+          <a-col :xs="24" :md="12">
+            <a-form-item label="个人简介" name="bio">
+              <a-textarea v-model:value="formState.bio" :rows="3" placeholder="请输入个人简介" />
             </a-form-item>
           </a-col>
         </a-row>
@@ -78,8 +100,8 @@ import { useRoute, useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import type { FormInstance, FormProps } from 'ant-design-vue';
 import PageContainer from '@/components/common/PageContainer.vue';
-import { teacherService } from '@/services/modules/teacher';
-import type { TeacherUpsertRequest } from '@/types';
+import { studentService } from '@/services/modules/student';
+import type { StudentUpsertRequest } from '@/types';
 import { extractErrorMessage } from '@/utils/error';
 
 const router = useRouter();
@@ -89,17 +111,20 @@ const recordId = computed(() => route.params.id as string | undefined);
 const formRef = ref<FormInstance>();
 const submitting = ref(false);
 
-type TeacherFormState = TeacherUpsertRequest & { confirmPassword?: string };
+type StudentFormState = StudentUpsertRequest & { confirmPassword?: string };
 
-const formState = reactive<TeacherFormState>({
+const formState = reactive<StudentFormState>({
   username: '',
   password: '',
+  confirmPassword: '',
   name: '',
   sex: '',
-  title: '',
-  email: '',
+  birth: '',
   phone: '',
-  confirmPassword: '',
+  email: '',
+  school: '',
+  score: 0,
+  bio: '',
 });
 
 const rules: FormProps['rules'] = {
@@ -115,12 +140,6 @@ const rules: FormProps['rules'] = {
       },
     },
   ],
-  email: [
-    { type: 'email', message: '邮箱格式不正确', trigger: 'blur' },
-  ],
-  phone: [
-    { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' },
-  ],
   confirmPassword: [
     {
       validator: (_rule: unknown, value: string) => {
@@ -132,23 +151,28 @@ const rules: FormProps['rules'] = {
       trigger: 'blur',
     },
   ],
+  email: [{ type: 'email', message: '邮箱格式不正确', trigger: 'blur' }],
+  phone: [{ pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' }],
 };
 
 const passwordLabel = computed(() => (isEdit.value ? '密码（留空表示不修改）' : '密码'));
 const passwordPlaceholder = computed(() => (isEdit.value ? '不修改可留空' : '请输入密码'));
-const pageTitle = computed(() => (isEdit.value ? '编辑教师' : '新建教师'));
+const pageTitle = computed(() => (isEdit.value ? '编辑学生' : '新建学生'));
 
 const loadDetail = async () => {
   if (!isEdit.value) return;
   try {
     if (!recordId.value) return;
-    const data = await teacherService.fetchDetail(recordId.value);
+    const data = await studentService.fetchDetail(recordId.value);
     formState.username = data.username;
     formState.name = data.name ?? '';
     formState.sex = data.sex ?? '';
-    formState.title = data.title ?? '';
-    formState.email = data.email ?? '';
+    formState.birth = data.birth ?? '';
     formState.phone = data.phone ?? '';
+    formState.email = data.email ?? '';
+    formState.school = data.school ?? '';
+    formState.score = data.score ?? 0;
+    formState.bio = data.bio ?? '';
     formState.password = '';
     formState.confirmPassword = '';
   } catch (error: any) {
@@ -160,13 +184,16 @@ const handleSubmit = async () => {
   try {
     await formRef.value?.validate();
     submitting.value = true;
-    const payload: TeacherUpsertRequest = {
+    const payload: StudentUpsertRequest = {
       username: formState.username,
       name: formState.name,
       sex: formState.sex,
-      title: formState.title,
-      email: formState.email,
+      birth: formState.birth || undefined,
       phone: formState.phone,
+      email: formState.email,
+      school: formState.school,
+      score: formState.score,
+      bio: formState.bio,
     };
     if (formState.password || formState.confirmPassword) {
       if (formState.password !== formState.confirmPassword) {
@@ -179,7 +206,7 @@ const handleSubmit = async () => {
       }
     }
     if (isEdit.value) {
-      await teacherService.update(recordId.value!, payload);
+      await studentService.update(recordId.value!, payload);
       message.success('更新成功');
     } else {
       if (!formState.password) {
@@ -188,10 +215,10 @@ const handleSubmit = async () => {
         return;
       }
       payload.password = formState.password;
-      await teacherService.create(payload);
+      await studentService.create(payload);
       message.success('创建成功');
     }
-    router.push('/admin/teachers');
+    router.push('/admin/students');
   } catch (error: any) {
     message.error(extractErrorMessage(error, '提交失败'));
   } finally {
@@ -207,3 +234,10 @@ onMounted(() => {
   loadDetail();
 });
 </script>
+
+<style scoped lang="less">
+.student-edit-form {
+  max-width: 960px;
+  margin: 0 auto;
+}
+</style>

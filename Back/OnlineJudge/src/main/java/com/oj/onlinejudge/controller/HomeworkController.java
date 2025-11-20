@@ -25,8 +25,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.util.CollectionUtils;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -56,11 +56,17 @@ public class HomeworkController {
             @RequestParam(defaultValue = "1") long page,
             @RequestParam(defaultValue = "10") long size,
             @Parameter(description = "按班级过滤") @RequestParam(required = false) Long classId,
+            @Parameter(description = "标题/描述关键字") @RequestParam(required = false) String keyword,
             @Parameter(description = "是否仅返回启用作业") @RequestParam(defaultValue = "true") boolean activeOnly) {
         ensureViewer(current);
         LambdaQueryWrapper<Homework> wrapper = new LambdaQueryWrapper<>();
         if (classId != null) {
             wrapper.eq(Homework::getClassId, classId);
+        }
+        if (StringUtils.hasText(keyword)) {
+            wrapper.and(w -> w.like(Homework::getTitle, keyword)
+                    .or()
+                    .like(Homework::getDescription, keyword));
         }
         if (activeOnly || isStudent(current)) {
             wrapper.eq(Homework::getIsActive, true);

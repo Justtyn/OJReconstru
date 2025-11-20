@@ -6,6 +6,7 @@ package com.oj.onlinejudge.controller;
 // - 创建：新增管理员（对密码进行加密存储）
 // - 更新：根据ID更新管理员（若未提供密码则保持旧值，若提供则加密）
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.oj.onlinejudge.common.api.ApiResponse;
 import com.oj.onlinejudge.domain.dto.AdminUpsertRequest;
@@ -44,11 +45,20 @@ public class AdminController {
     public ApiResponse<Page<Admin>> list(
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "页码，从1开始") @RequestParam(defaultValue = "1") long page,
-            @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") long size) {
+            @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") long size,
+            @Parameter(description = "用户名/姓名/邮箱关键字") @RequestParam(required = false) String keyword) {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
-        Page<Admin> p = adminService.page(new Page<>(page, size));
+        LambdaQueryWrapper<Admin> wrapper = new LambdaQueryWrapper<>();
+        if (StringUtils.hasText(keyword)) {
+            wrapper.and(w -> w.like(Admin::getUsername, keyword)
+                    .or()
+                    .like(Admin::getName, keyword)
+                    .or()
+                    .like(Admin::getEmail, keyword));
+        }
+        Page<Admin> p = adminService.page(new Page<>(page, size), wrapper);
         return ApiResponse.success(p);
     }
 
@@ -120,23 +130,21 @@ public class AdminController {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
-        Admin body = new Admin();
-        BeanUtils.copyProperties(request, body);
-        body.setId(id);
-        if (StringUtils.hasText(body.getPassword())) {
-            body.setPassword(passwordService.encode(body.getPassword()));
-        } else {
-            Admin old = adminService.getById(id);
-            if (old == null) {
-                throw ApiException.notFound("管理员不存在");
-            }
-            body.setPassword(old.getPassword());
+        Admin existing = adminService.getById(id);
+        if (existing == null) {
+            throw ApiException.notFound("管理员不存在");
         }
-        boolean ok = adminService.updateById(body);
+        if (StringUtils.hasText(request.getPassword())) {
+            existing.setPassword(passwordService.encode(request.getPassword()));
+        }
+        copyNonNullProperties(request, existing, "id", "password");
+        existing.setId(id);
+        boolean ok = adminService.updateById(existing);
         if (!ok) {
             throw ApiException.notFound("管理员不存在");
         }
-        return ApiResponse.success("更新成功", body);
+        Admin updated = adminService.getById(id);
+        return ApiResponse.success("更新成功", updated);
     }
 
     /**
@@ -158,5 +166,24 @@ public class AdminController {
             throw ApiException.notFound("管理员不存在");
         }
         return ApiResponse.success(null);
+    }
+
+    /**
+     * 复制非空字段，避免把空值覆盖数据库已有值
+     */
+    private void copyNonNullProperties(Object source, Object target, String... ignoreProperties) {
+        org.springframework.beans.BeanWrapper src = new org.springframework.beans.BeanWrapperImpl(source);
+        java.util.Set<String> ignore = new java.util.HashSet<>();
+        java.beans.PropertyDescriptor[] pds = src.getPropertyDescriptors();
+        for (java.beans.PropertyDescriptor pd : pds) {
+            Object val = src.getPropertyValue(pd.getName());
+            if (val == null) {
+                ignore.add(pd.getName());
+            }
+        }
+        if (ignoreProperties != null && ignoreProperties.length > 0) {
+            java.util.Collections.addAll(ignore, ignoreProperties);
+        }
+        BeanUtils.copyProperties(source, target, ignore.toArray(new String[0]));
     }
 }

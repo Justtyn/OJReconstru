@@ -30,7 +30,7 @@
           <a-list-item-meta :description="formatDate(item.time)">
             <template #title>
               <span>{{ item.title }}</span>
-              <a-tag v-if="item.pinned" color="gold" style="margin-left: 8px">置顶</a-tag>
+              <a-tag v-if="item.isPinned" color="gold" style="margin-left: 8px">置顶</a-tag>
             </template>
           </a-list-item-meta>
           <div class="announcement-excerpt">
@@ -48,7 +48,7 @@
     >
       <a-space direction="vertical" style="width: 100%">
         <a-space>
-          <a-tag v-if="currentDetail?.pinned" color="gold">置顶</a-tag>
+          <a-tag v-if="currentDetail?.isPinned" color="gold">置顶</a-tag>
           <a-tag v-if="!currentDetail?.isActive" color="red">未启用</a-tag>
           <span>{{ formatDate(currentDetail?.time) }}</span>
         </a-space>
@@ -63,9 +63,10 @@ import { onMounted, reactive, ref, computed } from 'vue';
 import PageContainer from '@/components/common/PageContainer.vue';
 import { format } from 'date-fns';
 import { message } from 'ant-design-vue';
-import { fetchAnnouncements, fetchAnnouncementDetail } from '@/services/modules/announcement';
+import { fetchPublicAnnouncements, fetchPublicAnnouncementDetail } from '@/services/modules/announcement';
 import type { AnnouncementVO, AnnouncementQuery } from '@/types';
 import { renderMarkdown } from '@/utils/markdown';
+import { extractErrorMessage } from '@/utils/error';
 
 const query = reactive<AnnouncementQuery>({
   page: 1,
@@ -95,11 +96,11 @@ const paginationConfig = computed(() => ({
 const loadData = async () => {
   loading.value = true;
   try {
-    const data = await fetchAnnouncements(query);
+    const data = await fetchPublicAnnouncements(query);
     announcements.value = data.records;
     total.value = data.total;
   } catch (error: any) {
-    message.error(error?.message || '获取公告失败');
+    message.error(extractErrorMessage(error, '获取公告失败'));
   } finally {
     loading.value = false;
   }
@@ -110,13 +111,13 @@ const handleSearch = () => {
   loadData();
 };
 
-const openDetail = async (id: number) => {
+const openDetail = async (id: string) => {
   detailOpen.value = true;
   currentDetail.value = null;
   try {
-    currentDetail.value = await fetchAnnouncementDetail(id);
+    currentDetail.value = await fetchPublicAnnouncementDetail(id);
   } catch (error: any) {
-    message.error(error?.message || '获取公告详情失败');
+    message.error(extractErrorMessage(error, '获取公告详情失败'));
     detailOpen.value = false;
   }
 };
@@ -141,13 +142,16 @@ onMounted(loadData);
 }
 
 .announcement-list {
-  background: #fff;
+  background: var(--card-bg);
+  border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 12px;
   padding: 16px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
 }
 
 .announcement-excerpt {
-  color: #475569;
+  color: var(--text-color);
+  opacity: 0.8;
 }
 
 .markdown-body :deep(p) {

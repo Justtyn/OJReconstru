@@ -49,6 +49,42 @@ export const adminRoutes: RouteRecordRaw[] = [
         component: () => import('@/modules/teacher/pages/TeacherEdit.vue'),
         meta: { title: '编辑教师', requiresAuth: true, roles: ['admin', 'teacher'] },
       },
+      {
+        path: 'students',
+        name: 'StudentList',
+        component: () => import('@/modules/student/pages/StudentList.vue'),
+        meta: { title: '学生管理', requiresAuth: true, roles: ['admin'] },
+      },
+      {
+        path: 'students/create',
+        name: 'StudentCreate',
+        component: () => import('@/modules/student/pages/StudentEdit.vue'),
+        meta: { title: '新建学生', requiresAuth: true, roles: ['admin'] },
+      },
+      {
+        path: 'students/:id/edit',
+        name: 'StudentEdit',
+        component: () => import('@/modules/student/pages/StudentEdit.vue'),
+        meta: { title: '编辑学生', requiresAuth: true, roles: ['admin'] },
+      },
+      {
+        path: 'announcements',
+        name: 'AnnouncementManageList',
+        component: () => import('@/modules/announcement/pages/AnnouncementManageList.vue'),
+        meta: { title: '公告管理', requiresAuth: true, roles: ['admin'] },
+      },
+      {
+        path: 'announcements/create',
+        name: 'AnnouncementManageCreate',
+        component: () => import('@/modules/announcement/pages/AnnouncementManageEdit.vue'),
+        meta: { title: '新建公告', requiresAuth: true, roles: ['admin'] },
+      },
+      {
+        path: 'announcements/:id/edit',
+        name: 'AnnouncementManageEdit',
+        component: () => import('@/modules/announcement/pages/AnnouncementManageEdit.vue'),
+        meta: { title: '编辑公告', requiresAuth: true, roles: ['admin'] },
+      },
     ],
   },
 ];

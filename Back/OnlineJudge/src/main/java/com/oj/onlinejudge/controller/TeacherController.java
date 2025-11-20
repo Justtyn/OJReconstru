@@ -7,6 +7,7 @@ package com.oj.onlinejudge.controller;
 // - PUT /api/teachers/{id} 更新（如未提供密码保持旧值，提供则加密）
 // - DELETE /api/teachers/{id} 删除
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.oj.onlinejudge.common.api.ApiResponse;
 import com.oj.onlinejudge.domain.dto.TeacherUpsertRequest;
@@ -41,11 +42,20 @@ public class TeacherController {
     public ApiResponse<Page<Teacher>> list(
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "页码") @RequestParam(defaultValue = "1") long page,
-            @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") long size) {
+            @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") long size,
+            @Parameter(description = "用户名/姓名/邮箱关键字") @RequestParam(required = false) String keyword) {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
-        Page<Teacher> p = teacherService.page(new Page<>(page, size));
+        LambdaQueryWrapper<Teacher> wrapper = new LambdaQueryWrapper<>();
+        if (StringUtils.hasText(keyword)) {
+            wrapper.and(w -> w.like(Teacher::getUsername, keyword)
+                    .or()
+                    .like(Teacher::getName, keyword)
+                    .or()
+                    .like(Teacher::getEmail, keyword));
+        }
+        Page<Teacher> p = teacherService.page(new Page<>(page, size), wrapper);
         return ApiResponse.success(p);
     }
 
@@ -107,23 +117,21 @@ public class TeacherController {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
-        Teacher body = new Teacher();
-        BeanUtils.copyProperties(request, body);
-        body.setId(id);
-        if (StringUtils.hasText(body.getPassword())) {
-            body.setPassword(passwordService.encode(body.getPassword()));
-        } else {
-            Teacher old = teacherService.getById(id);
-            if (old == null) {
-                throw ApiException.notFound("教师不存在");
-            }
-            body.setPassword(old.getPassword());
+        Teacher existing = teacherService.getById(id);
+        if (existing == null) {
+            throw ApiException.notFound("教师不存在");
         }
-        boolean ok = teacherService.updateById(body);
+        if (StringUtils.hasText(request.getPassword())) {
+            existing.setPassword(passwordService.encode(request.getPassword()));
+        }
+        copyNonNullProperties(request, existing, "id", "password");
+        existing.setId(id);
+        boolean ok = teacherService.updateById(existing);
         if (!ok) {
             throw ApiException.notFound("教师不存在");
         }
-        return ApiResponse.success("更新成功", body);
+        Teacher updated = teacherService.getById(id);
+        return ApiResponse.success("更新成功", updated);
     }
 
     /**
@@ -142,5 +150,24 @@ public class TeacherController {
             throw ApiException.notFound("教师不存在");
         }
         return ApiResponse.success(null);
+    }
+
+    /**
+     * 复制非空字段，避免把空值覆盖数据库已有值
+     */
+    private void copyNonNullProperties(Object source, Object target, String... ignoreProperties) {
+        org.springframework.beans.BeanWrapper src = new org.springframework.beans.BeanWrapperImpl(source);
+        java.util.Set<String> ignore = new java.util.HashSet<>();
+        java.beans.PropertyDescriptor[] pds = src.getPropertyDescriptors();
+        for (java.beans.PropertyDescriptor pd : pds) {
+            Object val = src.getPropertyValue(pd.getName());
+            if (val == null) {
+                ignore.add(pd.getName());
+            }
+        }
+        if (ignoreProperties != null && ignoreProperties.length > 0) {
+            java.util.Collections.addAll(ignore, ignoreProperties);
+        }
+        BeanUtils.copyProperties(source, target, ignore.toArray(new String[0]));
     }
 }

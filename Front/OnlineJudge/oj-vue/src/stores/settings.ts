@@ -24,11 +24,12 @@ export const useSettingsStore = defineStore('settings', {
       }
       return state.themeMode;
     },
-    antdTheme(state) {
+    antdTheme(): { algorithm: typeof theme.darkAlgorithm; token: { colorBgBase: string } } {
+      const mode = this.effectiveTheme as 'light' | 'dark';
       return {
-        algorithm: state.effectiveTheme === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
+        algorithm: mode === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
         token: {
-          colorBgBase: state.effectiveTheme === 'dark' ? '#0f172a' : '#ffffff',
+          colorBgBase: mode === 'dark' ? '#0f172a' : '#ffffff',
         },
       };
     },

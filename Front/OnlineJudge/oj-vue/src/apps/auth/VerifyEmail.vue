@@ -39,12 +39,13 @@
 <script setup lang="ts">
 import { reactive, ref, computed } from 'vue';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
-import type { FormInstance, FormRules } from 'ant-design-vue';
+import type { FormInstance, FormProps } from 'ant-design-vue';
 import { message } from 'ant-design-vue';
 import AuthLayout from './components/AuthLayout.vue';
 import { useAuthStore } from '@/stores/auth';
 import type { VerifyEmailRequest, UserRole } from '@/types';
 import { resolveDefaultRoute } from '@/utils/navigation';
+import { extractErrorMessage } from '@/utils/error';
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -60,7 +61,7 @@ const formState = reactive<VerifyEmailRequest>({
 
 const pendingEmail = computed(() => authStore.pendingVerifyUser?.email);
 
-const rules: FormRules = {
+const rules: FormProps['rules'] = {
   username: [{ required: true, message: '请输入用户名' }],
   code: [{ required: true, message: '请输入验证码' }],
 };
@@ -73,10 +74,7 @@ const handleSubmit = async () => {
     message.success('邮箱验证成功');
     router.replace(resolveDefaultRoute(data.role as UserRole));
   } catch (error: any) {
-    const backendMsg = error?.message || error?.response?.data?.message;
-    if (backendMsg) {
-      message.error(backendMsg);
-    }
+    message.error(extractErrorMessage(error, '验证失败'));
   } finally {
     submitting.value = false;
   }

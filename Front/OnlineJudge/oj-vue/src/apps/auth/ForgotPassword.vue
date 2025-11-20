@@ -62,11 +62,12 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue';
-import type { FormInstance, FormRules } from 'ant-design-vue';
+import type { FormInstance, FormProps } from 'ant-design-vue';
 import { message } from 'ant-design-vue';
 import { useRouter, RouterLink } from 'vue-router';
 import AuthLayout from './components/AuthLayout.vue';
 import { useAuthStore } from '@/stores/auth';
+import { extractErrorMessage } from '@/utils/error';
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -86,17 +87,17 @@ const stepTwo = reactive({
 const stepTwoForm = ref<FormInstance>();
 const resetting = ref(false);
 
-const stepOneRules: FormRules = {
+const stepOneRules: FormProps['rules'] = {
   username: [{ required: true, message: '请输入用户名' }],
 };
 
-const stepTwoRules: FormRules = {
+const stepTwoRules: FormProps['rules'] = {
   code: [{ required: true, message: '请输入验证码' }],
   newPassword: [{ required: true, message: '请输入新密码' }],
   confirmPassword: [
     { required: true, message: '请再次输入新密码' },
     {
-      validator: (_rule, value) => {
+      validator: (_rule: unknown, value: string) => {
         if (value !== stepTwo.newPassword) {
           return Promise.reject('两次输入的密码不一致');
         }
@@ -114,10 +115,7 @@ const handleSendCode = async () => {
     stepTwo.username = stepOne.username;
     currentStep.value = 1;
   } catch (error: any) {
-    const backendMsg = error?.message || error?.response?.data?.message;
-    if (backendMsg) {
-      message.error(backendMsg);
-    }
+    message.error(extractErrorMessage(error, '发送验证码失败'));
   } finally {
     sending.value = false;
   }
@@ -134,10 +132,7 @@ const handleReset = async () => {
     });
     router.replace('/login');
   } catch (error: any) {
-    const backendMsg = error?.message || error?.response?.data?.message;
-    if (backendMsg) {
-      message.error(backendMsg);
-    }
+    message.error(extractErrorMessage(error, '重置密码失败'));
   } finally {
     resetting.value = false;
   }

@@ -39,6 +39,7 @@ public class StudentController {
     public ApiResponse<Page<Student>> list(
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") long size,
+            @Parameter(description = "用户名/姓名/邮箱关键字") @RequestParam(required = false) String keyword,
             @Parameter(description = "按用户名模糊搜索") @RequestParam(required = false) String username,
             @Parameter(description = "按邮箱模糊搜索") @RequestParam(required = false) String email,
             @Parameter(description = "页码") @RequestParam(defaultValue = "1") long page) {
@@ -46,6 +47,13 @@ public class StudentController {
             throw ApiException.unauthorized("未登录或Token失效");
         }
         LambdaQueryWrapper<Student> wrapper = new LambdaQueryWrapper<>();
+        if (StringUtils.hasText(keyword)) {
+            wrapper.and(w -> w.like(Student::getUsername, keyword)
+                    .or()
+                    .like(Student::getName, keyword)
+                    .or()
+                    .like(Student::getEmail, keyword));
+        }
         if (StringUtils.hasText(username)) {
             wrapper.like(Student::getUsername, username);
         }
@@ -110,24 +118,21 @@ public class StudentController {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
-        Student body = new Student();
-        BeanUtils.copyProperties(request, body);
-        body.setId(id);
-        if (StringUtils.hasText(body.getPassword())) {
-            body.setPassword(passwordService.encode(body.getPassword()));
-        } else {
-            // 不修改密码: 读取旧值保持
-            Student old = studentService.getById(id);
-            if (old == null) {
-                throw ApiException.notFound("学生不存在");
-            }
-            body.setPassword(old.getPassword());
+        Student existing = studentService.getById(id);
+        if (existing == null) {
+            throw ApiException.notFound("学生不存在");
         }
-        boolean ok = studentService.updateById(body);
+        if (StringUtils.hasText(request.getPassword())) {
+            existing.setPassword(passwordService.encode(request.getPassword()));
+        }
+        copyNonNullProperties(request, existing, "id", "password");
+        existing.setId(id);
+        boolean ok = studentService.updateById(existing);
         if (!ok) {
             throw ApiException.notFound("学生不存在");
         }
-        return ApiResponse.success("更新成功", body);
+        Student updated = studentService.getById(id);
+        return ApiResponse.success("更新成功", updated);
     }
 
     /**
@@ -146,5 +151,24 @@ public class StudentController {
             throw ApiException.notFound("学生不存在");
         }
         return ApiResponse.success(null);
+    }
+
+    /**
+     * 复制非空字段，避免把空值覆盖数据库已有值
+     */
+    private void copyNonNullProperties(Object source, Object target, String... ignoreProperties) {
+        org.springframework.beans.BeanWrapper src = new org.springframework.beans.BeanWrapperImpl(source);
+        java.util.Set<String> ignore = new java.util.HashSet<>();
+        java.beans.PropertyDescriptor[] pds = src.getPropertyDescriptors();
+        for (java.beans.PropertyDescriptor pd : pds) {
+            Object val = src.getPropertyValue(pd.getName());
+            if (val == null) {
+                ignore.add(pd.getName());
+            }
+        }
+        if (ignoreProperties != null && ignoreProperties.length > 0) {
+            java.util.Collections.addAll(ignore, ignoreProperties);
+        }
+        BeanUtils.copyProperties(source, target, ignore.toArray(new String[0]));
     }
 }

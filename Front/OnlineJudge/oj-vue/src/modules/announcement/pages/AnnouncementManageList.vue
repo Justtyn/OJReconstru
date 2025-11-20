@@ -1,13 +1,21 @@
 <template>
-  <PageContainer title="管理员管理">
+  <PageContainer title="公告管理">
     <a-card>
-      <a-form layout="inline" :model="query" @submit.prevent="loadData">
+      <a-form layout="inline" :model="query">
         <a-form-item label="关键词">
           <a-input
             v-model:value="query.keyword"
             allow-clear
-            placeholder="用户名/姓名/邮箱"
+            placeholder="标题"
             @pressEnter="handleSearch"
+          />
+        </a-form-item>
+        <a-form-item>
+          <a-switch
+            v-model:checked="query.pinnedOnly"
+            checked-children="仅置顶"
+            un-checked-children="全部"
+            @change="handleSearch"
           />
         </a-form-item>
         <a-form-item>
@@ -15,7 +23,7 @@
           <a-button style="margin-left: 8px" @click="resetQuery">重置</a-button>
         </a-form-item>
         <a-form-item style="margin-left:auto;">
-          <a-button type="primary" @click="goCreate">新建管理员</a-button>
+          <a-button type="primary" @click="goCreate">新建公告</a-button>
         </a-form-item>
       </a-form>
     </a-card>
@@ -29,14 +37,24 @@
         :pagination="paginationConfig"
       >
         <template #bodyCell="{ column, record, text }">
-          <template v-if="column.key === 'lastLoginTime'">
+          <template v-if="column.key === 'time'">
             {{ text ? format(new Date(text), 'yyyy-MM-dd HH:mm') : '-' }}
+          </template>
+          <template v-else-if="column.key === 'isPinned'">
+            <a-tag :color="record.isPinned ? 'gold' : 'default'">
+              {{ record.isPinned ? '置顶' : '普通' }}
+            </a-tag>
+          </template>
+          <template v-else-if="column.key === 'isActive'">
+            <a-tag :color="record.isActive ? 'green' : 'red'">
+              {{ record.isActive ? '启用' : '禁用' }}
+            </a-tag>
           </template>
           <template v-else-if="column.key === 'actions'">
             <a-space>
               <a-button type="link" size="small" @click="edit(record)">编辑</a-button>
               <a-divider type="vertical" />
-              <a-button danger type="link" size="small" @click="confirmRemove(record)">删除</a-button>
+              <a-button type="link" danger size="small" @click="confirmRemove(record)">删除</a-button>
             </a-space>
           </template>
         </template>
@@ -51,35 +69,38 @@ import { useRouter } from 'vue-router';
 import { format } from 'date-fns';
 import { message, Modal } from 'ant-design-vue';
 import PageContainer from '@/components/common/PageContainer.vue';
-import { adminUserService } from '@/services/modules/adminUser';
-import type { AdminQuery, AdminUser } from '@/types';
+import { adminAnnouncementService } from '@/services/modules/adminAnnouncement';
+import type { AnnouncementVO, AnnouncementQuery } from '@/types';
 import type { TableColumnType } from 'ant-design-vue';
 import { extractErrorMessage } from '@/utils/error';
 
 const router = useRouter();
 
-const query = reactive<AdminQuery>({ page: 1, size: 10, keyword: '' });
-const list = ref<AdminUser[]>([]);
+const query = reactive<AnnouncementQuery>({ page: 1, size: 10, keyword: '', pinnedOnly: false });
+const list = ref<AnnouncementVO[]>([]);
 const total = ref(0);
 const loading = ref(false);
 
-const columns: TableColumnType<AdminUser>[] = [
-  { title: '用户名', dataIndex: 'username', key: 'username' },
-  { title: '姓名', dataIndex: 'name', key: 'name' },
-  { title: '邮箱', dataIndex: 'email', key: 'email' },
-  { title: '手机号', dataIndex: 'phone', key: 'phone' },
-  { title: '最后登录', dataIndex: 'lastLoginTime', key: 'lastLoginTime' },
+const columns: TableColumnType<AnnouncementVO>[] = [
+  { title: '标题', dataIndex: 'title', key: 'title' },
+  { title: '发布时间', dataIndex: 'time', key: 'time', width: 180 },
+  { title: '置顶', dataIndex: 'isPinned', key: 'isPinned', width: 100 },
+  { title: '状态', dataIndex: 'isActive', key: 'isActive', width: 100 },
   { title: '操作', key: 'actions', width: 160 },
 ];
 
 const loadData = async () => {
   loading.value = true;
   try {
-    const data = await adminUserService.fetchList(query);
+    const data = await adminAnnouncementService.fetchList({
+      ...query,
+      pinnedOnly: query.pinnedOnly || undefined,
+      isPinned: query.pinnedOnly || undefined,
+    });
     list.value = data.records;
     total.value = data.total;
   } catch (error: any) {
-    message.error(extractErrorMessage(error, '获取管理员列表失败'));
+    message.error(extractErrorMessage(error, '获取公告列表失败'));
   } finally {
     loading.value = false;
   }
@@ -92,20 +113,21 @@ const handleSearch = () => {
 
 const resetQuery = () => {
   query.keyword = '';
+  query.pinnedOnly = false;
   handleSearch();
 };
 
 const goCreate = () => {
-  router.push('/admin/users/create');
+  router.push('/admin/announcements/create');
 };
 
-const edit = (record: AdminUser) => {
-  router.push(`/admin/users/${record.id}/edit`);
+const edit = (record: AnnouncementVO) => {
+  router.push(`/admin/announcements/${record.id}/edit`);
 };
 
-const remove = async (record: AdminUser) => {
+const remove = async (record: AnnouncementVO) => {
   try {
-    await adminUserService.remove(record.id);
+    await adminAnnouncementService.remove(record.id);
     message.success('删除成功');
     loadData();
   } catch (error: any) {
@@ -113,10 +135,10 @@ const remove = async (record: AdminUser) => {
   }
 };
 
-const confirmRemove = (record: AdminUser) => {
+const confirmRemove = (record: AnnouncementVO) => {
   Modal.confirm({
-    title: '删除管理员',
-    content: `确认删除管理员「${record.username}」？不可恢复`,
+    title: '删除公告',
+    content: `确认删除公告「${record.title}」？`,
     okText: '确定',
     cancelText: '取消',
     onOk: () => remove(record),
@@ -128,9 +150,9 @@ const paginationConfig = computed(() => ({
   pageSize: query.size,
   total: total.value,
   showTotal: (t: number) => `共 ${t} 条`,
-  onChange: (page: number, pageSize?: number) => {
+  onChange: (page: number, size?: number) => {
     query.page = page;
-    query.size = pageSize ?? query.size;
+    query.size = size ?? query.size;
     loadData();
   },
 }));

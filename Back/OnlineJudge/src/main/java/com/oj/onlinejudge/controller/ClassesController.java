@@ -23,6 +23,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -51,7 +52,8 @@ public class ClassesController {
     public ApiResponse<Page<Classes>> list(
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "页码") @RequestParam(defaultValue = "1") long page,
-            @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") long size) {
+            @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") long size,
+            @Parameter(description = "名称/描述/邀请码关键字") @RequestParam(required = false) String keyword) {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
@@ -59,9 +61,24 @@ public class ClassesController {
         if (isTeacher(current)) {
             LambdaQueryWrapper<Classes> wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(Classes::getCreatorId, current.getUserId());
+            if (StringUtils.hasText(keyword)) {
+                wrapper.and(w -> w.like(Classes::getName, keyword)
+                        .or()
+                        .like(Classes::getDescription, keyword)
+                        .or()
+                        .like(Classes::getCode, keyword));
+            }
             p = classesService.page(new Page<>(page, size), wrapper);
         } else {
-            p = classesService.page(new Page<>(page, size));
+            LambdaQueryWrapper<Classes> wrapper = new LambdaQueryWrapper<>();
+            if (StringUtils.hasText(keyword)) {
+                wrapper.and(w -> w.like(Classes::getName, keyword)
+                        .or()
+                        .like(Classes::getDescription, keyword)
+                        .or()
+                        .like(Classes::getCode, keyword));
+            }
+            p = classesService.page(new Page<>(page, size), wrapper);
         }
         return ApiResponse.success(p);
     }

@@ -16,7 +16,17 @@
           </a>
           <template #overlay>
             <a-menu>
-              <a-menu-item key="profile" @click="goProfile">个人中心</a-menu-item>
+              <a-menu-item v-if="authStore.role === 'student'" key="profile" @click="goProfile">
+                个人中心
+              </a-menu-item>
+              <a-menu-item
+                v-if="authStore.role === 'admin' || authStore.role === 'teacher'"
+                key="admin"
+                @click="goAdmin"
+              >
+                管理系统
+              </a-menu-item>
+              <a-menu-divider />
               <a-menu-divider />
               <a-menu-item key="logout" danger @click="handleLogout">退出登录</a-menu-item>
             </a-menu>
@@ -45,6 +55,10 @@ const goHome = () => {
 
 const goProfile = () => {
   router.push('/profile');
+};
+
+const goAdmin = () => {
+  router.push('/admin');
 };
 
 const handleLogout = async () => {

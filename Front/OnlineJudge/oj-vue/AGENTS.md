@@ -61,6 +61,12 @@ Run commands from the repository root. Use `.env` files for API hosts instead of
     - Highlight primary actions visually; keep secondary actions distinct but less prominent.
     - Design proper empty states, skeleton/loading states, and error states rather than leaving plain text placeholders.
 
+### 全局深浅色与视觉规范（本仓库追加要求）
+- 所有页面与组件必须适配 light/dark 模式：容器背景、列表、卡片、侧边栏、页头页脚都要引用主题变量（`--body-bg`、`--card-bg`、`--text-color`），避免白底或低对比度。
+- 提升分区对比度：在浅色模式下增加阴影/边框/底色区分各模块；深色模式使用半透明描边或更深的卡片色值，保证层级清晰。
+- 列表/卡片/表单区域默认用卡片底色并加圆角与阴影，不要让内容直接贴在背景上。
+- 交互控件（开关、按钮、搜索框）需与背景形成明显对比，切换筛选类开关应立即触发数据刷新。
+
 ## Testing Guidelines
 
 - Automated tests are not yet configured. When adding tests, place them adjacent to components (`ComponentName.spec.ts`) and document the runner in this file.

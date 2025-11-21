@@ -50,23 +50,16 @@ export interface ProblemCase {
   problemId: string;
   inputData: string;
   outputData: string;
-  score?: number;
   isSample?: boolean;
-  isActive?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
 }
 
 export interface ProblemCaseQuery extends PageQuery {
   problemId: string;
   isSample?: boolean;
-  isActive?: boolean;
 }
 
 export interface ProblemCaseUpsertRequest {
   inputData: string;
   outputData: string;
-  score?: number;
   isSample?: boolean;
-  isActive?: boolean;
 }

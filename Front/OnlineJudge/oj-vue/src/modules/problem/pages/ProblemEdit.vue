@@ -33,36 +33,36 @@
         <a-row :gutter="16">
           <a-col :xs="24" :md="12">
             <a-form-item label="题目描述" name="description">
-              <a-textarea v-model:value="formState.description" :rows="5" placeholder="描述题意与约束" />
+              <a-textarea v-model:value="formState.description" :rows="2" placeholder="描述题意与约束" />
             </a-form-item>
           </a-col>
           <a-col :xs="24" :md="12">
             <a-form-item label="输入描述">
-              <a-textarea v-model:value="formState.descriptionInput" :rows="5" placeholder="说明输入格式" />
+              <a-textarea v-model:value="formState.descriptionInput" :rows="2" placeholder="说明输入格式" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :xs="24" :md="12">
             <a-form-item label="输出描述">
-              <a-textarea v-model:value="formState.descriptionOutput" :rows="5" placeholder="说明输出格式" />
+              <a-textarea v-model:value="formState.descriptionOutput" :rows="2" placeholder="说明输出格式" />
             </a-form-item>
           </a-col>
           <a-col :xs="24" :md="12">
             <a-form-item label="提示">
-              <a-textarea v-model:value="formState.hint" :rows="5" placeholder="可选的补充提示" />
+              <a-textarea v-model:value="formState.hint" :rows="2" placeholder="可选的补充提示" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :xs="24" :md="12">
             <a-form-item label="样例输入">
-              <a-textarea v-model:value="formState.sampleInput" :rows="4" placeholder="样例输入" />
+              <a-textarea v-model:value="formState.sampleInput" :rows="2" placeholder="样例输入" />
             </a-form-item>
           </a-col>
           <a-col :xs="24" :md="12">
             <a-form-item label="样例输出">
-              <a-textarea v-model:value="formState.sampleOutput" :rows="4" placeholder="样例输出" />
+              <a-textarea v-model:value="formState.sampleOutput" :rows="2" placeholder="样例输出" />
             </a-form-item>
           </a-col>
         </a-row>
@@ -106,12 +106,6 @@
           <template v-if="column.key === 'isSample'">
             <a-tag :color="record.isSample ? 'blue' : 'default'">{{ record.isSample ? '样例' : '评测' }}</a-tag>
           </template>
-          <template v-else-if="column.key === 'isActive'">
-            <a-badge :status="record.isActive ? 'success' : 'error'" :text="record.isActive ? '启用' : '禁用'" />
-          </template>
-          <template v-else-if="column.key === 'updatedAt'">
-            {{ text ? format(new Date(text), 'yyyy-MM-dd HH:mm:ss') : '-' }}
-          </template>
           <template v-else-if="column.key === 'inputData' || column.key === 'outputData'">
             <a-tooltip :title="text">
               <span class="ellipsis">{{ text }}</span>
@@ -149,7 +143,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { format } from 'date-fns';
 import { message, Modal } from 'ant-design-vue';
 import type { FormInstance, FormProps, TableColumnType } from 'ant-design-vue';
 import PageContainer from '@/components/common/PageContainer.vue';
@@ -248,20 +241,15 @@ const caseFormRef = ref<InstanceType<typeof ProblemCaseForm>>();
 const caseFormState = ref<ProblemCaseUpsertRequest>({
   inputData: '',
   outputData: '',
-  score: 0,
   isSample: false,
-  isActive: true,
 });
 const caseSubmitting = ref(false);
 const editingCaseId = ref<string | null>(null);
 
 const caseColumns: TableColumnType<ProblemCase>[] = [
   { title: '类型', dataIndex: 'isSample', key: 'isSample', width: 100 },
-  { title: '分值', dataIndex: 'score', key: 'score', width: 80 },
   { title: '输入', dataIndex: 'inputData', key: 'inputData' },
   { title: '输出', dataIndex: 'outputData', key: 'outputData' },
-  { title: '状态', dataIndex: 'isActive', key: 'isActive', width: 100 },
-  { title: '更新时间', dataIndex: 'updatedAt', key: 'updatedAt', width: 180 },
   { title: '操作', key: 'actions', width: 150 },
 ];
 
@@ -297,13 +285,11 @@ const openCreateCase = () => {
     return;
   }
   editingCaseId.value = null;
-    caseFormState.value = {
-      inputData: '',
-      outputData: '',
-      score: 0,
-      isSample: false,
-      isActive: true,
-    };
+  caseFormState.value = {
+    inputData: '',
+    outputData: '',
+    isSample: false,
+  };
   caseDrawerVisible.value = true;
 };
 
@@ -315,9 +301,7 @@ const openEditCase = async (record: ProblemCase) => {
     caseFormState.value = {
       inputData: (data as any).inputData ?? (data as any).input ?? '',
       outputData: (data as any).outputData ?? (data as any).output ?? '',
-      score: data.score ?? 0,
       isSample: data.isSample ?? false,
-      isActive: data.isActive ?? true,
     };
   } catch (error: any) {
     message.error(extractErrorMessage(error, '获取用例详情失败'));

@@ -115,6 +115,19 @@ public class ProblemAdminController {
         return ApiResponse.success("创建成功", testcase);
     }
 
+    @Operation(summary = "题库-测试用例详情")
+    @GetMapping("/problem-testcases/{testcaseId}")
+    public ApiResponse<ProblemTestcase> getTestcase(
+            @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
+            @Parameter(description = "测试用例ID") @PathVariable Long testcaseId) {
+        ensureProblemManager(current);
+        ProblemTestcase testcase = problemTestcaseService.getById(testcaseId);
+        if (testcase == null) {
+            throw ApiException.notFound("测试用例不存在");
+        }
+        return ApiResponse.success(testcase);
+    }
+
     @Operation(summary = "题库-更新测试用例")
     @PutMapping("/problem-testcases/{testcaseId}")
     public ApiResponse<ProblemTestcase> updateTestcase(

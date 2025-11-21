@@ -34,7 +34,15 @@ import { computed, ref, h } from 'vue';
 import { useRouter, useRoute, RouterView } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import type { MenuProps } from 'ant-design-vue';
-import { DashboardOutlined, TeamOutlined, UserOutlined, SolutionOutlined, NotificationOutlined } from '@ant-design/icons-vue';
+import {
+  DashboardOutlined,
+  TeamOutlined,
+  UserOutlined,
+  SolutionOutlined,
+  NotificationOutlined,
+  AuditOutlined,
+  CodeOutlined,
+} from '@ant-design/icons-vue';
 import ThemeSwitcher from '@/components/common/ThemeSwitcher.vue';
 
 const router = useRouter();
@@ -80,6 +88,18 @@ const rawMenuItems: MenuItem[] = [
     label: '公告管理',
     roles: ['admin'],
   },
+  {
+    key: '/admin/login-logs',
+    icon: () => h(AuditOutlined),
+    label: '登录日志',
+    roles: ['admin'],
+  },
+  {
+    key: '/admin/problems',
+    icon: () => h(CodeOutlined),
+    label: '题目管理',
+    roles: ['admin', 'teacher'],
+  },
 ];
 
 const menuItems = computed<MenuProps['items']>(() => {
@@ -98,6 +118,8 @@ const resolveSelectedKey = () => {
   if (route.path.startsWith('/admin/teachers')) return '/admin/teachers';
   if (route.path.startsWith('/admin/students')) return '/admin/students';
   if (route.path.startsWith('/admin/announcements')) return '/admin/announcements';
+  if (route.path.startsWith('/admin/login-logs')) return '/admin/login-logs';
+  if (route.path.startsWith('/admin/problems')) return '/admin/problems';
   return '/admin/overview';
 };
 

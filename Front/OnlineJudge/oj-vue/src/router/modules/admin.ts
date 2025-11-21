@@ -85,6 +85,30 @@ export const adminRoutes: RouteRecordRaw[] = [
         component: () => import('@/modules/announcement/pages/AnnouncementManageEdit.vue'),
         meta: { title: '编辑公告', requiresAuth: true, roles: ['admin'] },
       },
+      {
+        path: 'login-logs',
+        name: 'LoginLogList',
+        component: () => import('@/modules/log/pages/LoginLogList.vue'),
+        meta: { title: '登录日志', requiresAuth: true, roles: ['admin'] },
+      },
+      {
+        path: 'problems',
+        name: 'ProblemList',
+        component: () => import('@/modules/problem/pages/ProblemList.vue'),
+        meta: { title: '题目管理', requiresAuth: true, roles: ['admin', 'teacher'] },
+      },
+      {
+        path: 'problems/create',
+        name: 'ProblemCreate',
+        component: () => import('@/modules/problem/pages/ProblemEdit.vue'),
+        meta: { title: '新建题目', requiresAuth: true, roles: ['admin', 'teacher'] },
+      },
+      {
+        path: 'problems/:id/edit',
+        name: 'ProblemEdit',
+        component: () => import('@/modules/problem/pages/ProblemEdit.vue'),
+        meta: { title: '编辑题目', requiresAuth: true, roles: ['admin', 'teacher'] },
+      },
     ],
   },
 ];

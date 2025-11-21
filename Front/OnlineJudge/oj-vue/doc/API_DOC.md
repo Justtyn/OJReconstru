@@ -331,6 +331,7 @@ GET /api/students
 |名称|位置|类型|必选|说明|
 |---|---|---|---|---|
 |size|query|integer(int64)| 否 |每页条数|
+|keyword|query|string| 否 |用户名/姓名/邮箱关键字|
 |username|query|string| 否 |按用户名模糊搜索|
 |email|query|string| 否 |按邮箱模糊搜索|
 |page|query|integer(int64)| 否 |页码|
@@ -924,6 +925,7 @@ GET /api/homeworks
 |page|query|integer(int64)| 否 |none|
 |size|query|integer(int64)| 否 |none|
 |classId|query|integer(int64)| 否 |按班级过滤|
+|keyword|query|string| 否 |标题/描述关键字|
 |activeOnly|query|boolean| 否 |是否仅返回启用作业|
 
 > 返回示例
@@ -1472,6 +1474,7 @@ GET /api/classes
 |---|---|---|---|---|
 |page|query|integer(int64)| 否 |页码|
 |size|query|integer(int64)| 否 |每页条数|
+|keyword|query|string| 否 |名称/描述/邀请码关键字|
 
 > 返回示例
 
@@ -2035,6 +2038,35 @@ DELETE /api/admin/problem-testcases/{testcaseId}
 |状态码|状态码含义|说明|数据模型|
 |---|---|---|---|
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseVoid](#schemaapiresponsevoid)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+<a id="opIdgetTestcase"></a>
+
+## GET 题库-测试用例详情
+
+GET /api/admin/problem-testcases/{testcaseId}
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|testcaseId|path|integer(int64)| 是 |测试用例ID|
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":{"id":0,"problemId":0,"inputData":"string","outputData":"string"}}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseProblemTestcase](#schemaapiresponseproblemtestcase)|
 |400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
 |409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
 |500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|

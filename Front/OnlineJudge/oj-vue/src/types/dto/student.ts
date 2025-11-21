@@ -28,7 +28,8 @@ export interface Student {
 }
 
 export type StudentQuery = PageQuery & {
-  keyword?: string;
+  username?: string;
+  email?: string;
 };
 
 export interface StudentUpsertRequest {

@@ -2,13 +2,11 @@
   <PageContainer title="学生管理">
     <a-card>
       <a-form layout="inline" :model="query">
-        <a-form-item label="关键词">
-          <a-input
-            v-model:value="query.keyword"
-            allow-clear
-            placeholder="用户名/姓名/邮箱"
-            @pressEnter="handleSearch"
-          />
+        <a-form-item label="用户名">
+          <a-input v-model:value="query.username" allow-clear placeholder="按用户名搜索" @pressEnter="handleSearch" />
+        </a-form-item>
+        <a-form-item label="邮箱">
+          <a-input v-model:value="query.email" allow-clear placeholder="按邮箱搜索" @pressEnter="handleSearch" />
         </a-form-item>
         <a-form-item>
           <a-button type="primary" @click="handleSearch">查询</a-button>
@@ -67,7 +65,7 @@ import { extractErrorMessage } from '@/utils/error';
 const router = useRouter();
 const authStore = useAuthStore();
 
-const query = reactive<StudentQuery>({ page: 1, size: 10, keyword: '' });
+const query = reactive<StudentQuery>({ page: 1, size: 10, username: '', email: '' });
 const list = ref<Student[]>([]);
 const total = ref(0);
 const loading = ref(false);
@@ -105,7 +103,8 @@ const handleSearch = () => {
 };
 
 const resetQuery = () => {
-  query.keyword = '';
+  query.username = '';
+  query.email = '';
   handleSearch();
 };
 

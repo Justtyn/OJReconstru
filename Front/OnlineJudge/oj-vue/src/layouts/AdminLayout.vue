@@ -42,6 +42,7 @@ import {
   NotificationOutlined,
   AuditOutlined,
   CodeOutlined,
+  BookOutlined,
 } from '@ant-design/icons-vue';
 import ThemeSwitcher from '@/components/common/ThemeSwitcher.vue';
 
@@ -83,6 +84,12 @@ const rawMenuItems: MenuItem[] = [
     roles: ['admin'],
   },
   {
+    key: '/admin/classes',
+    icon: () => h(BookOutlined),
+    label: '班级与作业',
+    roles: ['admin', 'teacher'],
+  },
+  {
     key: '/admin/announcements',
     icon: () => h(NotificationOutlined),
     label: '公告管理',
@@ -117,6 +124,7 @@ const resolveSelectedKey = () => {
   if (route.path.startsWith('/admin/users')) return '/admin/users';
   if (route.path.startsWith('/admin/teachers')) return '/admin/teachers';
   if (route.path.startsWith('/admin/students')) return '/admin/students';
+  if (route.path.startsWith('/admin/classes')) return '/admin/classes';
   if (route.path.startsWith('/admin/announcements')) return '/admin/announcements';
   if (route.path.startsWith('/admin/login-logs')) return '/admin/login-logs';
   if (route.path.startsWith('/admin/problems')) return '/admin/problems';

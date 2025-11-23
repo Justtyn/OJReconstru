@@ -106,7 +106,10 @@ const difficultyColor = (val?: ProblemDifficulty) => {
 const loadData = async () => {
   loading.value = true;
   try {
-    const data = await problemService.fetchList(query);
+    const params = { ...query };
+    if (params.isActive === undefined) delete params.isActive;
+    if (params.difficulty === undefined) delete params.difficulty;
+    const data = await problemService.fetchList(params);
     list.value = data.records;
     total.value = data.total;
   } catch (error: any) {

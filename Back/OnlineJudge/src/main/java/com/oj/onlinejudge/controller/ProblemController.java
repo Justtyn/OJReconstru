@@ -26,9 +26,10 @@ public class ProblemController {
 
     private final ProblemService problemService;
 
-    @Operation(summary = "题库-公开列表", description = "支持按名称关键字、难度、挑战标签筛选，只返回启用题目")
+    @Operation(summary = "题库-公开列表", description = "支持按名称关键字、难度、挑战标签筛选，教师/管理员自动可见全部题目")
     @GetMapping
     public ApiResponse<Page<Problem>> list(
+            @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Parameter(description = "页码，从1开始") @RequestParam(defaultValue = "1") long page,
             @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") long size,
             @Parameter(description = "按题目名称模糊搜索") @RequestParam(required = false) String keyword,
@@ -45,7 +46,8 @@ public class ProblemController {
         if (StringUtils.hasText(dailyChallenge)) {
             wrapper.eq(Problem::getDailyChallenge, dailyChallenge);
         }
-        if (activeOnly) {
+        boolean filterInactive = activeOnly && !isProblemManager(current);
+        if (filterInactive) {
             wrapper.eq(Problem::getIsActive, true);
         }
         wrapper.orderByDesc(Problem::getCreateTime);

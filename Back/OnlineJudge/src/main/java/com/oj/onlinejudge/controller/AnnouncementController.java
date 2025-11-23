@@ -33,10 +33,14 @@ public class AnnouncementController {
             @RequestParam(defaultValue = "1") long page,
             @RequestParam(defaultValue = "10") long size,
             @Parameter(description = "是否只看置顶") @RequestParam(required = false) Boolean pinnedOnly,
-            @Parameter(description = "标题关键字") @RequestParam(required = false) String keyword) {
+            @Parameter(description = "标题关键字") @RequestParam(required = false) String keyword,
+            @Parameter(description = "是否包含未启用公告，管理员默认包含") @RequestParam(defaultValue = "false") boolean includeInactive) {
         ensureLoggedIn(current);
         LambdaQueryWrapper<Announcement> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Announcement::getIsActive, true);
+        boolean shouldIncludeInactive = includeInactive || isAdmin(current);
+        if (!shouldIncludeInactive) {
+            wrapper.eq(Announcement::getIsActive, true);
+        }
         if (Boolean.TRUE.equals(pinnedOnly)) {
             wrapper.eq(Announcement::getIsPinned, true);
         }

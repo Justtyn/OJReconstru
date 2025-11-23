@@ -1,29 +1,25 @@
 <template>
-  <PageContainer title="公告管理">
+  <PageContainer :title="pageTitle">
+    <template #extra>
+      <a-space>
+        <a-button @click="goBack">返回班级</a-button>
+        <a-button type="primary" @click="goCreate">新建作业</a-button>
+      </a-space>
+    </template>
+
     <a-card>
       <a-form layout="inline" :model="query">
         <a-form-item label="关键词">
           <a-input
             v-model:value="query.keyword"
             allow-clear
-            placeholder="标题"
+            placeholder="标题/描述"
             @pressEnter="handleSearch"
-          />
-        </a-form-item>
-        <a-form-item>
-          <a-switch
-            v-model:checked="query.pinnedOnly"
-            checked-children="仅置顶"
-            un-checked-children="全部"
-            @change="handleSearch"
           />
         </a-form-item>
         <a-form-item>
           <a-button type="primary" @click="handleSearch">查询</a-button>
           <a-button style="margin-left: 8px" @click="resetQuery">重置</a-button>
-        </a-form-item>
-        <a-form-item style="margin-left:auto;">
-          <a-button type="primary" @click="goCreate">新建公告</a-button>
         </a-form-item>
       </a-form>
     </a-card>
@@ -37,24 +33,19 @@
         :pagination="paginationConfig"
       >
         <template #bodyCell="{ column, record, text }">
-          <template v-if="column.key === 'time'">
+          <template v-if="column.key === 'startTime' || column.key === 'endTime'">
             {{ text ? format(new Date(text), 'yyyy-MM-dd HH:mm') : '-' }}
           </template>
-          <template v-else-if="column.key === 'isPinned'">
-            <a-tag :color="record.isPinned ? 'gold' : 'default'">
-              {{ record.isPinned ? '置顶' : '普通' }}
-            </a-tag>
-          </template>
           <template v-else-if="column.key === 'isActive'">
-            <a-tag :color="record.isActive ? 'green' : 'red'">
-              {{ record.isActive ? '启用' : '禁用' }}
+            <a-tag :color="record.isActive ? 'green' : 'default'">
+              {{ record.isActive ? '启用' : '停用' }}
             </a-tag>
           </template>
           <template v-else-if="column.key === 'actions'">
             <a-space>
               <a-button type="link" size="small" @click="edit(record)">编辑</a-button>
               <a-divider type="vertical" />
-              <a-button type="link" danger size="small" @click="confirmRemove(record)">删除</a-button>
+              <a-button danger type="link" size="small" @click="confirmRemove(record)">删除</a-button>
             </a-space>
           </template>
         </template>
@@ -64,44 +55,55 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import { format } from 'date-fns';
+import { computed, onMounted, reactive, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { message, Modal } from 'ant-design-vue';
+import { format } from 'date-fns';
 import PageContainer from '@/components/common/PageContainer.vue';
-import { adminAnnouncementService } from '@/services/modules/adminAnnouncement';
-import type { AnnouncementVO, AnnouncementQuery } from '@/types';
+import { classesService } from '@/services/modules/classes';
+import { homeworkService } from '@/services/modules/homework';
+import type { Classes, Homework, HomeworkQuery } from '@/types';
 import type { TableColumnType } from 'ant-design-vue';
 import { extractErrorMessage } from '@/utils/error';
 
 const router = useRouter();
+const route = useRoute();
+const classId = computed(() => (route.params.classId as string) || '');
 
-const query = reactive<AnnouncementQuery>({ page: 1, size: 10, keyword: '', pinnedOnly: false });
-const list = ref<AnnouncementVO[]>([]);
+const classInfo = ref<Classes>();
+const query = reactive<HomeworkQuery>({ page: 1, size: 10, classId: classId.value, keyword: '' });
+const list = ref<Homework[]>([]);
 const total = ref(0);
 const loading = ref(false);
 
-const columns: TableColumnType<AnnouncementVO>[] = [
-  { title: '标题', dataIndex: 'title', key: 'title' },
-  { title: '发布时间', dataIndex: 'time', key: 'time', width: 180 },
-  { title: '置顶', dataIndex: 'isPinned', key: 'isPinned', width: 100 },
+const pageTitle = computed(() => (classInfo.value ? `${classInfo.value.name}的作业` : '作业管理'));
+
+const columns: TableColumnType<Homework>[] = [
+  { title: '标题', dataIndex: 'title', key: 'title', width: 220 },
+  { title: '开始时间', dataIndex: 'startTime', key: 'startTime', width: 180 },
+  { title: '结束时间', dataIndex: 'endTime', key: 'endTime', width: 180 },
   { title: '状态', dataIndex: 'isActive', key: 'isActive', width: 100 },
+  { title: '描述', dataIndex: 'description', key: 'description' },
   { title: '操作', key: 'actions', width: 160 },
 ];
+
+const loadClass = async () => {
+  try {
+    const data = await classesService.fetchDetail(classId.value);
+    classInfo.value = data;
+  } catch (error: any) {
+    message.error(extractErrorMessage(error, '获取班级信息失败'));
+  }
+};
 
 const loadData = async () => {
   loading.value = true;
   try {
-    const params: AnnouncementQuery = {
-      ...query,
-      pinnedOnly: query.pinnedOnly || undefined,
-      isPinned: query.pinnedOnly || undefined,
-    };
-    const data = await adminAnnouncementService.fetchList(params);
+    const data = await homeworkService.fetchList({ ...query, activeOnly: false });
     list.value = data.records;
     total.value = data.total;
   } catch (error: any) {
-    message.error(extractErrorMessage(error, '获取公告列表失败'));
+    message.error(extractErrorMessage(error, '获取作业列表失败'));
   } finally {
     loading.value = false;
   }
@@ -114,21 +116,20 @@ const handleSearch = () => {
 
 const resetQuery = () => {
   query.keyword = '';
-  query.pinnedOnly = false;
   handleSearch();
 };
 
 const goCreate = () => {
-  router.push('/admin/announcements/create');
+  router.push(`/admin/classes/${classId.value}/homeworks/create`);
 };
 
-const edit = (record: AnnouncementVO) => {
-  router.push(`/admin/announcements/${record.id}/edit`);
+const edit = (record: Homework) => {
+  router.push(`/admin/classes/${classId.value}/homeworks/${record.id}/edit`);
 };
 
-const remove = async (record: AnnouncementVO) => {
+const remove = async (record: Homework) => {
   try {
-    await adminAnnouncementService.remove(record.id);
+    await homeworkService.remove(record.id);
     message.success('删除成功');
     loadData();
   } catch (error: any) {
@@ -136,14 +137,18 @@ const remove = async (record: AnnouncementVO) => {
   }
 };
 
-const confirmRemove = (record: AnnouncementVO) => {
+const confirmRemove = (record: Homework) => {
   Modal.confirm({
-    title: '删除公告',
-    content: `确认删除公告「${record.title}」？`,
+    title: '删除作业',
+    content: `确认删除作业「${record.title}」？`,
     okText: '确定',
     cancelText: '取消',
     onOk: () => remove(record),
   });
+};
+
+const goBack = () => {
+  router.push('/admin/classes');
 };
 
 const paginationConfig = computed(() => ({
@@ -158,7 +163,10 @@ const paginationConfig = computed(() => ({
   },
 }));
 
-loadData();
+onMounted(() => {
+  loadClass();
+  loadData();
+});
 </script>
 
 <style scoped lang="less">

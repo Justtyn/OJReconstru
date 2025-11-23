@@ -50,6 +50,42 @@ export const adminRoutes: RouteRecordRaw[] = [
         meta: { title: '编辑教师', requiresAuth: true, roles: ['admin', 'teacher'] },
       },
       {
+        path: 'classes',
+        name: 'ClassList',
+        component: () => import('@/modules/class/pages/ClassList.vue'),
+        meta: { title: '班级管理', requiresAuth: true, roles: ['admin', 'teacher'] },
+      },
+      {
+        path: 'classes/create',
+        name: 'ClassCreate',
+        component: () => import('@/modules/class/pages/ClassEdit.vue'),
+        meta: { title: '新建班级', requiresAuth: true, roles: ['admin', 'teacher'] },
+      },
+      {
+        path: 'classes/:id/edit',
+        name: 'ClassEdit',
+        component: () => import('@/modules/class/pages/ClassEdit.vue'),
+        meta: { title: '编辑班级', requiresAuth: true, roles: ['admin', 'teacher'] },
+      },
+      {
+        path: 'classes/:classId/homeworks',
+        name: 'HomeworkList',
+        component: () => import('@/modules/homework/pages/HomeworkList.vue'),
+        meta: { title: '作业管理', requiresAuth: true, roles: ['admin', 'teacher'] },
+      },
+      {
+        path: 'classes/:classId/homeworks/create',
+        name: 'HomeworkCreate',
+        component: () => import('@/modules/homework/pages/HomeworkEdit.vue'),
+        meta: { title: '新建作业', requiresAuth: true, roles: ['admin', 'teacher'] },
+      },
+      {
+        path: 'classes/:classId/homeworks/:id/edit',
+        name: 'HomeworkEdit',
+        component: () => import('@/modules/homework/pages/HomeworkEdit.vue'),
+        meta: { title: '编辑作业', requiresAuth: true, roles: ['admin', 'teacher'] },
+      },
+      {
         path: 'students',
         name: 'StudentList',
         component: () => import('@/modules/student/pages/StudentList.vue'),

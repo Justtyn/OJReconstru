@@ -62,7 +62,8 @@ public class DiscussionController {
         if (userId != null) {
             wrapper.eq(Discussion::getUserId, userId);
         }
-        if (!(includeInactive && isAdmin(current))) {
+        boolean includeInactiveAll = includeInactive || isAdmin(current);
+        if (!includeInactiveAll) {
             wrapper.eq(Discussion::getIsActive, true);
         }
         wrapper.orderByDesc(Discussion::getUpdateTime)

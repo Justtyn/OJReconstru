@@ -68,7 +68,8 @@ public class HomeworkController {
                     .or()
                     .like(Homework::getDescription, keyword));
         }
-        if (activeOnly || isStudent(current)) {
+        boolean filterInactive = isStudent(current) || (activeOnly && !(isTeacher(current) || isAdmin(current)));
+        if (filterInactive) {
             wrapper.eq(Homework::getIsActive, true);
         }
         wrapper.orderByDesc(Homework::getStartTime)

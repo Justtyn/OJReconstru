@@ -47,7 +47,8 @@ public class SolutionController {
             @Parameter(description = "作者学生ID过滤") @RequestParam(required = false) Long authorId,
             @Parameter(description = "是否包含未启用题解，仅管理员可用") @RequestParam(defaultValue = "false") boolean includeInactive) {
         ensureViewRole(current);
-        Page<Solution> result = querySolutions(problemId, authorId, includeInactive && isAdmin(current), page, size);
+        boolean includeInactiveAll = isAdmin(current) || (includeInactive && isAdmin(current));
+        Page<Solution> result = querySolutions(problemId, authorId, includeInactiveAll, page, size);
         return ApiResponse.success(result);
     }
 
@@ -60,7 +61,8 @@ public class SolutionController {
             @RequestParam(defaultValue = "10") long size) {
         ensureViewRole(current);
         ensureProblemExists(problemId);
-        Page<Solution> result = querySolutions(problemId, null, false, page, size);
+        boolean includeInactiveAll = isAdmin(current);
+        Page<Solution> result = querySolutions(problemId, null, includeInactiveAll, page, size);
         return ApiResponse.success(result);
     }
 

@@ -27,7 +27,6 @@
                 管理系统
               </a-menu-item>
               <a-menu-divider />
-              <a-menu-divider />
               <a-menu-item key="logout" danger @click="handleLogout">退出登录</a-menu-item>
             </a-menu>
           </template>
@@ -74,7 +73,7 @@ const handleLogout = async () => {
   justify-content: space-between;
   background: var(--card-bg);
   color: var(--text-color);
-  padding: 0 32px;
+  padding: 0 40px;
   height: 64px;
   border-bottom: 1px solid rgba(15, 23, 42, 0.08);
   box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
@@ -103,7 +102,8 @@ const handleLogout = async () => {
 .client-layout__actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
+  padding-right: 12px;
 }
 
 .client-layout__content {

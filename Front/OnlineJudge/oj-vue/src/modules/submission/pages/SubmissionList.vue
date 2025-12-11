@@ -18,7 +18,7 @@
         </a-form-item>
         <a-form-item label="学生">
           <a-select
-            v-model:value="query.userId"
+            v-model:value="query.studentId"
             show-search
             allow-clear
             :filter-option="false"
@@ -38,7 +38,7 @@
           </a-select>
         </a-form-item>
         <a-form-item label="状态">
-          <a-select v-model:value="query.overallStatusId" allow-clear placeholder="全部" style="width: 160px">
+          <a-select v-model:value="query.statusId" allow-clear placeholder="全部" style="width: 160px">
             <a-select-option :value="3">通过</a-select-option>
             <a-select-option :value="5">错误</a-select-option>
             <a-select-option :value="4">编译错误</a-select-option>
@@ -48,13 +48,10 @@
         <a-form-item>
           <a-button type="primary" @click="handleSearch">查询</a-button>
           <a-button style="margin-left: 8px" @click="resetQuery">重置</a-button>
+          <a-button type="primary" ghost style="margin-left: 8px" @click="openCreateModal">新增提交</a-button>
         </a-form-item>
       </a-form>
     </a-card>
-
-    <div class="actions-row">
-      <a-button type="primary" @click="openCreateModal">新增提交</a-button>
-    </div>
 
     <a-card class="mt-16">
       <a-table
@@ -442,9 +439,9 @@ const handleCreate = async () => {
 
 const resetQuery = () => {
   query.problemId = undefined;
-  query.userId = undefined;
+  query.studentId = undefined;
   query.languageId = undefined;
-  query.overallStatusId = undefined;
+  query.statusId = undefined;
   handleSearch();
 };
 

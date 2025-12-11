@@ -46,7 +46,6 @@ export interface TestcaseResult {
 export interface SubmissionQuery extends PageQuery {
   problemId?: string | number;
   homeworkId?: string | number | null;
-  userId?: string | number;
-  languageId?: number;
-  overallStatusId?: number;
+  studentId?: string | number;
+  statusId?: number;
 }

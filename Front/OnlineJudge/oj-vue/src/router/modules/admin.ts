@@ -163,6 +163,24 @@ export const adminRoutes: RouteRecordRaw[] = [
         component: () => import('@/modules/solution/pages/SolutionEdit.vue'),
         meta: { title: '编辑题解', requiresAuth: true, roles: ['admin', 'teacher'] },
       },
+      {
+        path: 'discussions',
+        name: 'DiscussionList',
+        component: () => import('@/modules/discussion/pages/DiscussionList.vue'),
+        meta: { title: '讨论管理', requiresAuth: true, roles: ['admin', 'teacher'] },
+      },
+      {
+        path: 'discussions/create',
+        name: 'DiscussionCreate',
+        component: () => import('@/modules/discussion/pages/DiscussionEdit.vue'),
+        meta: { title: '新建讨论', requiresAuth: true, roles: ['admin', 'teacher'] },
+      },
+      {
+        path: 'discussions/:id/edit',
+        name: 'DiscussionEdit',
+        component: () => import('@/modules/discussion/pages/DiscussionEdit.vue'),
+        meta: { title: '编辑讨论', requiresAuth: true, roles: ['admin', 'teacher'] },
+      },
     ],
   },
 ];

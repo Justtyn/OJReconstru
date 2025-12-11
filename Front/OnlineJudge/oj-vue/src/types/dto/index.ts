@@ -7,3 +7,4 @@ export * from './problem';
 export * from './classes';
 export * from './homework';
 export * from './solution';
+export * from './discussion';

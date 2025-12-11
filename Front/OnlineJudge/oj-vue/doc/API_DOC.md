@@ -1974,6 +1974,35 @@ DELETE /api/admin/problems/{id}
 |409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
 |500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
 
+<a id="opIdgetTestcase"></a>
+
+## GET 题库-测试用例详情
+
+GET /api/admin/problem-testcases/{testcaseId}
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|testcaseId|path|integer(int64)| 是 |测试用例ID|
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":{"id":0,"problemId":0,"inputData":"string","outputData":"string"}}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseProblemTestcase](#schemaapiresponseproblemtestcase)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
 <a id="opIdupdateTestcase"></a>
 
 ## PUT 题库-更新测试用例
@@ -2038,35 +2067,6 @@ DELETE /api/admin/problem-testcases/{testcaseId}
 |状态码|状态码含义|说明|数据模型|
 |---|---|---|---|
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseVoid](#schemaapiresponsevoid)|
-|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
-|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
-|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
-
-<a id="opIdgetTestcase"></a>
-
-## GET 题库-测试用例详情
-
-GET /api/admin/problem-testcases/{testcaseId}
-
-### 请求参数
-
-|名称|位置|类型|必选|说明|
-|---|---|---|---|---|
-|testcaseId|path|integer(int64)| 是 |测试用例ID|
-
-> 返回示例
-
-> 200 Response
-
-```
-{"code":0,"message":"string","data":{"id":0,"problemId":0,"inputData":"string","outputData":"string"}}
-```
-
-### 返回结果
-
-|状态码|状态码含义|说明|数据模型|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseProblemTestcase](#schemaapiresponseproblemtestcase)|
 |400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
 |409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
 |500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
@@ -2326,7 +2326,7 @@ GET /api/submissions
 > 200 Response
 
 ```
-{"code":0,"message":"string","data":{"records":[{"id":0,"problemId":0,"homeworkId":0,"languageId":0,"overallStatusId":0,"overallStatusCode":"string","overallStatusName":"string","passedCaseCount":0,"totalCaseCount":0,"score":0,"createdAt":"2019-08-24T14:15:22Z","updatedAt":"2019-08-24T14:15:22Z"}],"total":0,"size":0,"current":0,"orders":[{"column":"string","asc":true}],"optimizeCountSql":true,"searchCount":true,"maxLimit":0,"countId":"string","pages":0}}
+{"code":0,"message":"string","data":{"records":[{"id":0,"studentId":0,"problemId":0,"homeworkId":0,"languageId":0,"overallStatusId":0,"overallStatusCode":"string","overallStatusName":"string","passedCaseCount":0,"totalCaseCount":0,"score":0,"createdAt":"2019-08-24T14:15:22Z","updatedAt":"2019-08-24T14:15:22Z"}],"total":0,"size":0,"current":0,"orders":[{"column":"string","asc":true}],"optimizeCountSql":true,"searchCount":true,"maxLimit":0,"countId":"string","pages":0}}
 ```
 
 ### 返回结果
@@ -2350,6 +2350,7 @@ POST /api/submissions
 {
   "problemId": 0,
   "homeworkId": 0,
+  "studentId": 0,
   "languageId": 0,
   "sourceCode": "string"
 }
@@ -2366,7 +2367,7 @@ POST /api/submissions
 > 200 Response
 
 ```
-{"code":0,"message":"string","data":{"id":0,"problemId":0,"homeworkId":0,"languageId":0,"overallStatusId":0,"overallStatusCode":"string","overallStatusName":"string","passedCaseCount":0,"totalCaseCount":0,"score":0,"createdAt":"2019-08-24T14:15:22Z","updatedAt":"2019-08-24T14:15:22Z","sourceCode":"string","testcaseResults":[{"testcaseId":0,"statusId":0,"statusDescription":"string","stdout":"string","stderr":"string","compileOutput":"string","message":"string","timeUsed":0,"memoryUsed":0}]}}
+{"code":0,"message":"string","data":{"id":0,"studentId":0,"problemId":0,"homeworkId":0,"languageId":0,"overallStatusId":0,"overallStatusCode":"string","overallStatusName":"string","passedCaseCount":0,"totalCaseCount":0,"score":0,"createdAt":"2019-08-24T14:15:22Z","updatedAt":"2019-08-24T14:15:22Z","sourceCode":"string","testcaseResults":[{"testcaseId":0,"statusId":0,"statusDescription":"string","stdout":"string","stderr":"string","compileOutput":"string","message":"string","timeUsed":0,"memoryUsed":0}]}}
 ```
 
 ### 返回结果
@@ -2395,7 +2396,7 @@ GET /api/submissions/{id}
 > 200 Response
 
 ```
-{"code":0,"message":"string","data":{"id":0,"problemId":0,"homeworkId":0,"languageId":0,"overallStatusId":0,"overallStatusCode":"string","overallStatusName":"string","passedCaseCount":0,"totalCaseCount":0,"score":0,"createdAt":"2019-08-24T14:15:22Z","updatedAt":"2019-08-24T14:15:22Z","sourceCode":"string","testcaseResults":[{"testcaseId":0,"statusId":0,"statusDescription":"string","stdout":"string","stderr":"string","compileOutput":"string","message":"string","timeUsed":0,"memoryUsed":0}]}}
+{"code":0,"message":"string","data":{"id":0,"studentId":0,"problemId":0,"homeworkId":0,"languageId":0,"overallStatusId":0,"overallStatusCode":"string","overallStatusName":"string","passedCaseCount":0,"totalCaseCount":0,"score":0,"createdAt":"2019-08-24T14:15:22Z","updatedAt":"2019-08-24T14:15:22Z","sourceCode":"string","testcaseResults":[{"testcaseId":0,"statusId":0,"statusDescription":"string","stdout":"string","stderr":"string","compileOutput":"string","message":"string","timeUsed":0,"memoryUsed":0}]}}
 ```
 
 ### 返回结果
@@ -2842,7 +2843,7 @@ GET /api/auth/users/me
 
 GET /api/problems
 
-支持按名称关键字、难度、挑战标签筛选，只返回启用题目
+支持按名称关键字、难度、挑战标签筛选，教师/管理员自动可见全部题目
 
 ### 请求参数
 
@@ -2921,6 +2922,7 @@ GET /api/announcements
 |size|query|integer(int64)| 否 |none|
 |pinnedOnly|query|boolean| 否 |是否只看置顶|
 |keyword|query|string| 否 |标题关键字|
+|includeInactive|query|boolean| 否 |是否包含未启用公告，管理员默认包含|
 
 > 返回示例
 
@@ -4363,6 +4365,7 @@ GET /api/announcements/{id}
 {
   "problemId": 0,
   "homeworkId": 0,
+  "studentId": 0,
   "languageId": 0,
   "sourceCode": "string"
 }
@@ -4377,6 +4380,7 @@ GET /api/announcements/{id}
 |---|---|---|---|---|---|
 |problemId|integer(int64)|true|none||none|
 |homeworkId|integer(int64)|false|none||none|
+|studentId|integer(int64)|false|none||（仅管理员）代提交的学生ID|
 |languageId|integer(int32)|true|none||none|
 |sourceCode|string|true|none||none|
 
@@ -4393,6 +4397,7 @@ GET /api/announcements/{id}
   "message": "string",
   "data": {
     "id": 0,
+    "studentId": 0,
     "problemId": 0,
     "homeworkId": 0,
     "languageId": 0,
@@ -4441,6 +4446,7 @@ GET /api/announcements/{id}
 ```json
 {
   "id": 0,
+  "studentId": 0,
   "problemId": 0,
   "homeworkId": 0,
   "languageId": 0,
@@ -4477,6 +4483,7 @@ GET /api/announcements/{id}
 |名称|类型|必选|约束|中文名|说明|
 |---|---|---|---|---|---|
 |id|integer(int64)|false|none||none|
+|studentId|integer(int64)|false|none||none|
 |problemId|integer(int64)|false|none||none|
 |homeworkId|integer(int64)|false|none||none|
 |languageId|integer(int32)|false|none||none|
@@ -5059,6 +5066,7 @@ GET /api/announcements/{id}
     "records": [
       {
         "id": 0,
+        "studentId": 0,
         "problemId": 0,
         "homeworkId": 0,
         "languageId": 0,
@@ -5112,6 +5120,7 @@ GET /api/announcements/{id}
   "records": [
     {
       "id": 0,
+      "studentId": 0,
       "problemId": 0,
       "homeworkId": 0,
       "languageId": 0,
@@ -5170,6 +5179,7 @@ GET /api/announcements/{id}
 ```json
 {
   "id": 0,
+  "studentId": 0,
   "problemId": 0,
   "homeworkId": 0,
   "languageId": 0,
@@ -5192,6 +5202,7 @@ GET /api/announcements/{id}
 |名称|类型|必选|约束|中文名|说明|
 |---|---|---|---|---|---|
 |id|integer(int64)|false|none||none|
+|studentId|integer(int64)|false|none||none|
 |problemId|integer(int64)|false|none||none|
 |homeworkId|integer(int64)|false|none||none|
 |languageId|integer(int32)|false|none||none|

@@ -1,5 +1,13 @@
 import http from '@/services/http';
-import type { Classes, ClassesQuery, ClassesRequest, PageResult } from '@/types';
+import type {
+  Classes,
+  ClassesMember,
+  ClassesMemberQuery,
+  ClassesMemberRequest,
+  ClassesQuery,
+  ClassesRequest,
+  PageResult,
+} from '@/types';
 
 export const classesService = {
   fetchList(params: ClassesQuery) {
@@ -16,5 +24,17 @@ export const classesService = {
   },
   remove(id: string | number) {
     return http.delete<void>(`/api/classes/${id}`);
+  },
+};
+
+export const classesMemberService = {
+  fetchList(params: ClassesMemberQuery) {
+    return http.get<PageResult<ClassesMember>>('/api/classes-members', { params });
+  },
+  create(payload: ClassesMemberRequest) {
+    return http.post<ClassesMember>('/api/classes-members', payload);
+  },
+  remove(id: string | number) {
+    return http.delete<void>(`/api/classes-members/${id}`);
   },
 };

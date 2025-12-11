@@ -31,6 +31,20 @@
             </a-form-item>
           </a-col>
         </a-row>
+        <a-form-item label="班级学生">
+          <a-select
+            v-model:value="selectedStudentIds"
+            mode="multiple"
+            show-search
+            allow-clear
+            :filter-option="false"
+            :options="studentOptions"
+            :loading="studentLoading"
+            placeholder="输入用户名/邮箱检索并选择学生"
+            @search="handleStudentSearch"
+            @dropdownVisibleChange="handleStudentDropdown"
+          />
+        </a-form-item>
         <a-form-item>
           <a-space>
             <a-button type="primary" :loading="submitting" @click="handleSubmit">保存</a-button>
@@ -49,8 +63,9 @@ import type { FormInstance, FormProps } from 'ant-design-vue';
 import { message } from 'ant-design-vue';
 import dayjs, { type Dayjs } from 'dayjs';
 import PageContainer from '@/components/common/PageContainer.vue';
-import { classesService } from '@/services/modules/classes';
-import type { ClassesRequest } from '@/types';
+import { classesMemberService, classesService } from '@/services/modules/classes';
+import { studentService } from '@/services/modules/student';
+import type { ClassesMember, ClassesMemberRequest, ClassesRequest, Student } from '@/types';
 import { extractErrorMessage } from '@/utils/error';
 
 const router = useRouter();
@@ -70,6 +85,10 @@ const formState = reactive<ClassesRequest>({
 });
 
 const dateRange = ref<[string | Dayjs, string | Dayjs] | []>([]);
+const selectedStudentIds = ref<string[]>([]);
+const originalMemberMap = reactive<Record<string, string>>({}); // studentId -> memberId
+const studentOptions = ref<{ label: string; value: string }[]>([]);
+const studentLoading = ref(false);
 
 const rules: FormProps['rules'] = {
   name: [{ required: true, message: '请输入班级名称' }],
@@ -92,6 +111,7 @@ const loadDetail = async () => {
         Dayjs | string,
       ];
     }
+    await loadClassStudents(recordId.value);
   } catch (error: any) {
     message.error(extractErrorMessage(error, '获取班级详情失败'));
   }
@@ -111,9 +131,13 @@ const handleSubmit = async () => {
     const payload: ClassesRequest = { ...formState };
     if (isEdit.value) {
       await classesService.update(recordId.value!, payload);
+      await syncClassStudents(recordId.value!);
       message.success('更新成功');
     } else {
-      await classesService.create(payload);
+      const created = await classesService.create(payload);
+      if (created?.id) {
+        await syncClassStudents(created.id);
+      }
       message.success('创建成功');
     }
     goBack();
@@ -129,6 +153,101 @@ const goBack = () => {
 };
 
 loadDetail();
+
+const loadClassStudents = async (classId: string) => {
+  try {
+    const res = await classesMemberService.fetchList({ classId, page: 1, size: 200 });
+    selectedStudentIds.value = [];
+    Object.keys(originalMemberMap).forEach((key) => delete originalMemberMap[key]);
+    for (const m of res.records || []) {
+      if (!m.studentId) continue;
+      selectedStudentIds.value.push(m.studentId);
+      if (m.id) {
+        originalMemberMap[m.studentId] = m.id;
+      }
+    }
+    if (selectedStudentIds.value.length) {
+      await preloadStudents(selectedStudentIds.value);
+    }
+  } catch (error: any) {
+    message.error(extractErrorMessage(error, '加载班级学生失败'));
+  }
+};
+
+const handleStudentSearch = async (keyword: string) => {
+  studentLoading.value = true;
+  try {
+    const data = await studentService.fetchList({ page: 1, size: 50, username: keyword, email: keyword });
+    const options = data.records.map((s: Student) => ({
+      label: `${s.username}${s.name ? `（${s.name}）` : ''}（ID: ${s.id}）`,
+      value: s.id,
+    }));
+    mergeStudentOptions(options);
+  } catch (error: any) {
+    message.error(extractErrorMessage(error, '检索学生失败'));
+  } finally {
+    studentLoading.value = false;
+  }
+};
+
+const handleStudentDropdown = (open: boolean) => {
+  if (open) {
+    handleStudentSearch('');
+  }
+};
+
+const preloadStudents = async (ids: string[]) => {
+  try {
+    const results = await Promise.all(ids.map((id) => studentService.fetchDetail(id)));
+    const options = results.map((s) => ({
+      label: `${s.username}${s.name ? `（${s.name}）` : ''}（ID: ${s.id}）`,
+      value: s.id,
+    }));
+    mergeStudentOptions(options);
+  } catch (error: any) {
+    // 失败则忽略，已有 ID 仍然可提交
+  }
+};
+
+const mergeStudentOptions = (options: { label: string; value: string }[]) => {
+  const map = new Map<string, { label: string; value: string }>();
+  studentOptions.value.forEach((o) => map.set(o.value, o));
+  options.forEach((o) => map.set(o.value, o));
+  selectedStudentIds.value.forEach((id) => {
+    if (!map.has(id)) map.set(id, { label: `学生（ID: ${id}）`, value: id });
+  });
+  studentOptions.value = Array.from(map.values());
+};
+
+const syncClassStudents = async (classId: string) => {
+  const current = new Set(selectedStudentIds.value);
+  const original = new Set(Object.keys(originalMemberMap));
+  const toRemove = Array.from(original).filter((id) => !current.has(id));
+  const toAdd = Array.from(current).filter((id) => !original.has(id));
+
+  if (toRemove.length) {
+    await Promise.all(
+      toRemove
+        .map((id) => originalMemberMap[id])
+        .filter(Boolean)
+        .map((memberId) => classesMemberService.remove(memberId)),
+    );
+  }
+
+  if (toAdd.length) {
+    const payloads: ClassesMemberRequest[] = toAdd.map((id) => ({
+      classId,
+      memberType: 'student',
+      studentId: id,
+    }));
+    await Promise.all(payloads.map((p) => classesMemberService.create(p)));
+  }
+
+  // 更新原始映射
+  if (toAdd.length || toRemove.length) {
+    await loadClassStudents(classId);
+  }
+};
 </script>
 
 <style scoped lang="less">

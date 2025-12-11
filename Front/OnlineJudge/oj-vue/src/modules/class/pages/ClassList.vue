@@ -27,10 +27,38 @@
         :data-source="list"
         :loading="loading"
         :pagination="paginationConfig"
+        :expanded-row-keys="expandedRowKeys"
+        @expand="handleExpand"
       >
+        <template #expandedRowRender="{ record }">
+          <a-table
+            :columns="studentColumns"
+            :data-source="studentListMap[record.id]?.items || []"
+            :loading="studentListMap[record.id]?.loading"
+            row-key="id"
+            :pagination="false"
+            size="small"
+          >
+            <template #bodyCell="{ column, record: student }">
+              <template v-if="column.key === 'isVerified'">
+                <a-tag :color="student.isVerified ? 'green' : 'orange'">
+                  {{ student.isVerified ? '已验证' : '未验证' }}
+                </a-tag>
+              </template>
+              <template v-else-if="column.key === 'actions'">
+                <a-button danger type="link" size="small" @click="confirmRemoveStudent(record.id, student)">
+                  移出班级
+                </a-button>
+              </template>
+            </template>
+          </a-table>
+        </template>
         <template #bodyCell="{ column, record, text }">
           <template v-if="column.key === 'startDate' || column.key === 'endDate'">
             {{ text ? format(new Date(text), 'yyyy-MM-dd') : '-' }}
+          </template>
+          <template v-else-if="column.key === 'creatorName'">
+            {{ record.creatorName || record.creatorId || '-' }}
           </template>
           <template v-else-if="column.key === 'actions'">
             <a-space>
@@ -53,10 +81,11 @@ import { useRouter } from 'vue-router';
 import { format } from 'date-fns';
 import { message, Modal } from 'ant-design-vue';
 import PageContainer from '@/components/common/PageContainer.vue';
-import { classesService } from '@/services/modules/classes';
-import type { Classes, ClassesQuery } from '@/types';
+import { classesService, classesMemberService } from '@/services/modules/classes';
+import type { Classes, ClassesMember, ClassesQuery, Student } from '@/types';
 import type { TableColumnType } from 'ant-design-vue';
 import { extractErrorMessage } from '@/utils/error';
+import { studentService } from '@/services/modules/student';
 
 const router = useRouter();
 
@@ -64,14 +93,29 @@ const query = reactive<ClassesQuery>({ page: 1, size: 10, keyword: '' });
 const list = ref<Classes[]>([]);
 const total = ref(0);
 const loading = ref(false);
+const expandedRowKeys = ref<string[]>([]);
+const studentListMap = reactive<Record<string, { loading: boolean; items: (Student & { memberId: string })[] }>>({});
+const studentCache = reactive<Record<string, Student>>({});
 
 const columns: TableColumnType<Classes>[] = [
-  { title: '名称', dataIndex: 'name', key: 'name', width: 200 },
+  { title: '名称', dataIndex: 'name', key: 'name', width: 260 },
+  { title: '创建者', dataIndex: 'creatorName', key: 'creatorName', width: 160 },
   { title: '邀请码', dataIndex: 'code', key: 'code', width: 140 },
   { title: '开始日期', dataIndex: 'startDate', key: 'startDate', width: 140 },
   { title: '结束日期', dataIndex: 'endDate', key: 'endDate', width: 140 },
   { title: '描述', dataIndex: 'description', key: 'description' },
   { title: '操作', key: 'actions', width: 240 },
+];
+
+const studentColumns: TableColumnType<Student & { memberId: string }>[] = [
+  { title: '学生ID', dataIndex: 'id', key: 'id', width: 160 },
+  { title: '用户名', dataIndex: 'username', key: 'username', width: 140 },
+  { title: '姓名', dataIndex: 'name', key: 'name', width: 120 },
+  { title: '邮箱', dataIndex: 'email', key: 'email', width: 180 },
+  { title: '手机号', dataIndex: 'phone', key: 'phone', width: 140 },
+  { title: '积分', dataIndex: 'score', key: 'score', width: 80 },
+  { title: '邮箱状态', dataIndex: 'isVerified', key: 'isVerified', width: 100 },
+  { title: '操作', key: 'actions', width: 120 },
 ];
 
 const loadData = async () => {
@@ -95,6 +139,45 @@ const handleSearch = () => {
 const resetQuery = () => {
   query.keyword = '';
   handleSearch();
+};
+
+const loadStudents = async (classId: string) => {
+  if (!studentListMap[classId]) {
+    studentListMap[classId] = { loading: false, items: [] };
+  }
+  studentListMap[classId].loading = true;
+  try {
+    const members = await classesMemberService.fetchList({ classId, page: 1, size: 200 });
+    const items: (Student & { memberId: string })[] = [];
+    for (const m of members.records || []) {
+      if (!m.studentId) continue;
+      let student = studentCache[m.studentId];
+      if (!student) {
+        try {
+          student = await studentService.fetchDetail(m.studentId);
+          studentCache[m.studentId] = student;
+        } catch (err: any) {
+          // 失败时也记录占位，避免重复请求
+          studentCache[m.studentId] = { id: m.studentId, username: m.studentId } as Student;
+        }
+      }
+      items.push({ ...student, memberId: m.id });
+    }
+    studentListMap[classId].items = items;
+  } catch (error: any) {
+    message.error(extractErrorMessage(error, '获取班级学生失败'));
+  } finally {
+    studentListMap[classId].loading = false;
+  }
+};
+
+const handleExpand = (expanded: boolean, record: Classes) => {
+  if (expanded) {
+    expandedRowKeys.value = [...expandedRowKeys.value, record.id];
+    loadStudents(record.id);
+  } else {
+    expandedRowKeys.value = expandedRowKeys.value.filter((k) => k !== record.id);
+  }
 };
 
 const goCreate = () => {
@@ -126,6 +209,26 @@ const confirmRemove = (record: Classes) => {
     okText: '确定',
     cancelText: '取消',
     onOk: () => remove(record),
+  });
+};
+
+const removeStudent = async (classId: string, student: Student & { memberId: string }) => {
+  try {
+    await classesMemberService.remove(student.memberId);
+    message.success('已移出班级');
+    loadStudents(classId);
+  } catch (error: any) {
+    message.error(extractErrorMessage(error, '移除失败'));
+  }
+};
+
+const confirmRemoveStudent = (classId: string, student: Student & { memberId: string }) => {
+  Modal.confirm({
+    title: '移除学生',
+    content: `确认将学生「${student.name || student.username || student.id}」移出班级？`,
+    okText: '确定',
+    cancelText: '取消',
+    onOk: () => removeStudent(classId, student),
   });
 };
 

@@ -4,6 +4,7 @@ export interface Classes {
   id: string;
   name: string;
   creatorId?: string;
+  creatorName?: string;
   code?: string;
   startDate?: string;
   endDate?: string;
@@ -23,4 +24,27 @@ export interface ClassesRequest {
 
 export interface ClassesQuery extends PageQuery {
   keyword?: string;
+}
+
+export interface ClassesMember {
+  id: string;
+  classId: string;
+  memberType?: string;
+  studentId?: string;
+  teacherId?: string;
+  joinedAt?: string;
+  leftAt?: string;
+}
+
+export interface ClassesMemberRequest {
+  classId: string | number;
+  memberType: string;
+  studentId?: string | number;
+  teacherId?: string | number;
+  joinedAt?: string;
+  leftAt?: string;
+}
+
+export interface ClassesMemberQuery extends PageQuery {
+  classId?: string | number;
 }

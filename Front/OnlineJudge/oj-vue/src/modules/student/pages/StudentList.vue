@@ -27,7 +27,19 @@
         :pagination="paginationConfig"
       >
         <template #bodyCell="{ column, record, text }">
-          <template v-if="column.key === 'lastLoginTime'">
+          <template v-if="column.key === 'sex'">
+            <a-tag :color="getSexTagColor(text)">{{ formatSexLabel(text) }}</a-tag>
+          </template>
+          <template v-else-if="column.key === 'ac'">
+            {{ record.ac ?? 0 }}
+          </template>
+          <template v-else-if="column.key === 'submit'">
+            {{ record.submit ?? 0 }}
+          </template>
+          <template v-else-if="column.key === 'passRate'">
+            <a-tag color="geekblue">{{ getPassRate(record) }}</a-tag>
+          </template>
+          <template v-else-if="column.key === 'lastLoginTime'">
             {{ text ? format(new Date(text), 'yyyy-MM-dd HH:mm') : '-' }}
           </template>
           <template v-else-if="column.key === 'isVerified'">
@@ -75,14 +87,38 @@ const canCreate = computed(() => authStore.role === 'admin');
 const columns: TableColumnType<Student>[] = [
   { title: '用户名', dataIndex: 'username', key: 'username' },
   { title: '姓名', dataIndex: 'name', key: 'name' },
+  { title: '性别', dataIndex: 'sex', key: 'sex', width: 80 },
   { title: '邮箱', dataIndex: 'email', key: 'email' },
   { title: '手机号', dataIndex: 'phone', key: 'phone' },
   { title: '学校', dataIndex: 'school', key: 'school' },
+  { title: 'AC', dataIndex: 'ac', key: 'ac', width: 80 },
+  { title: '提交', dataIndex: 'submit', key: 'submit', width: 80 },
+  { title: '通过率', dataIndex: 'passRate', key: 'passRate', width: 100 },
   { title: '积分', dataIndex: 'score', key: 'score', width: 80 },
   { title: '邮箱状态', dataIndex: 'isVerified', key: 'isVerified', width: 100 },
   { title: '最近登录', dataIndex: 'lastLoginTime', key: 'lastLoginTime', width: 180 },
   { title: '操作', key: 'actions', width: 160 },
 ];
+
+const formatSexLabel = (sex?: string | null) => {
+  if (sex === 'male') return '男';
+  if (sex === 'female') return '女';
+  return '未填写';
+};
+
+const getSexTagColor = (sex?: string | null) => {
+  if (sex === 'male') return 'blue';
+  if (sex === 'female') return 'magenta';
+  return 'default';
+};
+
+const getPassRate = (record: Student) => {
+  const submit = record.submit ?? 0;
+  const ac = record.ac ?? 0;
+  if (!submit) return '0%';
+  const rate = (ac / submit) * 100;
+  return `${rate.toFixed(1)}%`;
+};
 
 const loadData = async () => {
   loading.value = true;

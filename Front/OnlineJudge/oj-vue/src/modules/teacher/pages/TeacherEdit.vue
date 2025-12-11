@@ -2,40 +2,40 @@
   <PageContainer :title="pageTitle">
     <a-card>
       <a-form
-        layout="vertical"
-        :model="formState"
-        :rules="rules"
-        ref="formRef"
-        class="admin-edit-form"
+          layout="vertical"
+          :model="formState"
+          :rules="rules"
+          ref="formRef"
+          class="admin-edit-form"
       >
         <a-row :gutter="16">
           <a-col :xs="24" :md="12">
             <a-form-item label="用户名" name="username">
-              <a-input v-model:value="formState.username" :disabled="isEdit" placeholder="请输入用户名" />
+              <a-input v-model:value="formState.username" :disabled="isEdit" placeholder="请输入用户名"/>
             </a-form-item>
           </a-col>
           <a-col :xs="24" :md="12">
             <a-form-item :label="passwordLabel" name="password">
-              <a-input-password v-model:value="formState.password" :placeholder="passwordPlaceholder" />
+              <a-input-password v-model:value="formState.password" :placeholder="passwordPlaceholder"/>
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :xs="24" :md="12">
             <a-form-item label="确认密码" name="confirmPassword">
-              <a-input-password v-model:value="formState.confirmPassword" placeholder="请再次输入密码" />
+              <a-input-password v-model:value="formState.confirmPassword" placeholder="请再次输入密码"/>
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :xs="24" :md="12">
             <a-form-item label="姓名" name="name">
-              <a-input v-model:value="formState.name" placeholder="请输入姓名" />
+              <a-input v-model:value="formState.name" placeholder="请输入姓名"/>
             </a-form-item>
           </a-col>
           <a-col :xs="24" :md="12">
             <a-form-item label="职称" name="title">
-              <a-input v-model:value="formState.title" placeholder="请输入职称" />
+              <a-input v-model:value="formState.title" placeholder="请输入职称"/>
             </a-form-item>
           </a-col>
         </a-row>
@@ -50,14 +50,14 @@
           </a-col>
           <a-col :xs="24" :md="12">
             <a-form-item label="邮箱" name="email">
-              <a-input v-model:value="formState.email" placeholder="请输入邮箱" />
+              <a-input v-model:value="formState.email" placeholder="请输入邮箱"/>
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :xs="24" :md="12">
             <a-form-item label="手机号" name="phone">
-              <a-input v-model:value="formState.phone" placeholder="请输入手机号" />
+              <a-input v-model:value="formState.phone" placeholder="请输入手机号"/>
             </a-form-item>
           </a-col>
         </a-row>
@@ -73,14 +73,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { message } from 'ant-design-vue';
-import type { FormInstance, FormProps } from 'ant-design-vue';
+import {computed, onMounted, reactive, ref} from 'vue';
+import {useRoute, useRouter} from 'vue-router';
+import {message} from 'ant-design-vue';
+import type {FormInstance, FormProps} from 'ant-design-vue';
 import PageContainer from '@/components/common/PageContainer.vue';
-import { teacherService } from '@/services/modules/teacher';
-import type { TeacherUpsertRequest } from '@/types';
-import { extractErrorMessage } from '@/utils/error';
+import {teacherService} from '@/services/modules/teacher';
+import type {TeacherUpsertRequest} from '@/types';
+import {extractErrorMessage} from '@/utils/error';
 
 const router = useRouter();
 const route = useRoute();
@@ -103,7 +103,7 @@ const formState = reactive<TeacherFormState>({
 });
 
 const rules: FormProps['rules'] = {
-  username: [{ required: true, message: '请输入用户名' }],
+  username: [{required: true, message: '请输入用户名'}],
   password: [
     {
       validator: (_rule: unknown, value: string) => {
@@ -116,10 +116,10 @@ const rules: FormProps['rules'] = {
     },
   ],
   email: [
-    { type: 'email', message: '邮箱格式不正确', trigger: 'blur' },
+    {type: 'email', message: '邮箱格式不正确', trigger: 'blur'},
   ],
   phone: [
-    { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' },
+    {pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur'},
   ],
   confirmPassword: [
     {

@@ -29,7 +29,10 @@
         :pagination="paginationConfig"
       >
         <template #bodyCell="{ column, record, text }">
-          <template v-if="column.key === 'lastLoginTime'">
+          <template v-if="column.key === 'sex'">
+            <a-tag :color="getSexTagColor(text)">{{ formatSexLabel(text) }}</a-tag>
+          </template>
+          <template v-else-if="column.key === 'lastLoginTime'">
             {{ text ? format(new Date(text), 'yyyy-MM-dd HH:mm') : '-' }}
           </template>
           <template v-else-if="column.key === 'actions'">
@@ -66,11 +69,24 @@ const loading = ref(false);
 const columns: TableColumnType<AdminUser>[] = [
   { title: '用户名', dataIndex: 'username', key: 'username' },
   { title: '姓名', dataIndex: 'name', key: 'name' },
+  { title: '性别', dataIndex: 'sex', key: 'sex', width: 80 },
   { title: '邮箱', dataIndex: 'email', key: 'email' },
   { title: '手机号', dataIndex: 'phone', key: 'phone' },
   { title: '最后登录', dataIndex: 'lastLoginTime', key: 'lastLoginTime' },
   { title: '操作', key: 'actions', width: 160 },
 ];
+
+const formatSexLabel = (sex?: string | null) => {
+  if (sex === 'male') return '男';
+  if (sex === 'female') return '女';
+  return '未填写';
+};
+
+const getSexTagColor = (sex?: string | null) => {
+  if (sex === 'male') return 'blue';
+  if (sex === 'female') return 'magenta';
+  return 'default';
+};
 
 const loadData = async () => {
   loading.value = true;

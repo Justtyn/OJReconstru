@@ -4,9 +4,7 @@
       <div class="code-editor__gutter" ref="gutterRef">
         <span v-for="line in lineNumbers" :key="line">{{ line }}</span>
       </div>
-      <pre class="code-editor__highlight" ref="highlightRef" aria-hidden="true">
-        <code v-html="highlightedCode" />
-      </pre>
+      <pre class="code-editor__highlight" ref="highlightRef" aria-hidden="true"><code v-html="highlightedCode"></code></pre>
       <textarea
         ref="textareaRef"
         v-model="localValue"
@@ -136,7 +134,8 @@ const syncScroll = () => {
   padding: 12px;
   margin: 0;
   pointer-events: none;
-  white-space: pre;
+  white-space: pre-wrap;
+  word-break: break-word;
   overflow: auto;
   color: var(--text-color, #0f172a);
 }
@@ -154,7 +153,9 @@ const syncScroll = () => {
   resize: vertical;
   padding: 12px;
   background: transparent;
-  color: var(--text-color, #0f172a);
+  color: transparent;
+  caret-color: var(--text-color, #0f172a);
+  text-shadow: none;
   line-height: 1.5;
   min-height: 260px;
   max-height: 560px;
@@ -162,7 +163,7 @@ const syncScroll = () => {
 }
 
 .code-editor__input::placeholder {
-  color: #bfbfbf;
+  color: var(--text-muted, #8c8c8c);
 }
 
 .token.keyword {
@@ -175,5 +176,27 @@ const syncScroll = () => {
 
 .token.comment {
   color: #8c8c8c;
+}
+
+.code-editor__highlight::-webkit-scrollbar,
+.code-editor__input::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.code-editor__highlight::-webkit-scrollbar-track,
+.code-editor__input::-webkit-scrollbar-track {
+  background: var(--body-bg, rgba(15, 23, 42, 0.04));
+}
+
+.code-editor__highlight::-webkit-scrollbar-thumb,
+.code-editor__input::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.35);
+  border-radius: 4px;
+}
+
+.code-editor__highlight::-webkit-scrollbar-thumb:hover,
+.code-editor__input::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.5);
 }
 </style>

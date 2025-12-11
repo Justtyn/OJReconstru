@@ -337,6 +337,20 @@ abstract class ControllerTestSupport {
         return params;
     }
 
+    /* --------------------- 旧测试兼容辅助 --------------------- */
+    protected ResultActions authed(MockHttpServletRequestBuilder builder, String bearerToken) throws Exception {
+        builder.accept(MediaType.APPLICATION_JSON);
+        return perform(builder, bearerToken);
+    }
+
+    protected JsonNode readJson(ResultActions actions) throws Exception {
+        return readBody(actions);
+    }
+
+    protected String uniqueLabel(String prefix) {
+        return prefix + "-" + uniqueSuffix();
+    }
+
     /* --------------------- 会话封装 --------------------- */
     protected static final class AuthSession {
         private final AuthUserVO user;

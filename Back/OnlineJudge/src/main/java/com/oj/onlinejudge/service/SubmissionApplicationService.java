@@ -9,6 +9,7 @@ import com.oj.onlinejudge.domain.entity.ProblemTestcase;
 import com.oj.onlinejudge.domain.entity.Submission;
 import com.oj.onlinejudge.domain.entity.SubmissionOverallStatus;
 import com.oj.onlinejudge.domain.entity.SubmissionTestcaseResult;
+import com.oj.onlinejudge.domain.entity.Student;
 import com.oj.onlinejudge.domain.vo.SubmissionDetailVO;
 import com.oj.onlinejudge.domain.vo.SubmissionTestcaseResultVO;
 import com.oj.onlinejudge.exception.ApiException;
@@ -40,10 +41,11 @@ public class SubmissionApplicationService {
     private final HomeworkProblemService homeworkProblemService;
     private final Judge0Client judge0Client;
     private final JudgeStatusService judgeStatusService;
+    private final StudentService studentService;
 
     @Transactional(rollbackFor = Exception.class)
     public SubmissionDetailVO submit(SubmissionCreateRequest request, AuthenticatedUser current) {
-        ensureStudent(current);
+        Long targetStudentId = resolveStudentId(request, current);
         Problem problem = requireProblem(request.getProblemId());
         Homework homework = null;
         if (request.getHomeworkId() != null) {
@@ -67,7 +69,7 @@ public class SubmissionApplicationService {
         }
         LocalDateTime now = LocalDateTime.now();
         Submission submission = new Submission();
-        submission.setStudentId(current.getUserId());
+        submission.setStudentId(targetStudentId);
         submission.setProblemId(problem.getId());
         submission.setHomeworkId(request.getHomeworkId());
         submission.setLanguageId(request.getLanguageId());
@@ -117,6 +119,7 @@ public class SubmissionApplicationService {
         submission.setScore(calculateScore(passed, testcases.size()));
         submission.setUpdatedAt(LocalDateTime.now());
         submissionService.updateById(submission);
+        updateStatistics(submission);
 
         return buildDetailVO(submission, testcaseResults);
     }
@@ -181,13 +184,24 @@ public class SubmissionApplicationService {
         return problem;
     }
 
-    private void ensureStudent(AuthenticatedUser current) {
+    private Long resolveStudentId(SubmissionCreateRequest request, AuthenticatedUser current) {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
-        if (!"student".equalsIgnoreCase(current.getRole())) {
-            throw ApiException.forbidden("仅学生可以提交代码");
+        if ("student".equalsIgnoreCase(current.getRole())) {
+            return current.getUserId();
         }
+        if ("admin".equalsIgnoreCase(current.getRole())) {
+            if (request.getStudentId() == null) {
+                throw ApiException.badRequest("管理员提交需指定学生ID");
+            }
+            Student student = studentService.getById(request.getStudentId());
+            if (student == null) {
+                throw ApiException.notFound("学生不存在");
+            }
+            return student.getId();
+        }
+        throw ApiException.forbidden("仅学生或管理员可以提交代码");
     }
 
     public SubmissionDetailVO buildDetailVO(Submission submission, List<SubmissionTestcaseResult> testcaseResults) {
@@ -223,6 +237,7 @@ public class SubmissionApplicationService {
 
     private void copySubmissionToVO(Submission submission, SubmissionDetailVO vo) {
         vo.setId(submission.getId());
+        vo.setStudentId(submission.getStudentId());
         vo.setProblemId(submission.getProblemId());
         vo.setHomeworkId(submission.getHomeworkId());
         vo.setLanguageId(submission.getLanguageId());
@@ -232,5 +247,36 @@ public class SubmissionApplicationService {
         vo.setScore(submission.getScore());
         vo.setCreatedAt(submission.getCreatedAt());
         vo.setUpdatedAt(submission.getUpdatedAt());
+    }
+
+    private void updateStatistics(Submission submission) {
+        boolean accepted = submission.getOverallStatusId() != null && submission.getOverallStatusId() == 3;
+        Problem problem = problemService.getById(submission.getProblemId());
+        if (problem != null) {
+            problem.setSubmitCount(safeCount(problem.getSubmitCount()) + 1);
+            problem.setAcCount(safeCount(problem.getAcCount()) + (accepted ? 1 : 0));
+            problemService.updateById(problem);
+        }
+        if (submission.getHomeworkId() != null) {
+            HomeworkProblem hp = homeworkProblemService.lambdaQuery()
+                    .eq(HomeworkProblem::getHomeworkId, submission.getHomeworkId())
+                    .eq(HomeworkProblem::getProblemId, submission.getProblemId())
+                    .one();
+            if (hp != null) {
+                hp.setSubmitCount(safeCount(hp.getSubmitCount()) + 1);
+                hp.setAcCount(safeCount(hp.getAcCount()) + (accepted ? 1 : 0));
+                homeworkProblemService.updateById(hp);
+            }
+        }
+        Student student = studentService.getById(submission.getStudentId());
+        if (student != null) {
+            student.setSubmit(safeCount(student.getSubmit()) + 1);
+            student.setAc(safeCount(student.getAc()) + (accepted ? 1 : 0));
+            studentService.updateById(student);
+        }
+    }
+
+    private int safeCount(Integer count) {
+        return count == null ? 0 : count;
     }
 }

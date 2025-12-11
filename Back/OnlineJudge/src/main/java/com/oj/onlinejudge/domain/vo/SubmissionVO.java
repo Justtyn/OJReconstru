@@ -9,6 +9,7 @@ import lombok.Data;
 @Schema(description = "提交摘要")
 public class SubmissionVO {
     private Long id;
+    private Long studentId;
     private Long problemId;
     private Long homeworkId;
     private Integer languageId;

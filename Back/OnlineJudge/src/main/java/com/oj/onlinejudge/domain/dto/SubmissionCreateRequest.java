@@ -14,6 +14,9 @@ public class SubmissionCreateRequest {
 
     private Long homeworkId;
 
+    @Schema(description = "（仅管理员）代提交的学生ID")
+    private Long studentId;
+
     @NotNull(message = "语言ID不能为空")
     private Integer languageId;
 

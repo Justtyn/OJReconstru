@@ -5,16 +5,31 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.oj.onlinejudge.domain.dto.ClassesRequest;
+import com.oj.onlinejudge.domain.dto.HomeworkRequest;
 import com.oj.onlinejudge.domain.dto.ProblemTestcaseRequest;
 import com.oj.onlinejudge.domain.dto.SubmissionCreateRequest;
+import com.oj.onlinejudge.domain.entity.Classes;
+import com.oj.onlinejudge.domain.entity.Homework;
+import com.oj.onlinejudge.domain.entity.HomeworkProblem;
 import com.oj.onlinejudge.domain.entity.Problem;
+import com.oj.onlinejudge.domain.entity.Student;
 import com.oj.onlinejudge.domain.vo.SubmissionDetailVO;
+import com.oj.onlinejudge.service.HomeworkProblemService;
+import com.oj.onlinejudge.service.ProblemService;
+import com.oj.onlinejudge.service.StudentService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.LinkedMultiValueMap;
+import java.util.List;
 
 @DisplayName("SubmissionController 集成测试")
 class SubmissionControllerIT extends ControllerTestSupport {
+
+    @Autowired private ProblemService problemService;
+    @Autowired private StudentService studentService;
+    @Autowired private HomeworkProblemService homeworkProblemService;
 
     @Test
     @DisplayName("学生提交代码成功，其他学生无法查看详情，老师可按学号筛选")
@@ -38,8 +53,10 @@ class SubmissionControllerIT extends ControllerTestSupport {
         JsonNode list = assertOkAndStandardApiResponse(performGet("/api/submissions", params, student.token()))
                 .get("data")
                 .get("records");
+        JsonNode first = list.get(0);
         assertThat(list.findValues("problemId").stream().map(JsonNode::asText).toArray())
                 .contains(String.valueOf(problemId));
+        assertThat(first.get("studentId").asLong()).isEqualTo(student.id());
 
         // 其他学生查看详情 403
         AuthSession other = registerAndLoginStudent();
@@ -64,6 +81,74 @@ class SubmissionControllerIT extends ControllerTestSupport {
         SubmissionDetailVO detail =
                 readData(performPostJson("/api/submissions", request, student.token()), SubmissionDetailVO.class);
         assertThat(detail.getOverallStatusId()).isNotEqualTo(3);
+
+        Problem problem = problemService.getById(problemId);
+        assertThat(problem.getSubmitCount()).isEqualTo(1);
+        assertThat(problem.getAcCount()).isZero();
+
+        Student studentEntity = studentService.getById(student.id());
+        assertThat(studentEntity.getSubmit()).isEqualTo(1);
+        assertThat(studentEntity.getAc()).isZero();
+    }
+
+    @Test
+    @DisplayName("管理员可代学生提交代码")
+    void adminSubmitOnBehalfOfStudent() throws Exception {
+        AuthSession admin = registerAndLoginAdmin();
+        long problemId = createProblemWithTestcase(admin);
+        AuthSession student = registerAndLoginStudent();
+
+        SubmissionCreateRequest request = new SubmissionCreateRequest();
+        request.setProblemId(problemId);
+        request.setLanguageId(54);
+        request.setSourceCode("int main(){return 0;}");
+        request.setStudentId(student.id());
+
+        SubmissionDetailVO detail =
+                readData(performPostJson("/api/submissions", request, admin.token()), SubmissionDetailVO.class);
+        assertThat(detail.getOverallStatusId()).isEqualTo(3);
+        assertThat(detail.getStudentId()).isEqualTo(student.id());
+    }
+
+    @Test
+    @DisplayName("提交成功后同步累加题目/作业/学生的提交与AC计数")
+    void accumulateStatisticsAfterSubmission() throws Exception {
+        AuthSession teacher = registerAndLoginTeacher();
+        long problemId = createProblemWithTestcase(teacher);
+        Classes clazz = createClass(teacher);
+
+        HomeworkRequest hwReq = new HomeworkRequest();
+        hwReq.setTitle("HW-" + uniqueSuffix());
+        hwReq.setClassId(clazz.getId());
+        hwReq.setProblemIds(List.of(problemId));
+        Homework homework = readData(
+                performPostJson("/api/homeworks", hwReq, teacher.token()), Homework.class);
+
+        AuthSession student = registerAndLoginStudent();
+        SubmissionCreateRequest request = new SubmissionCreateRequest();
+        request.setProblemId(problemId);
+        request.setHomeworkId(homework.getId());
+        request.setLanguageId(54);
+        request.setSourceCode("int main(){return 0;}");
+        SubmissionDetailVO detail =
+                readData(performPostJson("/api/submissions", request, student.token()), SubmissionDetailVO.class);
+        assertThat(detail.getOverallStatusId()).isEqualTo(3);
+
+        Problem problem = problemService.getById(problemId);
+        assertThat(problem.getSubmitCount()).isEqualTo(1);
+        assertThat(problem.getAcCount()).isEqualTo(1);
+
+        HomeworkProblem hp = homeworkProblemService.lambdaQuery()
+                .eq(HomeworkProblem::getHomeworkId, homework.getId())
+                .eq(HomeworkProblem::getProblemId, problemId)
+                .one();
+        assertThat(hp).isNotNull();
+        assertThat(hp.getSubmitCount()).isEqualTo(1);
+        assertThat(hp.getAcCount()).isEqualTo(1);
+
+        Student studentEntity = studentService.getById(student.id());
+        assertThat(studentEntity.getSubmit()).isEqualTo(1);
+        assertThat(studentEntity.getAc()).isEqualTo(1);
     }
 
     private long createProblemWithTestcase(AuthSession teacher) throws Exception {
@@ -93,5 +178,12 @@ class SubmissionControllerIT extends ControllerTestSupport {
         req.setSource("integration-test");
         req.setIsActive(true);
         return req;
+    }
+
+    private Classes createClass(AuthSession teacher) throws Exception {
+        ClassesRequest request = new ClassesRequest();
+        request.setName("Class-" + uniqueSuffix());
+        request.setCode("CODE" + uniqueSuffix());
+        return readData(performPostJson("/api/classes", request, teacher.token()), Classes.class);
     }
 }

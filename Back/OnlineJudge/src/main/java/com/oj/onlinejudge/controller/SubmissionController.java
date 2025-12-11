@@ -121,6 +121,7 @@ public class SubmissionController {
         vo.setScore(submission.getScore());
         vo.setCreatedAt(submission.getCreatedAt());
         vo.setUpdatedAt(submission.getUpdatedAt());
+        vo.setStudentId(submission.getStudentId());
         SubmissionOverallStatus status = statusMap.get(submission.getOverallStatusId());
         if (status != null) {
             vo.setOverallStatusCode(status.getCode());

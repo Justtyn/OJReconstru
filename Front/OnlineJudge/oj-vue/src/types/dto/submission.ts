@@ -23,6 +23,14 @@ export interface SubmissionDetail extends Submission {
   testcaseResults?: TestcaseResult[];
 }
 
+export interface SubmissionCreateRequest {
+  problemId: string | number;
+  homeworkId?: string | number | null;
+  studentId: string | number;
+  languageId: number;
+  sourceCode: string;
+}
+
 export interface TestcaseResult {
   testcaseId: string;
   statusId?: number;

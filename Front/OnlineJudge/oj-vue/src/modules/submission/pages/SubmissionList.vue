@@ -52,6 +52,10 @@
       </a-form>
     </a-card>
 
+    <div class="actions-row">
+      <a-button type="primary" @click="openCreateModal">新增提交</a-button>
+    </div>
+
     <a-card class="mt-16">
       <a-table
         row-key="id"
@@ -87,6 +91,131 @@
         </template>
       </a-table>
     </a-card>
+
+    <a-modal
+      v-model:open="createVisible"
+      title="新增提交"
+      width="900px"
+      :confirm-loading="createLoading"
+      @ok="handleCreate"
+    >
+      <a-spin :spinning="createLoading">
+        <a-form layout="vertical">
+          <a-form-item label="提交方式" required>
+            <a-radio-group v-model:value="submissionMode" @change="handleModeChange">
+              <a-radio-button value="problem">按题目提交</a-radio-button>
+              <a-radio-button value="homework">按作业提交</a-radio-button>
+            </a-radio-group>
+          </a-form-item>
+
+          <a-row :gutter="16" v-if="submissionMode === 'problem'">
+            <a-col :span="12">
+              <a-form-item label="题目" required>
+                <a-select
+                  v-model:value="createForm.problemId"
+                  show-search
+                  allow-clear
+                  :filter-option="false"
+                  :options="problemOptions"
+                  :loading="problemLoading"
+                  placeholder="搜索题目"
+                  @search="searchProblems"
+                  @dropdownVisibleChange="handleProblemDropdown"
+                />
+              </a-form-item>
+            </a-col>
+          </a-row>
+
+          <template v-else>
+            <a-row :gutter="16">
+              <a-col :span="12">
+                <a-form-item label="班级" required>
+                  <a-select
+                    v-model:value="createForm.classId"
+                    show-search
+                    allow-clear
+                    :filter-option="false"
+                    :options="classOptions"
+                    :loading="classLoading"
+                    placeholder="搜索班级"
+                    @change="handleClassChange"
+                    @search="searchClasses"
+                    @dropdownVisibleChange="handleClassDropdown"
+                  />
+                </a-form-item>
+              </a-col>
+              <a-col :span="12">
+                <a-form-item label="作业" required>
+                  <a-select
+                    v-model:value="createForm.homeworkId"
+                    show-search
+                    allow-clear
+                    :filter-option="false"
+                    :options="homeworkOptions"
+                    :loading="homeworkLoading"
+                    :disabled="!createForm.classId"
+                    placeholder="请选择作业"
+                    @search="searchHomeworks"
+                    @change="handleHomeworkChange"
+                  />
+                </a-form-item>
+              </a-col>
+            </a-row>
+            <a-row :gutter="16">
+              <a-col :span="12">
+                <a-form-item label="题目" required>
+                  <a-select
+                    v-model:value="createForm.problemId"
+                    show-search
+                    allow-clear
+                    :filter-option="false"
+                    :options="homeworkProblemOptions"
+                    :loading="homeworkProblemLoading"
+                    :disabled="!createForm.homeworkId"
+                    placeholder="请选择作业下的题目"
+                  />
+                </a-form-item>
+              </a-col>
+            </a-row>
+          </template>
+
+          <a-row :gutter="16">
+            <a-col :span="12">
+              <a-form-item label="学生" required>
+                <a-select
+                  v-model:value="createForm.studentId"
+                  show-search
+                  allow-clear
+                  :filter-option="false"
+                  :options="studentOptions"
+                  :loading="studentLoading"
+                  placeholder="搜索学生"
+                  @search="searchStudents"
+                  @dropdownVisibleChange="handleStudentDropdown"
+                />
+              </a-form-item>
+            </a-col>
+            <a-col :span="12">
+              <a-form-item label="语言" required>
+                <a-select v-model:value="createForm.languageId" allow-clear placeholder="选择语言">
+                  <a-select-option v-for="lang in languageOptions" :key="lang.id" :value="lang.id">
+                    {{ lang.name }}
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+            </a-col>
+          </a-row>
+
+          <a-form-item label="代码" required>
+            <CodeEditor
+              v-model="createForm.sourceCode"
+              :language="languageLabel(createForm.languageId)"
+              placeholder="在此编写或粘贴代码，支持行号与基础高亮"
+            />
+          </a-form-item>
+        </a-form>
+      </a-spin>
+    </a-modal>
   </PageContainer>
 </template>
 
@@ -97,10 +226,13 @@ import { format } from 'date-fns';
 import type { TableColumnType } from 'ant-design-vue';
 import { message } from 'ant-design-vue';
 import PageContainer from '@/components/common/PageContainer.vue';
+import CodeEditor from '@/components/common/CodeEditor.vue';
 import { submissionService } from '@/services/modules/submission';
 import { problemService } from '@/services/modules/problem';
 import { studentService } from '@/services/modules/student';
-import type { Submission, SubmissionQuery, Problem, Student } from '@/types';
+import { classesService } from '@/services/modules/classes';
+import { homeworkService } from '@/services/modules/homework';
+import type { Submission, SubmissionQuery, Problem, Student, Homework, HomeworkProblem } from '@/types';
 import { extractErrorMessage } from '@/utils/error';
 
 const router = useRouter();
@@ -119,10 +251,10 @@ const languageOptions = [
   { id: 23, name: 'C# Test (.NET Core SDK 3.1.406, NUnit 3.12.0)' },
   { id: 24, name: 'F# (.NET Core SDK 3.1.406)' },
   { id: 4, name: 'Java (OpenJDK 14.0.1)' },
-  { id: 5, name: 'Java Test (OpenJDK 14.0.1, JUnit 1.6.2)' },
-  { id: 6, name: 'MPI C (GCC 8.4.0)' },
-  { id: 7, name: 'MPI C++ (GCC 8.4.0)' },
-  { id: 8, name: 'MPI Python (3.7.7)' },
+  { id: 5, name: 'Java Test (OpenJDK 14.0.1, JUnit Platform Console Standalone 1.6.2)' },
+  { id: 6, name: 'MPI (OpenRTE 3.1.3) with C (GCC 8.4.0)' },
+  { id: 7, name: 'MPI (OpenRTE 3.1.3) with C++ (GCC 8.4.0)' },
+  { id: 8, name: 'MPI (OpenRTE 3.1.3) with Python (3.7.7)' },
   { id: 89, name: 'Multi-file program' },
   { id: 9, name: 'Nim (stable)' },
   { id: 10, name: 'Python for ML (3.7.7)' },
@@ -133,6 +265,25 @@ const query = reactive<SubmissionQuery>({ page: 1, size: 10 });
 const list = ref<Submission[]>([]);
 const total = ref(0);
 const loading = ref(false);
+const createVisible = ref(false);
+const createLoading = ref(false);
+const submissionMode = ref<'problem' | 'homework'>('problem');
+
+const createForm = reactive<{
+  problemId?: string;
+  classId?: string;
+  studentId?: string;
+  homeworkId?: string;
+  languageId?: number;
+  sourceCode: string;
+}>({
+  problemId: undefined,
+  classId: undefined,
+  studentId: undefined,
+  homeworkId: undefined,
+  languageId: undefined,
+  sourceCode: '',
+});
 
 const problemOptions = ref<{ label: string; value: string }[]>([]);
 const problemLoading = ref(false);
@@ -141,6 +292,13 @@ const problemCache = reactive<Record<string, Problem>>({});
 const studentOptions = ref<{ label: string; value: string }[]>([]);
 const studentLoading = ref(false);
 const studentCache = reactive<Record<string, Student>>({});
+
+const classOptions = ref<{ label: string; value: string }[]>([]);
+const classLoading = ref(false);
+const homeworkOptions = ref<{ label: string; value: string }[]>([]);
+const homeworkLoading = ref(false);
+const homeworkProblemOptions = ref<{ label: string; value: string }[]>([]);
+const homeworkProblemLoading = ref(false);
 
 const columns: TableColumnType<Submission>[] = [
   { title: '提交ID', dataIndex: 'id', key: 'id', width: 200 },
@@ -204,6 +362,84 @@ const handleSearch = () => {
   loadData();
 };
 
+const openCreateModal = () => {
+  submissionMode.value = 'problem';
+  resetCreateForm();
+  createVisible.value = true;
+};
+
+const resetCreateForm = () => {
+  createForm.problemId = undefined;
+  createForm.classId = undefined;
+  createForm.studentId = undefined;
+  createForm.homeworkId = undefined;
+  createForm.languageId = languageOptions[0]?.id;
+  createForm.sourceCode = '';
+  homeworkOptions.value = [];
+  homeworkProblemOptions.value = [];
+};
+
+const handleModeChange = () => {
+  createForm.problemId = undefined;
+  createForm.classId = undefined;
+  createForm.homeworkId = undefined;
+  homeworkOptions.value = [];
+  homeworkProblemOptions.value = [];
+};
+
+const handleCreate = async () => {
+  if (submissionMode.value === 'problem') {
+    if (!createForm.problemId) {
+      message.error('请选择题目');
+      return;
+    }
+  } else {
+    if (!createForm.classId) {
+      message.error('请选择班级');
+      return;
+    }
+    if (!createForm.homeworkId) {
+      message.error('请选择作业');
+      return;
+    }
+    if (!createForm.problemId) {
+      message.error('请选择作业下的题目');
+      return;
+    }
+  }
+  if (!createForm.studentId) {
+    message.error('请选择学生');
+    return;
+  }
+  if (!createForm.languageId) {
+    message.error('请选择语言');
+    return;
+  }
+  if (!createForm.sourceCode?.trim()) {
+    message.error('请输入代码');
+    return;
+  }
+  createLoading.value = true;
+  try {
+    const payloadHomeworkId = submissionMode.value === 'homework' ? createForm.homeworkId : undefined;
+    await submissionService.create({
+      problemId: createForm.problemId,
+      homeworkId: payloadHomeworkId,
+      studentId: createForm.studentId,
+      languageId: createForm.languageId,
+      sourceCode: createForm.sourceCode,
+    });
+    message.success('提交成功，判题进行中');
+    createVisible.value = false;
+    resetCreateForm();
+    loadData();
+  } catch (error: any) {
+    message.error(extractErrorMessage(error, '提交失败，请稍后重试'));
+  } finally {
+    createLoading.value = false;
+  }
+};
+
 const resetQuery = () => {
   query.problemId = undefined;
   query.userId = undefined;
@@ -243,12 +479,75 @@ const searchStudents = async (keyword: string) => {
   }
 };
 
+const searchHomeworks = async (keyword: string) => {
+  if (!createForm.classId) return;
+  homeworkLoading.value = true;
+  try {
+    const data = await homeworkService.fetchList({ page: 1, size: 50, classId: createForm.classId as any, keyword });
+    homeworkOptions.value = data.records.map((h: Homework) => ({ label: `${h.title}（ID: ${h.id}）`, value: h.id }));
+  } catch (error: any) {
+    message.error(extractErrorMessage(error, '搜索作业失败'));
+  } finally {
+    homeworkLoading.value = false;
+  }
+};
+
+const loadHomeworkProblems = async (homeworkId?: string) => {
+  if (!homeworkId) {
+    homeworkProblemOptions.value = [];
+    return;
+  }
+  homeworkProblemLoading.value = true;
+  try {
+    const data = await homeworkService.fetchProblems(homeworkId);
+    homeworkProblemOptions.value = data.map((p: HomeworkProblem) => ({
+      label: `${p.name || p.id}`,
+      value: p.id as string,
+    }));
+  } catch (error: any) {
+    message.error(extractErrorMessage(error, '获取作业题目失败'));
+  } finally {
+    homeworkProblemLoading.value = false;
+  }
+};
+
+const searchClasses = async (keyword: string) => {
+  classLoading.value = true;
+  try {
+    const data = await classesService.fetchList({ page: 1, size: 50, keyword });
+    classOptions.value = data.records.map((c) => ({ label: `${c.name}（ID: ${c.id}）`, value: c.id }));
+  } catch (error: any) {
+    message.error(extractErrorMessage(error, '搜索班级失败'));
+  } finally {
+    classLoading.value = false;
+  }
+};
+
 const handleProblemDropdown = (open: boolean) => {
   if (open) searchProblems('');
 };
 
 const handleStudentDropdown = (open: boolean) => {
   if (open) searchStudents('');
+};
+
+const handleClassDropdown = (open: boolean) => {
+  if (open) searchClasses('');
+};
+
+const handleClassChange = () => {
+  createForm.homeworkId = undefined;
+  createForm.problemId = undefined;
+  homeworkOptions.value = [];
+  homeworkProblemOptions.value = [];
+  if (createForm.classId) {
+    searchHomeworks('');
+  }
+};
+
+const handleHomeworkChange = (value: string) => {
+  createForm.problemId = undefined;
+  loadHomeworkProblems(value);
 };
 
 const languageLabel = (id?: number) => languageOptions.find((l) => l.id === id)?.name || id || '-';
@@ -279,11 +578,18 @@ const paginationConfig = computed(() => ({
   },
 }));
 
+resetCreateForm();
 loadData();
 </script>
 
 <style scoped lang="less">
 .mt-16 {
+  margin-top: 16px;
+}
+
+.actions-row {
+  display: flex;
+  justify-content: flex-end;
   margin-top: 16px;
 }
 </style>

@@ -1,6 +1,6 @@
 import http from '@/services/http';
 import type { PageResult } from '@/types/api';
-import type { Submission, SubmissionDetail, SubmissionQuery } from '@/types';
+import type { Submission, SubmissionCreateRequest, SubmissionDetail, SubmissionQuery } from '@/types';
 
 export const submissionService = {
   fetchList(params: SubmissionQuery) {
@@ -8,5 +8,8 @@ export const submissionService = {
   },
   fetchDetail(id: string | number) {
     return http.get<SubmissionDetail>(`/api/submissions/${id}`);
+  },
+  create(payload: SubmissionCreateRequest) {
+    return http.post<SubmissionDetail>('/api/submissions', payload);
   },
 };

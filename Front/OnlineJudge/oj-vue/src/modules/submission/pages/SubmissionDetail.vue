@@ -22,9 +22,10 @@
     </a-card>
 
     <a-card class="mt-16" title="源代码" v-if="submission?.sourceCode">
-      <a-typography-paragraph>
-        <pre class="code-block"><code>{{ submission.sourceCode }}</code></pre>
-      </a-typography-paragraph>
+      <template #extra>
+        <a-button type="link" size="small" @click="copyCode">复制代码</a-button>
+      </template>
+      <CodeEditor :model-value="submission?.sourceCode || ''" :language="languageLabel(submission?.languageId)" :readonly="true" />
     </a-card>
 
     <a-card class="mt-16" title="测试点结果" v-if="submission?.testcaseResults?.length">
@@ -62,6 +63,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { format } from 'date-fns';
 import { message } from 'ant-design-vue';
 import PageContainer from '@/components/common/PageContainer.vue';
+import CodeEditor from '@/components/common/CodeEditor.vue';
 import { submissionService } from '@/services/modules/submission';
 import { problemService } from '@/services/modules/problem';
 import type { SubmissionDetail, Problem } from '@/types';
@@ -86,10 +88,10 @@ const languageOptions = [
   { id: 23, name: 'C# Test (.NET Core SDK 3.1.406, NUnit 3.12.0)' },
   { id: 24, name: 'F# (.NET Core SDK 3.1.406)' },
   { id: 4, name: 'Java (OpenJDK 14.0.1)' },
-  { id: 5, name: 'Java Test (OpenJDK 14.0.1, JUnit 1.6.2)' },
-  { id: 6, name: 'MPI C (GCC 8.4.0)' },
-  { id: 7, name: 'MPI C++ (GCC 8.4.0)' },
-  { id: 8, name: 'MPI Python (3.7.7)' },
+  { id: 5, name: 'Java Test (OpenJDK 14.0.1, JUnit Platform Console Standalone 1.6.2)' },
+  { id: 6, name: 'MPI (OpenRTE 3.1.3) with C (GCC 8.4.0)' },
+  { id: 7, name: 'MPI (OpenRTE 3.1.3) with C++ (GCC 8.4.0)' },
+  { id: 8, name: 'MPI (OpenRTE 3.1.3) with Python (3.7.7)' },
   { id: 89, name: 'Multi-file program' },
   { id: 9, name: 'Nim (stable)' },
   { id: 10, name: 'Python for ML (3.7.7)' },
@@ -140,6 +142,20 @@ const statusBadgeFromId = (id?: number) => {
   if (id === 5) return 'error';
   if (id === 4) return 'warning';
   return 'processing';
+};
+
+const copyCode = async () => {
+  const code = submission.value?.sourceCode;
+  if (!code) {
+    message.warning('暂无可复制的代码');
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(code);
+    message.success('代码已复制');
+  } catch {
+    message.error('复制失败，请手动复制');
+  }
 };
 
 onMounted(() => {

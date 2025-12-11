@@ -43,5 +43,5 @@ export interface HomeworkProblem {
 }
 
 export interface HomeworkProblemBatchRequest {
-  problemIds: number[];
+  problemIds: Array<string | number>;
 }

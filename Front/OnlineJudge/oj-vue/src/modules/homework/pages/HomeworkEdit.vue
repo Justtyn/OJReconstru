@@ -83,6 +83,7 @@ const submitting = ref(false);
 const classInfo = ref<Classes>();
 const dateRange = ref<[Dayjs, Dayjs] | []>([]);
 const selectedProblemIds = ref<string[]>([]);
+const originalProblemIds = ref<string[]>([]);
 const problemOptions = ref<{ label: string; value: string }[]>([]);
 const problemOptionsLoading = ref(false);
 
@@ -93,7 +94,6 @@ const formState = reactive<HomeworkRequest>({
   startTime: '',
   endTime: '',
   isActive: true,
-  problemIds: [],
 });
 
 const rules: FormProps['rules'] = {
@@ -153,16 +153,17 @@ const handleSubmit = async () => {
     const payload: HomeworkRequest = {
       ...formState,
       classId: classId.value,
-      problemIds: selectedProblemIds.value.length
-        ? selectedProblemIds.value.map((id) => Number(id)).filter((id) => !Number.isNaN(id))
-        : undefined,
     };
 
     if (isEdit.value) {
       await homeworkService.update(recordId.value!, payload);
+      await syncHomeworkProblems(recordId.value!);
       message.success('更新成功');
     } else {
-      await homeworkService.create(payload);
+      const created = await homeworkService.create(payload);
+      if (created?.id) {
+        await syncHomeworkProblems(created.id);
+      }
       message.success('创建成功');
     }
     goBack();
@@ -186,10 +187,11 @@ const handleProblemSearch = async (keyword: string) => {
   problemOptionsLoading.value = true;
   try {
     const data = await problemService.fetchList({ page: 1, size: 50, keyword });
-    problemOptions.value = data.records.map((item: Problem) => ({
+    const options = data.records.map((item: Problem) => ({
       label: `${item.name}（ID: ${item.id}）`,
       value: item.id,
     }));
+    mergeOptions(options);
   } catch (error: any) {
     message.error(extractErrorMessage(error, '检索题目失败'));
   } finally {
@@ -198,7 +200,7 @@ const handleProblemSearch = async (keyword: string) => {
 };
 
 const handleProblemDropdown = (open: boolean) => {
-  if (open && !problemOptions.value.length) {
+  if (open) {
     handleProblemSearch('');
   }
 };
@@ -207,11 +209,45 @@ const loadHomeworkProblems = async (id: string) => {
   try {
     const problems: HomeworkProblem[] = await homeworkService.fetchProblems(id);
     selectedProblemIds.value = problems.map((p) => p.id.toString());
+    originalProblemIds.value = [...selectedProblemIds.value];
     const options = problems.map((p) => ({ label: `${p.name ?? '题目'}（ID: ${p.id}）`, value: p.id }));
-    problemOptions.value = Array.from(new Map([...problemOptions.value, ...options].map((o) => [o.value, o])).values());
+    mergeOptions(options);
   } catch (error: any) {
     message.error(extractErrorMessage(error, '加载作业题目失败'));
   }
+};
+
+const mergeOptions = (options: { label: string; value: string }[]) => {
+  const map = new Map<string, { label: string; value: string }>();
+  problemOptions.value.forEach((o) => map.set(o.value, o));
+  options.forEach((o) => map.set(o.value, o));
+  selectedProblemIds.value.forEach((id) => {
+    if (!map.has(id)) {
+      map.set(id, { label: `题目（ID: ${id}）`, value: id });
+    }
+  });
+  problemOptions.value = Array.from(map.values());
+};
+
+const syncHomeworkProblems = async (homeworkId: string) => {
+  const currentIds = selectedProblemIds.value.map((id) => id.toString());
+  const originalIdsSet = new Set(originalProblemIds.value);
+  const currentIdsSet = new Set(currentIds);
+
+  const toRemove = originalProblemIds.value.filter((id) => !currentIdsSet.has(id));
+  const toAdd = currentIds.filter((id) => !originalIdsSet.has(id));
+
+  if (toRemove.length) {
+    await Promise.all(
+      toRemove.map((pid) => homeworkService.removeProblem(homeworkId, pid)),
+    );
+  }
+
+  if (toAdd.length) {
+    await homeworkService.addProblems(homeworkId, { problemIds: toAdd });
+  }
+
+  originalProblemIds.value = [...currentIds];
 };
 </script>
 

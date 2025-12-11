@@ -15,12 +15,17 @@
             </a-form-item>
           </a-col>
           <a-col :xs="24" :md="12">
-            <a-form-item :label="passwordLabel" name="password">
-              <a-input-password v-model:value="formState.password" :placeholder="passwordPlaceholder"/>
+            <a-form-item label="姓名" name="name">
+              <a-input v-model:value="formState.name" placeholder="请输入姓名"/>
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
+          <a-col :xs="24" :md="12">
+            <a-form-item :label="passwordLabel" name="password">
+              <a-input-password v-model:value="formState.password" :placeholder="passwordPlaceholder"/>
+            </a-form-item>
+          </a-col>
           <a-col :xs="24" :md="12">
             <a-form-item label="确认密码" name="confirmPassword">
               <a-input-password v-model:value="formState.confirmPassword" placeholder="请再次输入密码"/>
@@ -29,13 +34,14 @@
         </a-row>
         <a-row :gutter="16">
           <a-col :xs="24" :md="12">
-            <a-form-item label="姓名" name="name">
-              <a-input v-model:value="formState.name" placeholder="请输入姓名"/>
-            </a-form-item>
-          </a-col>
-          <a-col :xs="24" :md="12">
             <a-form-item label="职称" name="title">
-              <a-input v-model:value="formState.title" placeholder="请输入职称"/>
+              <a-auto-complete
+                  v-model:value="formState.title"
+                  :options="titleOptions"
+                  allow-clear
+                  placeholder="请选择或输入职称"
+                  :filter-option="true"
+              />
             </a-form-item>
           </a-col>
         </a-row>
@@ -133,6 +139,19 @@ const rules: FormProps['rules'] = {
     },
   ],
 };
+
+const titleOptions = [
+  { value: '助教' },
+  { value: '讲师' },
+  { value: '副教授' },
+  { value: '教授' },
+  { value: '特聘教授' },
+  { value: '外聘教师' },
+  { value: '兼职教师' },
+  { value: '高级工程师' },
+  { value: '研究员' },
+  { value: '首席专家' },
+];
 
 const passwordLabel = computed(() => (isEdit.value ? '密码（留空表示不修改）' : '密码'));
 const passwordPlaceholder = computed(() => (isEdit.value ? '不修改可留空' : '请输入密码'));

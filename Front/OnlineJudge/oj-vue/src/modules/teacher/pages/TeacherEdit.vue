@@ -34,6 +34,14 @@
         </a-row>
         <a-row :gutter="16">
           <a-col :xs="24" :md="12">
+            <a-form-item label="性别" name="sex">
+              <a-select v-model:value="formState.sex" placeholder="请选择性别" allow-clear>
+                <a-select-option value="male">男</a-select-option>
+                <a-select-option value="female">女</a-select-option>
+              </a-select>
+            </a-form-item>
+          </a-col>
+          <a-col :xs="24" :md="12">
             <a-form-item label="职称" name="title">
               <a-auto-complete
                   v-model:value="formState.title"
@@ -47,20 +55,10 @@
         </a-row>
         <a-row :gutter="16">
           <a-col :xs="24" :md="12">
-            <a-form-item label="性别" name="sex">
-              <a-select v-model:value="formState.sex" placeholder="请选择性别" allow-clear>
-                <a-select-option value="male">男</a-select-option>
-                <a-select-option value="female">女</a-select-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-          <a-col :xs="24" :md="12">
             <a-form-item label="邮箱" name="email">
               <a-input v-model:value="formState.email" placeholder="请输入邮箱"/>
             </a-form-item>
           </a-col>
-        </a-row>
-        <a-row :gutter="16">
           <a-col :xs="24" :md="12">
             <a-form-item label="手机号" name="phone">
               <a-input v-model:value="formState.phone" placeholder="请输入手机号"/>

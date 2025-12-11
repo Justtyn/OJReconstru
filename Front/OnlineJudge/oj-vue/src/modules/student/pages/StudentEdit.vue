@@ -15,12 +15,17 @@
             </a-form-item>
           </a-col>
           <a-col :xs="24" :md="12">
-            <a-form-item :label="passwordLabel" name="password">
-              <a-input-password v-model:value="formState.password" :placeholder="passwordPlaceholder" />
+            <a-form-item label="姓名" name="name">
+              <a-input v-model:value="formState.name" placeholder="请输入姓名" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
+          <a-col :xs="24" :md="12">
+            <a-form-item :label="passwordLabel" name="password">
+              <a-input-password v-model:value="formState.password" :placeholder="passwordPlaceholder" />
+            </a-form-item>
+          </a-col>
           <a-col :xs="24" :md="12">
             <a-form-item label="确认密码" name="confirmPassword">
               <a-input-password v-model:value="formState.confirmPassword" placeholder="请再次输入密码" />
@@ -29,11 +34,6 @@
         </a-row>
         <a-row :gutter="16">
           <a-col :xs="24" :md="12">
-            <a-form-item label="姓名" name="name">
-              <a-input v-model:value="formState.name" placeholder="请输入姓名" />
-            </a-form-item>
-          </a-col>
-          <a-col :xs="24" :md="12">
             <a-form-item label="性别" name="sex">
               <a-select v-model:value="formState.sex" placeholder="请选择性别" allow-clear>
                 <a-select-option value="male">男</a-select-option>
@@ -41,8 +41,6 @@
               </a-select>
             </a-form-item>
           </a-col>
-        </a-row>
-        <a-row :gutter="16">
           <a-col :xs="24" :md="12">
             <a-form-item label="出生日期" name="birth">
               <a-date-picker
@@ -53,31 +51,33 @@
               />
             </a-form-item>
           </a-col>
+        </a-row>
+        <a-row :gutter="16">
           <a-col :xs="24" :md="12">
             <a-form-item label="学校" name="school">
               <a-input v-model:value="formState.school" placeholder="请输入学校" />
             </a-form-item>
           </a-col>
-        </a-row>
-        <a-row :gutter="16">
           <a-col :xs="24" :md="12">
             <a-form-item label="邮箱" name="email">
               <a-input v-model:value="formState.email" placeholder="请输入邮箱" />
             </a-form-item>
           </a-col>
+        </a-row>
+        <a-row :gutter="16">
           <a-col :xs="24" :md="12">
             <a-form-item label="手机号" name="phone">
               <a-input v-model:value="formState.phone" placeholder="请输入手机号" />
             </a-form-item>
           </a-col>
-        </a-row>
-        <a-row :gutter="16">
           <a-col :xs="24" :md="12">
             <a-form-item label="积分" name="score">
               <a-input-number v-model:value="formState.score" style="width: 100%" :min="0" />
             </a-form-item>
           </a-col>
-          <a-col :xs="24" :md="12">
+        </a-row>
+        <a-row :gutter="16">
+          <a-col :xs="24" :md="24">
             <a-form-item label="个人简介" name="bio">
               <a-textarea v-model:value="formState.bio" :rows="3" placeholder="请输入个人简介" />
             </a-form-item>

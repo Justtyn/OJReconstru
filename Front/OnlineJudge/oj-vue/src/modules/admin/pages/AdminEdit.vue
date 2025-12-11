@@ -16,12 +16,17 @@
             </a-form-item>
           </a-col>
           <a-col :xs="24" :md="12">
-            <a-form-item :label="passwordLabel" name="password">
-              <a-input-password v-model:value="formState.password" :placeholder="passwordPlaceholder" />
+            <a-form-item label="姓名" name="name">
+              <a-input v-model:value="formState.name" placeholder="请输入姓名" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
+          <a-col :xs="24" :md="12">
+            <a-form-item :label="passwordLabel" name="password">
+              <a-input-password v-model:value="formState.password" :placeholder="passwordPlaceholder" />
+            </a-form-item>
+          </a-col>
           <a-col :xs="24" :md="12">
             <a-form-item label="确认密码" name="confirmPassword">
               <a-input-password v-model:value="formState.confirmPassword" placeholder="请再次输入密码" />
@@ -30,16 +35,21 @@
         </a-row>
         <a-row :gutter="16">
           <a-col :xs="24" :md="12">
-            <a-form-item label="姓名" name="name">
-              <a-input v-model:value="formState.name" placeholder="请输入姓名" />
-            </a-form-item>
-          </a-col>
-          <a-col :xs="24" :md="12">
             <a-form-item label="性别" name="sex">
               <a-select v-model:value="formState.sex" placeholder="请选择性别" allow-clear>
                 <a-select-option value="male">男</a-select-option>
                 <a-select-option value="female">女</a-select-option>
               </a-select>
+            </a-form-item>
+          </a-col>
+          <a-col :xs="24" :md="12">
+            <a-form-item label="出生日期" name="birth">
+              <a-date-picker
+                v-model:value="formState.birth"
+                placeholder="选择出生日期"
+                value-format="YYYY-MM-DD"
+                style="width: 100%"
+              />
             </a-form-item>
           </a-col>
         </a-row>
@@ -52,18 +62,6 @@
           <a-col :xs="24" :md="12">
             <a-form-item label="手机号" name="phone">
               <a-input v-model:value="formState.phone" placeholder="请输入手机号" />
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-row :gutter="16">
-          <a-col :xs="24" :md="12">
-            <a-form-item label="出生日期" name="birth">
-              <a-date-picker
-                v-model:value="formState.birth"
-                placeholder="选择出生日期"
-                value-format="YYYY-MM-DD"
-                style="width: 100%"
-              />
             </a-form-item>
           </a-col>
         </a-row>

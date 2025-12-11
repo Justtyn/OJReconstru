@@ -8,3 +8,4 @@ export * from './classes';
 export * from './homework';
 export * from './solution';
 export * from './discussion';
+export * from './submission';

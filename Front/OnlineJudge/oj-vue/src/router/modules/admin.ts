@@ -181,6 +181,18 @@ export const adminRoutes: RouteRecordRaw[] = [
         component: () => import('@/modules/discussion/pages/DiscussionEdit.vue'),
         meta: { title: '编辑讨论', requiresAuth: true, roles: ['admin', 'teacher'] },
       },
+      {
+        path: 'submissions',
+        name: 'SubmissionList',
+        component: () => import('@/modules/submission/pages/SubmissionList.vue'),
+        meta: { title: '提交记录', requiresAuth: true, roles: ['admin', 'teacher'] },
+      },
+      {
+        path: 'submissions/:id',
+        name: 'SubmissionDetail',
+        component: () => import('@/modules/submission/pages/SubmissionDetail.vue'),
+        meta: { title: '提交详情', requiresAuth: true, roles: ['admin', 'teacher'] },
+      },
     ],
   },
 ];

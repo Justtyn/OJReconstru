@@ -44,6 +44,7 @@ import {
   CodeOutlined,
   BookOutlined,
   CommentOutlined,
+  LaptopOutlined,
 } from '@ant-design/icons-vue';
 import ThemeSwitcher from '@/components/common/ThemeSwitcher.vue';
 
@@ -118,6 +119,12 @@ const rawMenuItems: MenuItem[] = [
     key: '/admin/discussions',
     icon: () => h(CommentOutlined),
     label: '讨论管理',
+    roles: ['admin', 'teacher'],
+  },
+  {
+    key: '/admin/submissions',
+    icon: () => h(LaptopOutlined),
+    label: '提交记录',
     roles: ['admin', 'teacher'],
   },
 ];

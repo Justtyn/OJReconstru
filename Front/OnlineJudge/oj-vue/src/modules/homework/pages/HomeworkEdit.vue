@@ -34,12 +34,18 @@
         <a-form-item label="描述">
           <a-textarea v-model:value="formState.description" :rows="3" placeholder="作业说明、评分标准等" />
         </a-form-item>
-        <a-form-item label="题目ID列表（可选，逗号分隔）">
-          <a-input
-            v-model:value="problemIdsInput"
-            placeholder="例如：1,2,3"
+        <a-form-item label="选择题目">
+          <a-select
+            v-model:value="selectedProblemIds"
+            mode="multiple"
+            show-search
             allow-clear
-            autocomplete="off"
+            :filter-option="false"
+            :options="problemOptions"
+            :loading="problemOptionsLoading"
+            placeholder="输入题目名称或ID检索，支持多选"
+            @search="handleProblemSearch"
+            @dropdownVisibleChange="handleProblemDropdown"
           />
         </a-form-item>
         <a-form-item>
@@ -62,7 +68,8 @@ import dayjs, { type Dayjs } from 'dayjs';
 import PageContainer from '@/components/common/PageContainer.vue';
 import { classesService } from '@/services/modules/classes';
 import { homeworkService } from '@/services/modules/homework';
-import type { Classes, HomeworkRequest } from '@/types';
+import { problemService } from '@/services/modules/problem';
+import type { Classes, HomeworkProblem, HomeworkRequest, Problem } from '@/types';
 import { extractErrorMessage } from '@/utils/error';
 
 const router = useRouter();
@@ -75,7 +82,9 @@ const formRef = ref<FormInstance>();
 const submitting = ref(false);
 const classInfo = ref<Classes>();
 const dateRange = ref<[Dayjs, Dayjs] | []>([]);
-const problemIdsInput = ref('');
+const selectedProblemIds = ref<string[]>([]);
+const problemOptions = ref<{ label: string; value: string }[]>([]);
+const problemOptionsLoading = ref(false);
 
 const formState = reactive<HomeworkRequest>({
   title: '',
@@ -112,8 +121,7 @@ const loadDetail = async () => {
     formState.isActive = data.isActive ?? true;
     formState.startTime = data.startTime ?? '';
     formState.endTime = data.endTime ?? '';
-    formState.problemIds = data.problemIds ?? [];
-    problemIdsInput.value = (formState.problemIds ?? []).join(',');
+    await loadHomeworkProblems(recordId.value);
     if (data.startTime || data.endTime) {
       const range: Dayjs[] = [];
       if (data.startTime) range.push(dayjs(data.startTime));
@@ -141,17 +149,13 @@ const handleSubmit = async () => {
   try {
     await formRef.value?.validate();
     submitting.value = true;
-    const parsedProblemIds = problemIdsInput.value
-      .split(',')
-      .map((id) => id.trim())
-      .filter((id) => id)
-      .map((id) => Number(id))
-      .filter((id) => !Number.isNaN(id));
 
     const payload: HomeworkRequest = {
       ...formState,
       classId: classId.value,
-      problemIds: parsedProblemIds.length ? parsedProblemIds : undefined,
+      problemIds: selectedProblemIds.value.length
+        ? selectedProblemIds.value.map((id) => Number(id)).filter((id) => !Number.isNaN(id))
+        : undefined,
     };
 
     if (isEdit.value) {
@@ -177,6 +181,38 @@ onMounted(() => {
   loadClass();
   loadDetail();
 });
+
+const handleProblemSearch = async (keyword: string) => {
+  problemOptionsLoading.value = true;
+  try {
+    const data = await problemService.fetchList({ page: 1, size: 50, keyword });
+    problemOptions.value = data.records.map((item: Problem) => ({
+      label: `${item.name}（ID: ${item.id}）`,
+      value: item.id,
+    }));
+  } catch (error: any) {
+    message.error(extractErrorMessage(error, '检索题目失败'));
+  } finally {
+    problemOptionsLoading.value = false;
+  }
+};
+
+const handleProblemDropdown = (open: boolean) => {
+  if (open && !problemOptions.value.length) {
+    handleProblemSearch('');
+  }
+};
+
+const loadHomeworkProblems = async (id: string) => {
+  try {
+    const problems: HomeworkProblem[] = await homeworkService.fetchProblems(id);
+    selectedProblemIds.value = problems.map((p) => p.id.toString());
+    const options = problems.map((p) => ({ label: `${p.name ?? '题目'}（ID: ${p.id}）`, value: p.id }));
+    problemOptions.value = Array.from(new Map([...problemOptions.value, ...options].map((o) => [o.value, o])).values());
+  } catch (error: any) {
+    message.error(extractErrorMessage(error, '加载作业题目失败'));
+  }
+};
 </script>
 
 <style scoped lang="less">

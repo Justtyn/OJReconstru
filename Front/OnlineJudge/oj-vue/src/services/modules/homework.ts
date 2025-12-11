@@ -1,5 +1,12 @@
 import http from '@/services/http';
-import type { Homework, HomeworkQuery, HomeworkRequest, PageResult } from '@/types';
+import type {
+  Homework,
+  HomeworkProblem,
+  HomeworkProblemBatchRequest,
+  HomeworkQuery,
+  HomeworkRequest,
+  PageResult,
+} from '@/types';
 
 export const homeworkService = {
   fetchList(params: HomeworkQuery) {
@@ -16,5 +23,14 @@ export const homeworkService = {
   },
   remove(id: string | number) {
     return http.delete<void>(`/api/homeworks/${id}`);
+  },
+  fetchProblems(id: string | number) {
+    return http.get<HomeworkProblem[]>(`/api/homeworks/${id}/problems`);
+  },
+  addProblems(id: string | number, payload: HomeworkProblemBatchRequest) {
+    return http.post<void>(`/api/homeworks/${id}/problems`, payload);
+  },
+  removeProblem(homeworkId: string | number, problemId: string | number) {
+    return http.delete<void>(`/api/homeworks/${homeworkId}/problems/${problemId}`);
   },
 };

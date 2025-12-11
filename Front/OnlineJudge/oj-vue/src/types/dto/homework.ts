@@ -28,3 +28,20 @@ export interface HomeworkQuery extends PageQuery {
   keyword?: string;
   activeOnly?: boolean;
 }
+
+export interface HomeworkProblem {
+  id: string;
+  homeworkId?: string;
+  name?: string;
+  difficulty?: string;
+  isActive?: boolean;
+  acCount?: number;
+  submitCount?: number;
+  createdAt?: string;
+  createTime?: string;
+  updatedAt?: string;
+}
+
+export interface HomeworkProblemBatchRequest {
+  problemIds: number[];
+}

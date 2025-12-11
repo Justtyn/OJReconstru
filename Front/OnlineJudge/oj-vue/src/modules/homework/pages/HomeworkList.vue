@@ -31,7 +31,39 @@
         :data-source="list"
         :loading="loading"
         :pagination="paginationConfig"
+        :expanded-row-keys="expandedRowKeys"
+        @expand="handleExpand"
       >
+        <template #expandedRowRender="{ record }">
+          <a-table
+            :columns="problemColumns"
+            :data-source="problemListMap[record.id]?.items || []"
+            :loading="problemListMap[record.id]?.loading"
+            row-key="id"
+            :pagination="false"
+            size="small"
+          >
+            <template #bodyCell="{ column, record: problem, text }">
+              <template v-if="column.key === 'difficulty'">
+                <a-tag :color="difficultyColor(problem.difficulty)">{{ difficultyLabel(problem.difficulty) }}</a-tag>
+              </template>
+              <template v-else-if="column.key === 'acCount'">
+                {{ problem.acCount ?? 0 }} / {{ problem.submitCount ?? 0 }}
+              </template>
+              <template v-else-if="column.key === 'isActive'">
+                <a-badge :status="problem.isActive ? 'success' : 'error'" :text="problem.isActive ? '启用' : '禁用'" />
+              </template>
+              <template v-else-if="column.key === 'updatedAt' || column.key === 'createTime'">
+                {{ text ? format(new Date(text), 'yyyy-MM-dd HH:mm') : '-' }}
+              </template>
+              <template v-else-if="column.key === 'actions'">
+                <a-button danger type="link" size="small" @click="confirmRemoveProblem(record.id, problem)">
+                  从作业移除
+                </a-button>
+              </template>
+            </template>
+          </a-table>
+        </template>
         <template #bodyCell="{ column, record, text }">
           <template v-if="column.key === 'startTime' || column.key === 'endTime'">
             {{ text ? format(new Date(text), 'yyyy-MM-dd HH:mm') : '-' }}
@@ -62,7 +94,7 @@ import { format } from 'date-fns';
 import PageContainer from '@/components/common/PageContainer.vue';
 import { classesService } from '@/services/modules/classes';
 import { homeworkService } from '@/services/modules/homework';
-import type { Classes, Homework, HomeworkQuery } from '@/types';
+import type { Classes, Homework, HomeworkProblem, HomeworkQuery } from '@/types';
 import type { TableColumnType } from 'ant-design-vue';
 import { extractErrorMessage } from '@/utils/error';
 
@@ -75,6 +107,8 @@ const query = reactive<HomeworkQuery>({ page: 1, size: 10, classId: classId.valu
 const list = ref<Homework[]>([]);
 const total = ref(0);
 const loading = ref(false);
+const expandedRowKeys = ref<string[]>([]);
+const problemListMap = reactive<Record<string, { loading: boolean; items: HomeworkProblem[] }>>({});
 
 const pageTitle = computed(() => (classInfo.value ? `${classInfo.value.name}的作业` : '作业管理'));
 
@@ -86,6 +120,30 @@ const columns: TableColumnType<Homework>[] = [
   { title: '描述', dataIndex: 'description', key: 'description' },
   { title: '操作', key: 'actions', width: 160 },
 ];
+
+const problemColumns: TableColumnType<HomeworkProblem>[] = [
+  { title: '题目ID', dataIndex: 'id', key: 'id', width: 120 },
+  { title: '名称', dataIndex: 'name', key: 'name' },
+  { title: '难度', dataIndex: 'difficulty', key: 'difficulty', width: 100 },
+  { title: 'AC/提交', dataIndex: 'acCount', key: 'acCount', width: 120 },
+  { title: '状态', dataIndex: 'isActive', key: 'isActive', width: 100 },
+  { title: '更新时间', dataIndex: 'updatedAt', key: 'updatedAt', width: 180 },
+  { title: '操作', key: 'actions', width: 140 },
+];
+
+const difficultyLabel = (val?: string) => {
+  if (val === 'easy') return '简单';
+  if (val === 'medium') return '中等';
+  if (val === 'hard') return '困难';
+  return val || '-';
+};
+
+const difficultyColor = (val?: string) => {
+  if (val === 'easy') return 'green';
+  if (val === 'medium') return 'orange';
+  if (val === 'hard') return 'red';
+  return 'blue';
+};
 
 const loadClass = async () => {
   try {
@@ -119,6 +177,30 @@ const resetQuery = () => {
   handleSearch();
 };
 
+const loadProblems = async (homeworkId: string) => {
+  if (!problemListMap[homeworkId]) {
+    problemListMap[homeworkId] = { loading: false, items: [] };
+  }
+  problemListMap[homeworkId].loading = true;
+  try {
+    const data = await homeworkService.fetchProblems(homeworkId);
+    problemListMap[homeworkId].items = data;
+  } catch (error: any) {
+    message.error(extractErrorMessage(error, '获取作业题目失败'));
+  } finally {
+    problemListMap[homeworkId].loading = false;
+  }
+};
+
+const handleExpand = (expanded: boolean, record: Homework) => {
+  if (expanded) {
+    expandedRowKeys.value = [...expandedRowKeys.value, record.id];
+    loadProblems(record.id);
+  } else {
+    expandedRowKeys.value = expandedRowKeys.value.filter((k) => k !== record.id);
+  }
+};
+
 const goCreate = () => {
   router.push(`/admin/classes/${classId.value}/homeworks/create`);
 };
@@ -144,6 +226,26 @@ const confirmRemove = (record: Homework) => {
     okText: '确定',
     cancelText: '取消',
     onOk: () => remove(record),
+  });
+};
+
+const removeProblem = async (homeworkId: string, problem: HomeworkProblem) => {
+  try {
+    await homeworkService.removeProblem(homeworkId, problem.id);
+    message.success('已从作业移除该题目');
+    loadProblems(homeworkId);
+  } catch (error: any) {
+    message.error(extractErrorMessage(error, '移除题目失败'));
+  }
+};
+
+const confirmRemoveProblem = (homeworkId: string, problem: HomeworkProblem) => {
+  Modal.confirm({
+    title: '移除题目',
+    content: `确认从作业中移除题目「${problem.name || problem.problemId}」？`,
+    okText: '确定',
+    cancelText: '取消',
+    onOk: () => removeProblem(homeworkId, problem),
   });
 };
 

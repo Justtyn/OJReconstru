@@ -58,7 +58,7 @@
             {{ text ? format(new Date(text), 'yyyy-MM-dd') : '-' }}
           </template>
           <template v-else-if="column.key === 'creatorName'">
-            {{ record.creatorName || record.creatorId || '-' }}
+            {{ record.creatorName || teacherCache[record.creatorId || '']?.username || record.creatorId || '-' }}
           </template>
           <template v-else-if="column.key === 'actions'">
             <a-space>
@@ -82,10 +82,11 @@ import { format } from 'date-fns';
 import { message, Modal } from 'ant-design-vue';
 import PageContainer from '@/components/common/PageContainer.vue';
 import { classesService, classesMemberService } from '@/services/modules/classes';
-import type { Classes, ClassesMember, ClassesQuery, Student } from '@/types';
+import type { Classes, ClassesMember, ClassesQuery, Student, Teacher } from '@/types';
 import type { TableColumnType } from 'ant-design-vue';
 import { extractErrorMessage } from '@/utils/error';
 import { studentService } from '@/services/modules/student';
+import { teacherService } from '@/services/modules/teacher';
 
 const router = useRouter();
 
@@ -96,6 +97,7 @@ const loading = ref(false);
 const expandedRowKeys = ref<string[]>([]);
 const studentListMap = reactive<Record<string, { loading: boolean; items: (Student & { memberId: string })[] }>>({});
 const studentCache = reactive<Record<string, Student>>({});
+const teacherCache = reactive<Record<string, Teacher>>({});
 
 const columns: TableColumnType<Classes>[] = [
   { title: '名称', dataIndex: 'name', key: 'name', width: 260 },
@@ -124,6 +126,7 @@ const loadData = async () => {
     const data = await classesService.fetchList(query);
     list.value = data.records;
     total.value = data.total;
+    await loadCreators(data.records);
   } catch (error: any) {
     message.error(extractErrorMessage(error, '获取班级列表失败'));
   } finally {
@@ -134,6 +137,43 @@ const loadData = async () => {
 const handleSearch = () => {
   query.page = 1;
   loadData();
+};
+
+const loadCreators = async (records: Classes[]) => {
+  const ids = Array.from(
+    new Set(
+      (records || [])
+        .map((c) => c.creatorId)
+        .filter((id): id is string => Boolean(id && !teacherCache[id])),
+    ),
+  );
+  if (!ids.length) return;
+  try {
+    const results = await Promise.all(
+      ids.map(async (id) => {
+        try {
+          const detail = await teacherService.fetchDetail(id);
+          teacherCache[id] = detail;
+          return detail;
+        } catch (error: any) {
+          // ignore single failure
+          return null;
+        }
+      }),
+    );
+    const nameMap: Record<string, string> = {};
+    results.forEach((r) => {
+      if (r?.id) {
+        nameMap[r.id] = r.username || r.name || r.id;
+      }
+    });
+    list.value = list.value.map((item) => ({
+      ...item,
+      creatorName: nameMap[item.creatorId || ''] || item.creatorName || item.creatorId,
+    }));
+  } catch (error: any) {
+    // 忽略整体错误
+  }
 };
 
 const resetQuery = () => {

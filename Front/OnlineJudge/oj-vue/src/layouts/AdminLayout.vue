@@ -148,6 +148,9 @@ const resolveSelectedKey = () => {
   if (route.path.startsWith('/admin/announcements')) return '/admin/announcements';
   if (route.path.startsWith('/admin/login-logs')) return '/admin/login-logs';
   if (route.path.startsWith('/admin/problems')) return '/admin/problems';
+  if (route.path.startsWith('/admin/solutions')) return '/admin/solutions';
+  if (route.path.startsWith('/admin/discussions')) return '/admin/discussions';
+  if (route.path.startsWith('/admin/submissions')) return '/admin/submissions';
   return '/admin/overview';
 };
 

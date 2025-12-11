@@ -64,6 +64,9 @@
           <template v-if="column.key === 'problemId'">
             {{ problemCache[record.problemId]?.name || record.problemId }}
           </template>
+          <template v-else-if="column.key === 'studentId'">
+            {{ studentLabel(record) }}
+          </template>
           <template v-else-if="column.key === 'overallStatusName'">
             <a-badge :status="statusBadge(record.overallStatusCode)" :text="record.overallStatusName || record.overallStatusCode" />
           </template>
@@ -142,6 +145,7 @@ const studentCache = reactive<Record<string, Student>>({});
 const columns: TableColumnType<Submission>[] = [
   { title: '提交ID', dataIndex: 'id', key: 'id', width: 200 },
   { title: '题目', dataIndex: 'problemId', key: 'problemId', width: 220 },
+  { title: '学生', dataIndex: 'studentId', key: 'studentId', width: 200 },
   { title: '语言', dataIndex: 'languageId', key: 'languageId', width: 160 },
   { title: '状态', dataIndex: 'overallStatusName', key: 'overallStatusName', width: 140 },
   { title: '通过/总数', dataIndex: 'caseCount', key: 'caseCount', width: 120 },
@@ -166,7 +170,9 @@ const loadData = async () => {
 
 const preloadCaches = (records: Submission[]) => {
   const pIds = Array.from(new Set(records.map((r) => r.problemId).filter((id) => id && !problemCache[id])));
-  const uIds = Array.from(new Set(records.map((r) => (r as any).userId).filter((id) => id && !studentCache[id])));
+  const uIds = Array.from(
+    new Set(records.map((r) => r.studentId || (r as any).userId).filter((id) => id && !studentCache[id])),
+  );
   if (pIds.length) {
     Promise.all(
       pIds.map(async (id) => {
@@ -246,6 +252,14 @@ const handleStudentDropdown = (open: boolean) => {
 };
 
 const languageLabel = (id?: number) => languageOptions.find((l) => l.id === id)?.name || id || '-';
+
+const studentLabel = (record: Submission) => {
+  const id = record.studentId || (record as any).userId;
+  if (!id) return '-';
+  const cached = studentCache[id];
+  if (cached) return cached.name ? `${cached.username}（${cached.name}）` : cached.username;
+  return record.studentUsername || (record as any).username || id;
+};
 
 const statusBadge = (code?: string) => {
   if (code === 'ACCEPTED') return 'success';

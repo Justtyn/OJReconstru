@@ -93,3 +93,8 @@ Run commands from the repository root. Use `.env` files for API hosts instead of
     - Store in Pinia and sync to `localStorage` only when necessary.
     - On logout, clear both store and storage immediately.
 - Keep sensitive logic (user roles, permission checks) centralized in router guards or dedicated service utilities.
+
+## 额外要求
+
+- 所有对话必须全程使用中文回复。
+- 每次编码完成后必须在 `TODO.md` 中记录留痕。

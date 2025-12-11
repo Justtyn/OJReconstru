@@ -3,6 +3,9 @@ import type { PageQuery } from '@/types/pagination';
 export interface Submission {
   id: string;
   problemId: string;
+  studentId?: string;
+  studentUsername?: string;
+  studentName?: string | null;
   homeworkId?: string | null;
   languageId?: number;
   overallStatusId?: number;

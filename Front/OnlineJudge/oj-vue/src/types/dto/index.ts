@@ -6,3 +6,4 @@ export * from './loginLog';
 export * from './problem';
 export * from './classes';
 export * from './homework';
+export * from './solution';

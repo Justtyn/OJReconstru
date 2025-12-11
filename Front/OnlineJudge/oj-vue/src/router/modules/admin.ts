@@ -145,6 +145,24 @@ export const adminRoutes: RouteRecordRaw[] = [
         component: () => import('@/modules/problem/pages/ProblemEdit.vue'),
         meta: { title: '编辑题目', requiresAuth: true, roles: ['admin', 'teacher'] },
       },
+      {
+        path: 'solutions',
+        name: 'SolutionList',
+        component: () => import('@/modules/solution/pages/SolutionList.vue'),
+        meta: { title: '题解管理', requiresAuth: true, roles: ['admin', 'teacher'] },
+      },
+      {
+        path: 'solutions/create',
+        name: 'SolutionCreate',
+        component: () => import('@/modules/solution/pages/SolutionEdit.vue'),
+        meta: { title: '新建题解', requiresAuth: true, roles: ['admin', 'teacher'] },
+      },
+      {
+        path: 'solutions/:id/edit',
+        name: 'SolutionEdit',
+        component: () => import('@/modules/solution/pages/SolutionEdit.vue'),
+        meta: { title: '编辑题解', requiresAuth: true, roles: ['admin', 'teacher'] },
+      },
     ],
   },
 ];

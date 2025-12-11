@@ -107,6 +107,12 @@ const rawMenuItems: MenuItem[] = [
     label: '题目管理',
     roles: ['admin', 'teacher'],
   },
+  {
+    key: '/admin/solutions',
+    icon: () => h(SolutionOutlined),
+    label: '题解管理',
+    roles: ['admin', 'teacher'],
+  },
 ];
 
 const menuItems = computed<MenuProps['items']>(() => {

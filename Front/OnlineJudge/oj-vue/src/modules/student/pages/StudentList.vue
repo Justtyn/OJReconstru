@@ -27,7 +27,17 @@
         :pagination="paginationConfig"
       >
         <template #bodyCell="{ column, record, text }">
-          <template v-if="column.key === 'sex'">
+          <template v-if="column.key === 'avatar'">
+            <a-avatar
+              :src="record.avatar"
+              shape="square"
+              :size="48"
+              style="border-radius: 6px"
+            >
+              <template #icon>{{ (record.username && record.username[0]) || 'S' }}</template>
+            </a-avatar>
+          </template>
+          <template v-else-if="column.key === 'sex'">
             <a-tag :color="getSexTagColor(text)">{{ formatSexLabel(text) }}</a-tag>
           </template>
           <template v-else-if="column.key === 'ac'">
@@ -85,6 +95,7 @@ const loading = ref(false);
 const canCreate = computed(() => authStore.role === 'admin');
 
 const columns: TableColumnType<Student>[] = [
+  { title: '头像', dataIndex: 'avatar', key: 'avatar', width: 80 },
   { title: '用户名', dataIndex: 'username', key: 'username' },
   { title: '姓名', dataIndex: 'name', key: 'name' },
   { title: '性别', dataIndex: 'sex', key: 'sex', width: 80 },

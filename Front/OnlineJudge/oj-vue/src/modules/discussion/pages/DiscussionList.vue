@@ -43,9 +43,6 @@
           <a-button type="primary" @click="handleSearch">查询</a-button>
           <a-button style="margin-left: 8px" @click="resetQuery">重置</a-button>
         </a-form-item>
-        <a-form-item style="margin-left:auto;">
-          <a-button type="primary" @click="goCreate">新建讨论</a-button>
-        </a-form-item>
       </a-form>
     </a-card>
 
@@ -215,10 +212,6 @@ const resetQuery = () => {
   query.userId = undefined;
   query.isActive = undefined;
   handleSearch();
-};
-
-const goCreate = () => {
-  router.push('/admin/discussions/create');
 };
 
 const edit = (record: Discussion) => {

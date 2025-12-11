@@ -22,6 +22,33 @@
         </a-row>
         <a-row :gutter="16">
           <a-col :xs="24" :md="12">
+            <a-form-item label="头像" name="avatar">
+              <a-upload
+                :action="`${avatarPrefix}/api/files/avatar`"
+                name="file"
+                accept="image/*"
+                :show-upload-list="false"
+                :before-upload="beforeUpload"
+                @change="handleUploadChange"
+              >
+                <div class="avatar-upload">
+                  <a-avatar :src="avatarPreview" shape="square" :size="96" style="border-radius: 10px">
+                    <template #icon>上传</template>
+                  </a-avatar>
+                  <div class="avatar-upload__text">点击上传</div>
+                </div>
+              </a-upload>
+            </a-form-item>
+          </a-col>
+          <a-col :xs="24" :md="12">
+            <a-form-item label="头像前缀">
+              <a-input v-model:value="avatarPrefix" placeholder="例如：http://localhost:8080" />
+              <div class="tip-text">用于拼接上传返回的路径前缀</div>
+            </a-form-item>
+          </a-col>
+        </a-row>
+        <a-row :gutter="16">
+          <a-col :xs="24" :md="12">
             <a-form-item :label="passwordLabel" name="password">
               <a-input-password v-model:value="formState.password" :placeholder="passwordPlaceholder" />
             </a-form-item>
@@ -97,7 +124,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { message } from 'ant-design-vue';
+import { message, Upload, type UploadProps } from 'ant-design-vue';
 import type { FormInstance, FormProps } from 'ant-design-vue';
 import PageContainer from '@/components/common/PageContainer.vue';
 import { studentService } from '@/services/modules/student';
@@ -125,7 +152,10 @@ const formState = reactive<StudentFormState>({
   school: '',
   score: 0,
   bio: '',
+  avatar: '',
 });
+const avatarPreview = ref('');
+const avatarPrefix = ref('http://localhost:8080');
 
 const rules: FormProps['rules'] = {
   username: [{ required: true, message: '请输入用户名' }],
@@ -173,6 +203,8 @@ const loadDetail = async () => {
     formState.school = data.school ?? '';
     formState.score = data.score ?? 0;
     formState.bio = data.bio ?? '';
+    formState.avatar = data.avatar ?? '';
+    avatarPreview.value = data.avatar ? withPrefix(data.avatar) : '';
     formState.password = '';
     formState.confirmPassword = '';
   } catch (error: any) {
@@ -194,6 +226,7 @@ const handleSubmit = async () => {
       school: formState.school,
       score: formState.score,
       bio: formState.bio,
+      avatar: formState.avatar || `${avatarPrefix.value}/files/avatars/DefaultAvatar.jpg`,
     };
     if (formState.password || formState.confirmPassword) {
       if (formState.password !== formState.confirmPassword) {
@@ -233,11 +266,77 @@ const goBack = () => {
 onMounted(() => {
   loadDetail();
 });
+
+const beforeUpload: UploadProps['beforeUpload'] = async (file) => {
+  const isImage = file.type.startsWith('image/');
+  if (!isImage) {
+    message.error('请上传图片文件');
+    return Upload.LIST_IGNORE;
+  }
+  const isSquare = await checkSquare(file);
+  if (!isSquare) {
+    message.error('请上传正方形图片');
+    return Upload.LIST_IGNORE;
+  }
+  return true;
+};
+
+const checkSquare = (file: File): Promise<boolean> =>
+  new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        resolve(img.width === img.height);
+      };
+      img.onerror = () => resolve(false);
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+
+const handleUploadChange: UploadProps['onChange'] = async ({ file }) => {
+  if (file.status === 'uploading') {
+    return;
+  }
+  if (file.status === 'done' && file.response) {
+    const urlSuffix = file.response?.data || file.response?.url || file.response;
+    formState.avatar = urlSuffix;
+    avatarPreview.value = withPrefix(urlSuffix);
+    message.success('上传成功');
+  } else if (file.status === 'error') {
+    message.error('上传失败');
+  }
+};
+
+const withPrefix = (url?: string) => {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  return `${avatarPrefix.value}${url}`;
+};
 </script>
 
 <style scoped lang="less">
 .student-edit-form {
   max-width: 960px;
   margin: 0 auto;
+}
+
+.avatar-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.avatar-upload__text {
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 12px;
+}
+
+.tip-text {
+  margin-top: 4px;
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 12px;
 }
 </style>

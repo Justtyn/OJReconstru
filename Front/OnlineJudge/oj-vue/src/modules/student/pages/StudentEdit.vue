@@ -29,21 +29,17 @@
                 accept="image/*"
                 :show-upload-list="false"
                 :before-upload="beforeUpload"
+                :headers="uploadHeaders"
                 @change="handleUploadChange"
               >
                 <div class="avatar-upload">
-                  <a-avatar :src="avatarPreview" shape="square" :size="96" style="border-radius: 10px">
-                    <template #icon>上传</template>
+                  <a-avatar :src="avatarPreview" shape="square" :size="80" style="border-radius: 10px">
+                    <template #icon>+</template>
                   </a-avatar>
                   <div class="avatar-upload__text">点击上传</div>
                 </div>
               </a-upload>
-            </a-form-item>
-          </a-col>
-          <a-col :xs="24" :md="12">
-            <a-form-item label="头像前缀">
-              <a-input v-model:value="avatarPrefix" placeholder="例如：http://localhost:8080" />
-              <div class="tip-text">用于拼接上传返回的路径前缀</div>
+              <div class="tip-text">当前前缀：{{ avatarPrefix }}</div>
             </a-form-item>
           </a-col>
         </a-row>
@@ -130,6 +126,7 @@ import PageContainer from '@/components/common/PageContainer.vue';
 import { studentService } from '@/services/modules/student';
 import type { StudentUpsertRequest } from '@/types';
 import { extractErrorMessage } from '@/utils/error';
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
 const route = useRoute();
@@ -137,6 +134,16 @@ const isEdit = computed(() => Boolean(route.params.id));
 const recordId = computed(() => route.params.id as string | undefined);
 const formRef = ref<FormInstance>();
 const submitting = ref(false);
+const authStore = useAuthStore();
+const avatarPrefixKey = 'studentAvatarPrefix';
+const avatarPrefix = ref<string>(localStorage.getItem(avatarPrefixKey) || 'http://localhost:8080');
+const uploadHeaders = computed(() => {
+  const raw = authStore.token || '';
+  const token = raw.replace(/^Bearer\s+/i, '');
+  return {
+    Authorization: token ? `Bearer ${token}` : '',
+  };
+});
 
 type StudentFormState = StudentUpsertRequest & { confirmPassword?: string };
 
@@ -155,7 +162,6 @@ const formState = reactive<StudentFormState>({
   avatar: '',
 });
 const avatarPreview = ref('');
-const avatarPrefix = ref('http://localhost:8080');
 
 const rules: FormProps['rules'] = {
   username: [{ required: true, message: '请输入用户名' }],
@@ -204,7 +210,7 @@ const loadDetail = async () => {
     formState.score = data.score ?? 0;
     formState.bio = data.bio ?? '';
     formState.avatar = data.avatar ?? '';
-    avatarPreview.value = data.avatar ? withPrefix(data.avatar) : '';
+    avatarPreview.value = resolveAvatar(data.avatar);
     formState.password = '';
     formState.confirmPassword = '';
   } catch (error: any) {
@@ -226,7 +232,7 @@ const handleSubmit = async () => {
       school: formState.school,
       score: formState.score,
       bio: formState.bio,
-      avatar: formState.avatar || `${avatarPrefix.value}/files/avatars/DefaultAvatar.jpg`,
+      avatar: resolveAvatar(formState.avatar),
     };
     if (formState.password || formState.confirmPassword) {
       if (formState.password !== formState.confirmPassword) {
@@ -300,9 +306,9 @@ const handleUploadChange: UploadProps['onChange'] = async ({ file }) => {
     return;
   }
   if (file.status === 'done' && file.response) {
-    const urlSuffix = file.response?.data || file.response?.url || file.response;
+    const urlSuffix = file.response?.data?.url || file.response?.data || file.response?.url || file.response;
     formState.avatar = urlSuffix;
-    avatarPreview.value = withPrefix(urlSuffix);
+    avatarPreview.value = resolveAvatar(urlSuffix);
     message.success('上传成功');
   } else if (file.status === 'error') {
     message.error('上传失败');
@@ -313,6 +319,12 @@ const withPrefix = (url?: string) => {
   if (!url) return '';
   if (url.startsWith('http')) return url;
   return `${avatarPrefix.value}${url}`;
+};
+
+const resolveAvatar = (url?: unknown) => {
+  const str = typeof url === 'string' ? url : '';
+  if (!str) return `${avatarPrefix.value}/files/avatars/DefaultAvatar.jpg`;
+  return withPrefix(str);
 };
 </script>
 
@@ -330,13 +342,13 @@ const withPrefix = (url?: string) => {
 }
 
 .avatar-upload__text {
-  color: rgba(0, 0, 0, 0.45);
+  color: var(--text-color, rgba(0, 0, 0, 0.65));
   font-size: 12px;
 }
 
 .tip-text {
   margin-top: 4px;
-  color: rgba(0, 0, 0, 0.45);
+  color: var(--text-color, rgba(0, 0, 0, 0.65));
   font-size: 12px;
 }
 </style>

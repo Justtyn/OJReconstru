@@ -8,6 +8,12 @@
         <a-form-item label="邮箱">
           <a-input v-model:value="query.email" allow-clear placeholder="按邮箱搜索" @pressEnter="handleSearch" />
         </a-form-item>
+        <a-form-item label="头像前缀">
+          <a-input v-model:value="avatarPrefix" style="width: 220px" placeholder="http://localhost:8080" />
+        </a-form-item>
+        <a-form-item>
+          <a-button @click="savePrefix">保存前缀</a-button>
+        </a-form-item>
         <a-form-item>
           <a-button type="primary" @click="handleSearch">查询</a-button>
           <a-button style="margin-left: 8px" @click="resetQuery">重置</a-button>
@@ -29,9 +35,9 @@
         <template #bodyCell="{ column, record, text }">
           <template v-if="column.key === 'avatar'">
             <a-avatar
-              :src="record.avatar"
+              :src="withPrefix(record.avatar)"
               shape="square"
-              :size="48"
+              :size="40"
               style="border-radius: 6px"
             >
               <template #icon>{{ (record.username && record.username[0]) || 'S' }}</template>
@@ -91,21 +97,23 @@ const query = reactive<StudentQuery>({ page: 1, size: 10, username: '', email: '
 const list = ref<Student[]>([]);
 const total = ref(0);
 const loading = ref(false);
+const avatarPrefixKey = 'studentAvatarPrefix';
+const avatarPrefix = ref<string>(localStorage.getItem(avatarPrefixKey) || 'http://localhost:8080');
 
 const canCreate = computed(() => authStore.role === 'admin');
 
 const columns: TableColumnType<Student>[] = [
-  { title: '头像', dataIndex: 'avatar', key: 'avatar', width: 80 },
+  { title: '头像', dataIndex: 'avatar', key: 'avatar', width: 70 },
   { title: '用户名', dataIndex: 'username', key: 'username' },
   { title: '姓名', dataIndex: 'name', key: 'name' },
   { title: '性别', dataIndex: 'sex', key: 'sex', width: 80 },
   { title: '邮箱', dataIndex: 'email', key: 'email' },
   { title: '手机号', dataIndex: 'phone', key: 'phone' },
-  { title: '学校', dataIndex: 'school', key: 'school' },
-  { title: 'AC', dataIndex: 'ac', key: 'ac', width: 80 },
-  { title: '提交', dataIndex: 'submit', key: 'submit', width: 80 },
-  { title: '通过率', dataIndex: 'passRate', key: 'passRate', width: 100 },
-  { title: '积分', dataIndex: 'score', key: 'score', width: 80 },
+  { title: '学校', dataIndex: 'school', key: 'school', width: 150 },
+  { title: 'AC', dataIndex: 'ac', key: 'ac', width: 70 },
+  { title: '提交', dataIndex: 'submit', key: 'submit', width: 70 },
+  { title: '通过率', dataIndex: 'passRate', key: 'passRate', width: 90 },
+  { title: '积分', dataIndex: 'score', key: 'score', width: 70 },
   { title: '邮箱状态', dataIndex: 'isVerified', key: 'isVerified', width: 100 },
   { title: '最近登录', dataIndex: 'lastLoginTime', key: 'lastLoginTime', width: 180 },
   { title: '操作', key: 'actions', width: 160 },
@@ -131,11 +139,20 @@ const getPassRate = (record: Student) => {
   return `${rate.toFixed(1)}%`;
 };
 
+const withPrefix = (url?: string | null) => {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  return `${avatarPrefix.value}${url}`;
+};
+
 const loadData = async () => {
   loading.value = true;
   try {
     const data = await studentService.fetchList(query);
-    list.value = data.records;
+    list.value = data.records.map((item) => ({
+      ...item,
+      avatar: withPrefix(item.avatar),
+    }));
     total.value = data.total;
   } catch (error: any) {
     message.error(extractErrorMessage(error, '获取学生列表失败'));
@@ -153,6 +170,12 @@ const resetQuery = () => {
   query.username = '';
   query.email = '';
   handleSearch();
+};
+
+const savePrefix = () => {
+  localStorage.setItem(avatarPrefixKey, avatarPrefix.value);
+  message.success('头像前缀已保存');
+  loadData();
 };
 
 const goCreate = () => {

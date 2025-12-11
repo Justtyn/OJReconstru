@@ -31,6 +31,26 @@
           @keydown="handleKeydown($event, 'password')"
         />
       </a-form-item>
+      <a-form-item label="验证码" name="captcha">
+        <div class="captcha-row">
+          <a-input
+            ref="captchaInputRef"
+            v-model:value="formState.captcha"
+            placeholder="请输入验证码"
+            allow-clear
+            @keydown="handleKeydown($event, 'captcha')"
+          />
+          <div
+            class="captcha-box"
+            role="button"
+            tabindex="0"
+            @click="refreshCaptcha"
+            @keydown.enter.prevent="refreshCaptcha"
+          >
+            <span class="captcha-text">{{ captchaCode }}</span>
+          </div>
+        </div>
+      </a-form-item>
       <a-form-item label="角色" name="role">
         <a-segmented
           ref="roleSegmentedRef"
@@ -62,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import type { FormInstance, FormProps, InputRef } from 'ant-design-vue';
 import { message } from 'ant-design-vue';
 import { useRouter, useRoute, RouterLink } from 'vue-router';
@@ -81,6 +101,7 @@ const usernameInputRef = ref<InputRef>();
 const passwordInputRef = ref<InputRef>();
 const roleSegmentedRef = ref<any>();
 const loginButtonRef = ref<any>();
+const captchaInputRef = ref<InputRef>();
 
 const roleOptions = [
   { label: '学生', value: 'student' },
@@ -88,25 +109,56 @@ const roleOptions = [
   { label: '管理员', value: 'admin' },
 ];
 
-const formState = reactive<LoginRequest>({
+type LoginFormState = LoginRequest & { captcha: string };
+
+const formState = reactive<LoginFormState>({
   username: '',
   password: '',
   role: 'student',
+  captcha: '',
 });
 
 const rules: FormProps['rules'] = {
   username: [{ required: true, message: '请输入用户名' }],
   password: [{ required: true, message: '请输入密码' }],
   role: [{ required: true }],
+  captcha: [
+    {
+      validator: (_rule: unknown, value: string) => {
+        if (!value) return Promise.reject('请输入验证码');
+        if (value.trim().toLowerCase() !== captchaCode.value.toLowerCase()) {
+          return Promise.reject('验证码不正确');
+        }
+        return Promise.resolve();
+      },
+      trigger: 'blur',
+    },
+  ],
 };
 
-type FocusTarget = 'username' | 'password' | 'role' | 'submit';
+const captchaCode = ref('');
+
+const generateCaptcha = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  let result = '';
+  for (let i = 0; i < 6; i += 1) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
+
+const refreshCaptcha = () => {
+  captchaCode.value = generateCaptcha();
+};
+
+type FocusTarget = 'username' | 'password' | 'captcha' | 'role' | 'submit';
 
 const focusField = (target: FocusTarget) => {
   const map: Record<FocusTarget, any> = {
     username: usernameInputRef.value,
     password: passwordInputRef.value,
     role: roleSegmentedRef.value,
+    captcha: captchaInputRef.value,
     submit: loginButtonRef.value,
   };
   const instance = map[target];
@@ -128,7 +180,7 @@ const focusField = (target: FocusTarget) => {
 };
 
 const getNextTarget = (current: FocusTarget, backward = false): FocusTarget | undefined => {
-  const order: FocusTarget[] = ['username', 'password', 'role', 'submit'];
+  const order: FocusTarget[] = ['username', 'password', 'captcha', 'role', 'submit'];
   const index = order.indexOf(current);
   if (index === -1) return undefined;
   const nextIndex = index + (backward ? -1 : 1);
@@ -154,8 +206,19 @@ const handleKeydown = (event: KeyboardEvent, current: FocusTarget) => {
 const handleSubmit = async () => {
   try {
     await formRef.value?.validate();
+    if (formState.captcha.trim().toLowerCase() !== captchaCode.value.toLowerCase()) {
+      message.error('验证码不正确');
+      refreshCaptcha();
+      formState.captcha = '';
+      focusField('captcha');
+      return;
+    }
     submitting.value = true;
-    await authStore.login(formState);
+    await authStore.login({
+      username: formState.username,
+      password: formState.password,
+      role: formState.role,
+    });
     message.success('登录成功');
     const redirect =
       (route.query.redirect as string) || resolveDefaultRoute(authStore.role as UserRole);
@@ -166,6 +229,10 @@ const handleSubmit = async () => {
     submitting.value = false;
   }
 };
+
+onMounted(() => {
+  refreshCaptcha();
+});
 </script>
 
 <style scoped lang="less">
@@ -188,5 +255,49 @@ const handleSubmit = async () => {
   margin-top: 16px;
   display: flex;
   justify-content: space-between;
+}
+
+.captcha-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.captcha-box {
+  min-width: 140px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.12));
+  background: var(--card-bg, rgba(255, 255, 255, 0.92));
+  color: var(--text-color, #0f172a);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.captcha-text {
+  letter-spacing: 2px;
+  font-weight: 700;
+  font-size: 18px;
+  user-select: none;
+}
+
+@media (max-width: 576px) {
+  .captcha-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .captcha-box {
+    width: 100%;
+    align-items: center;
+  }
 }
 </style>

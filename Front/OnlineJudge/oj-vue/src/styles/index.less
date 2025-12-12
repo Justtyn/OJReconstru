@@ -5,6 +5,9 @@
   --body-bg: #f5f7fb;
   --text-color: #0f172a;
   --card-bg: #ffffff;
+  --scroll-track: rgba(15, 23, 42, 0.06);
+  --scroll-thumb: rgba(99, 102, 241, 0.35);
+  --scroll-thumb-hover: rgba(99, 102, 241, 0.55);
 }
 
 :root[data-theme='dark'] {
@@ -13,6 +16,9 @@
   --body-bg: #0f172a;
   --text-color: #e2e8f0;
   --card-bg: #152238;
+  --scroll-track: rgba(226, 232, 240, 0.06);
+  --scroll-thumb: rgba(148, 163, 184, 0.35);
+  --scroll-thumb-hover: rgba(148, 163, 184, 0.6);
 }
 
 *,
@@ -27,6 +33,36 @@ body {
   background-color: var(--body-bg);
   color: var(--text-color);
   transition: background-color 0.3s, color 0.3s;
+}
+
+.admin-layout__content,
+.ant-table-body,
+.ant-table-content,
+.ant-modal-body,
+.ant-drawer-body,
+.ant-list-split,
+.ant-card-body,
+body {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--scroll-track);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scroll-thumb-hover);
 }
 
 .ant-layout,

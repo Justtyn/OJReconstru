@@ -523,6 +523,8 @@ GET /api/problems/{problemId}/solutions
 |problemId|path|integer(int64)| 是 |none|
 |page|query|integer(int64)| 否 |none|
 |size|query|integer(int64)| 否 |none|
+|title|query|string| 否 |标题模糊查询|
+|isActive|query|boolean| 否 |按启用状态过滤（管理员/教师可用）|
 
 > 返回示例
 
@@ -547,7 +549,7 @@ GET /api/problems/{problemId}/solutions
 
 POST /api/problems/{problemId}/solutions
 
-学生或管理员可发布，管理员需指定 authorId 为学生ID，路径参数指定题目ID
+学生或管理员可发布，管理员需指定 authorId 为学生ID，路径参数指定题目ID；发布成功为作者积分+3
 
 > Body 请求参数
 
@@ -602,7 +604,9 @@ GET /api/solutions
 |size|query|integer(int64)| 否 |none|
 |problemId|query|integer(int64)| 否 |题目ID过滤|
 |authorId|query|integer(int64)| 否 |作者学生ID过滤|
+|title|query|string| 否 |标题模糊查询|
 |includeInactive|query|boolean| 否 |是否包含未启用题解，仅管理员可用|
+|isActive|query|boolean| 否 |按启用状态过滤（管理员/教师可用）|
 
 > 返回示例
 
@@ -734,6 +738,8 @@ DELETE /api/login-logs/{id}
 ## GET 登录日志-分页列表
 
 GET /api/login-logs
+
+支持按角色、用户ID、用户名模糊查询，按登录时间倒序返回
 
 ### 请求参数
 
@@ -1200,6 +1206,8 @@ DELETE /api/discussions/{id}
 
 GET /api/discussions
 
+支持按题目、作者、标题、内容、启用状态筛选，管理员可查看未启用讨论
+
 ### 请求参数
 
 |名称|位置|类型|必选|说明|
@@ -1208,6 +1216,9 @@ GET /api/discussions
 |size|query|integer(int64)| 否 |none|
 |problemId|query|integer(int64)| 否 |关联题目过滤|
 |userId|query|integer(int64)| 否 |作者过滤|
+|title|query|string| 否 |标题模糊查询|
+|content|query|string| 否 |内容模糊查询|
+|isActive|query|boolean| 否 |按启用状态过滤（管理员/教师可用）|
 |includeInactive|query|boolean| 否 |管理员专用：是否包含未启用讨论|
 
 > 返回示例
@@ -1233,7 +1244,7 @@ GET /api/discussions
 
 POST /api/discussions
 
-管理员发布需指定 authorId 为学生ID
+管理员发布需指定 authorId 为学生ID；发布成功为作者积分+3
 
 > Body 请求参数
 
@@ -2353,6 +2364,8 @@ GET /api/submissions
 ## POST 提交代码（学生）
 
 POST /api/submissions
+
+判题通过（ACCEPTED）后为该学生积分+5，其他状态不加分
 
 > Body 请求参数
 
@@ -6495,3 +6508,4 @@ GET /api/announcements/{id}
 |code|integer(int32)|false|none||none|
 |message|string|false|none||none|
 |data|[[ProblemTestcase](#schemaproblemtestcase)]|false|none||[题目测试用例实体]|
+

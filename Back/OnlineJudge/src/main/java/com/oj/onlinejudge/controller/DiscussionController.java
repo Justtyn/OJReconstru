@@ -48,7 +48,7 @@ public class DiscussionController {
     private final ProblemService problemService;
     private final StudentService studentService;
 
-    @Operation(summary = "讨论-列表")
+    @Operation(summary = "讨论-列表", description = "支持按题目、作者、标题、内容、启用状态筛选，管理员可查看未启用讨论")
     @GetMapping
     public ApiResponse<Page<Discussion>> list(
             @Parameter(description = "当前登录用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
@@ -56,6 +56,9 @@ public class DiscussionController {
             @RequestParam(defaultValue = "10") long size,
             @Parameter(description = "关联题目过滤") @RequestParam(required = false) Long problemId,
             @Parameter(description = "作者过滤") @RequestParam(required = false) Long userId,
+            @Parameter(description = "标题模糊查询") @RequestParam(required = false) String title,
+            @Parameter(description = "内容模糊查询") @RequestParam(required = false) String content,
+            @Parameter(description = "按启用状态过滤（管理员/教师可用）") @RequestParam(required = false) Boolean isActive,
             @Parameter(description = "管理员专用：是否包含未启用讨论") @RequestParam(defaultValue = "false") boolean includeInactive) {
         ensureViewer(current);
         LambdaQueryWrapper<Discussion> wrapper = new LambdaQueryWrapper<>();
@@ -65,8 +68,21 @@ public class DiscussionController {
         if (userId != null) {
             wrapper.eq(Discussion::getUserId, userId);
         }
+        if (title != null && !title.trim().isEmpty()) {
+            wrapper.like(Discussion::getTitle, title.trim());
+        }
+        if (content != null && !content.trim().isEmpty()) {
+            wrapper.like(Discussion::getContent, content.trim());
+        }
         boolean includeInactiveAll = includeInactive || isAdmin(current);
-        if (!includeInactiveAll) {
+        boolean canFilterInactive = isAdmin(current) || isTeacher(current);
+        if (isActive != null) {
+            if (!canFilterInactive && Boolean.FALSE.equals(isActive)) {
+                wrapper.eq(Discussion::getIsActive, true);
+            } else {
+                wrapper.eq(Discussion::getIsActive, isActive);
+            }
+        } else if (!includeInactiveAll) {
             wrapper.eq(Discussion::getIsActive, true);
         }
         wrapper.orderByDesc(Discussion::getUpdateTime)
@@ -272,6 +288,10 @@ public class DiscussionController {
 
     private boolean isAdmin(AuthenticatedUser current) {
         return current != null && "admin".equalsIgnoreCase(current.getRole());
+    }
+
+    private boolean isTeacher(AuthenticatedUser current) {
+        return current != null && "teacher".equalsIgnoreCase(current.getRole());
     }
 
     private boolean isStudent(AuthenticatedUser current) {

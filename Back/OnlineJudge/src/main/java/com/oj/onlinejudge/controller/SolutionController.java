@@ -48,10 +48,13 @@ public class SolutionController {
             @RequestParam(defaultValue = "10") long size,
             @Parameter(description = "题目ID过滤") @RequestParam(required = false) Long problemId,
             @Parameter(description = "作者学生ID过滤") @RequestParam(required = false) Long authorId,
-            @Parameter(description = "是否包含未启用题解，仅管理员可用") @RequestParam(defaultValue = "false") boolean includeInactive) {
+            @Parameter(description = "标题模糊查询") @RequestParam(required = false) String title,
+            @Parameter(description = "是否包含未启用题解，仅管理员可用") @RequestParam(defaultValue = "false") boolean includeInactive,
+            @Parameter(description = "按启用状态过滤（管理员/教师可用）") @RequestParam(required = false) Boolean isActive) {
         ensureViewRole(current);
         boolean includeInactiveAll = isAdmin(current) || (includeInactive && isAdmin(current));
-        Page<Solution> result = querySolutions(problemId, authorId, includeInactiveAll, page, size);
+        boolean canFilterInactive = isAdmin(current) || isTeacher(current);
+        Page<Solution> result = querySolutions(problemId, authorId, title, isActive, includeInactiveAll, canFilterInactive, page, size);
         return ApiResponse.success(result);
     }
 
@@ -61,11 +64,14 @@ public class SolutionController {
             @Parameter(description = "当前登录用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @PathVariable Long problemId,
             @RequestParam(defaultValue = "1") long page,
-            @RequestParam(defaultValue = "10") long size) {
+            @RequestParam(defaultValue = "10") long size,
+            @Parameter(description = "标题模糊查询") @RequestParam(required = false) String title,
+            @Parameter(description = "按启用状态过滤（管理员/教师可用）") @RequestParam(required = false) Boolean isActive) {
         ensureViewRole(current);
         ensureProblemExists(problemId);
         boolean includeInactiveAll = isAdmin(current);
-        Page<Solution> result = querySolutions(problemId, null, includeInactiveAll, page, size);
+        boolean canFilterInactive = isAdmin(current) || isTeacher(current);
+        Page<Solution> result = querySolutions(problemId, null, title, isActive, includeInactiveAll, canFilterInactive, page, size);
         return ApiResponse.success(result);
     }
 
@@ -160,7 +166,9 @@ public class SolutionController {
         return ApiResponse.success(null);
     }
 
-    private Page<Solution> querySolutions(Long problemId, Long authorId, boolean includeInactive, long page, long size) {
+    private Page<Solution> querySolutions(Long problemId, Long authorId, String title, Boolean isActive,
+                                          boolean includeInactive, boolean canFilterInactive,
+                                          long page, long size) {
         LambdaQueryWrapper<Solution> wrapper = new LambdaQueryWrapper<>();
         if (problemId != null) {
             wrapper.eq(Solution::getProblemId, problemId);
@@ -168,7 +176,16 @@ public class SolutionController {
         if (authorId != null) {
             wrapper.eq(Solution::getUserId, authorId);
         }
-        if (!includeInactive) {
+        if (title != null && !title.trim().isEmpty()) {
+            wrapper.like(Solution::getTitle, title.trim());
+        }
+        if (isActive != null) {
+            if (!canFilterInactive && Boolean.FALSE.equals(isActive)) {
+                wrapper.eq(Solution::getIsActive, true);
+            } else {
+                wrapper.eq(Solution::getIsActive, isActive);
+            }
+        } else if (!includeInactive) {
             wrapper.eq(Solution::getIsActive, true);
         }
         wrapper.orderByDesc(Solution::getCreateTime)
@@ -218,6 +235,10 @@ public class SolutionController {
 
     private boolean isAdmin(AuthenticatedUser current) {
         return current != null && "admin".equalsIgnoreCase(current.getRole());
+    }
+
+    private boolean isTeacher(AuthenticatedUser current) {
+        return current != null && "teacher".equalsIgnoreCase(current.getRole());
     }
 
     private boolean isOwner(AuthenticatedUser current, Solution solution) {

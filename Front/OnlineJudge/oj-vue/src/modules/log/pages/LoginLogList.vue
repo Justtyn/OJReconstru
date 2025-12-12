@@ -12,6 +12,15 @@
         <a-form-item label="用户ID">
           <a-input v-model:value="query.userId" allow-clear placeholder="按用户ID筛选" @pressEnter="handleSearch" />
         </a-form-item>
+        <a-form-item label="用户名">
+          <a-input
+            v-model:value="query.username"
+            allow-clear
+            placeholder="按用户名模糊匹配"
+            @pressEnter="handleSearch"
+            style="width: 200px"
+          />
+        </a-form-item>
         <a-form-item>
           <a-button type="primary" @click="handleSearch">查询</a-button>
           <a-button style="margin-left: 8px" @click="resetQuery">重置</a-button>
@@ -99,7 +108,7 @@ import { loginLogService } from '@/services/modules/loginLog';
 import type { LoginLog, LoginLogQuery } from '@/types';
 import { extractErrorMessage } from '@/utils/error';
 
-const query = reactive<LoginLogQuery>({ page: 1, size: 10, role: undefined, userId: '' });
+const query = reactive<LoginLogQuery>({ page: 1, size: 10, role: undefined, userId: '', username: '' });
 const list = ref<LoginLog[]>([]);
 const total = ref(0);
 const loading = ref(false);
@@ -152,6 +161,7 @@ const handleSearch = () => {
 const resetQuery = () => {
   query.role = undefined;
   query.userId = '';
+  query.username = '';
   handleSearch();
 };
 

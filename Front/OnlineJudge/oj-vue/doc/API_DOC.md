@@ -743,6 +743,7 @@ GET /api/login-logs
 |size|query|integer(int64)| 否 |每页条数|
 |role|query|string| 否 |角色过滤|
 |userId|query|integer(int64)| 否 |用户ID过滤|
+|username|query|string| 否 |用户名模糊查询|
 
 > 返回示例
 
@@ -1305,7 +1306,6 @@ GET /api/discussions/{id}/comments
 POST /api/discussions/{id}/comments
 
 管理员评论需指定 authorId 为学生ID
-评论内容最长 200 字；讨论列表可通过“评论”按钮调用本接口。
 
 > Body 请求参数
 

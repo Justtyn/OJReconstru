@@ -37,13 +37,22 @@ public class LoginLogController {
             @Parameter(description = "页码") @RequestParam(defaultValue = "1") long page,
             @Parameter(description = "每页条数") @RequestParam(defaultValue = "10") long size,
             @Parameter(description = "角色过滤") @RequestParam(required = false) String role,
-            @Parameter(description = "用户ID过滤") @RequestParam(required = false) Long userId) {
+            @Parameter(description = "用户ID过滤") @RequestParam(required = false) Long userId,
+            @Parameter(description = "用户名模糊查询") @RequestParam(required = false) String username) {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
         LambdaQueryWrapper<LoginLog> wrapper = new LambdaQueryWrapper<>();
-        if (role != null && !role.isEmpty()) wrapper.eq(LoginLog::getRole, role);
-        if (userId != null) wrapper.eq(LoginLog::getUserId, userId);
+        if (role != null && !role.isEmpty()) {
+            wrapper.eq(LoginLog::getRole, role);
+        }
+        if (userId != null) {
+            wrapper.eq(LoginLog::getUserId, userId);
+        }
+        if (username != null && !username.isEmpty()) {
+            wrapper.like(LoginLog::getUsername, username);
+        }
+        wrapper.orderByDesc(LoginLog::getLoginTime).orderByDesc(LoginLog::getCreatedAt);
         Page<LoginLog> p = loginLogService.page(new Page<>(page, size), wrapper);
         return ApiResponse.success(p);
     }

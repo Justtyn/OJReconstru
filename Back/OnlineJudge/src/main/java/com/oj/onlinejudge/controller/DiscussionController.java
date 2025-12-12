@@ -9,6 +9,7 @@ import com.oj.onlinejudge.domain.dto.group.UpdateGroup;
 import com.oj.onlinejudge.domain.entity.Discussion;
 import com.oj.onlinejudge.domain.entity.DiscussionComment;
 import com.oj.onlinejudge.domain.entity.Problem;
+import com.oj.onlinejudge.domain.entity.Student;
 import com.oj.onlinejudge.exception.ApiException;
 import com.oj.onlinejudge.security.AuthenticatedUser;
 import com.oj.onlinejudge.service.DiscussionCommentService;
@@ -90,7 +91,7 @@ public class DiscussionController {
         return ApiResponse.success(discussion);
     }
 
-    @Operation(summary = "讨论-创建（学生/管理员）", description = "管理员发布需指定 authorId 为学生ID")
+    @Operation(summary = "讨论-创建（学生/管理员）", description = "管理员发布需指定 authorId 为学生ID；发布成功为作者积分+3")
     @PostMapping
     public ApiResponse<Discussion> create(
             @Parameter(description = "当前登录用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
@@ -109,6 +110,7 @@ public class DiscussionController {
             ensureProblemExists(discussion.getProblemId());
         }
         discussionService.save(discussion);
+        addScoreForStudent(discussion.getUserId(), 3);
         return ApiResponse.success("创建成功", discussion);
     }
 
@@ -293,5 +295,17 @@ public class DiscussionController {
         if (studentId == null || studentService.getById(studentId) == null) {
             throw ApiException.badRequest("指定的学生不存在");
         }
+    }
+
+    private void addScoreForStudent(Long studentId, int delta) {
+        if (studentId == null || delta <= 0) {
+            return;
+        }
+        Student student = studentService.getById(studentId);
+        if (student == null) {
+            return;
+        }
+        student.setScore((student.getScore() == null ? 0 : student.getScore()) + delta);
+        studentService.updateById(student);
     }
 }

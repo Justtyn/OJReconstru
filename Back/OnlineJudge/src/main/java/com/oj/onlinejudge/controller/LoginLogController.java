@@ -30,7 +30,7 @@ public class LoginLogController {
     /**
      * 分页查询登录日志（可按角色、用户ID筛选）
      */
-    @Operation(summary = "登录日志-分页列表")
+    @Operation(summary = "登录日志-分页列表", description = "支持按角色、用户ID、用户名模糊查询，按登录时间倒序返回")
     @GetMapping
     public ApiResponse<Page<LoginLog>> list(
             @Parameter(description = "当前认证用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,

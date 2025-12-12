@@ -42,7 +42,7 @@ public class SubmissionController {
     private final SubmissionTestcaseResultService submissionTestcaseResultService;
     private final SubmissionOverallStatusService submissionOverallStatusService;
 
-    @Operation(summary = "提交代码（学生）")
+    @Operation(summary = "提交代码（学生）", description = "判题通过（ACCEPTED）后为该学生积分+5，其他状态不加分")
     @PostMapping
     public ApiResponse<SubmissionDetailVO> create(
             @Parameter(description = "当前学生") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,

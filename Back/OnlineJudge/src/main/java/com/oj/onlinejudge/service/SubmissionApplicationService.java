@@ -272,6 +272,9 @@ public class SubmissionApplicationService {
         if (student != null) {
             student.setSubmit(safeCount(student.getSubmit()) + 1);
             student.setAc(safeCount(student.getAc()) + (accepted ? 1 : 0));
+            if (accepted) {
+                student.setScore(safeCount(student.getScore()) + 5);
+            }
             studentService.updateById(student);
         }
     }

@@ -61,8 +61,10 @@
           <template v-else-if="column.key === 'actions'">
             <a-space>
               <a-button type="link" size="small" @click="edit(record)">编辑</a-button>
-              <a-divider type="vertical" />
-              <a-button danger type="link" size="small" @click="confirmRemove(record)">删除</a-button>
+              <template v-if="!isTeacher">
+                <a-divider type="vertical" />
+                <a-button danger type="link" size="small" @click="confirmRemove(record)">删除</a-button>
+              </template>
             </a-space>
           </template>
         </template>
@@ -81,8 +83,11 @@ import PageContainer from '@/components/common/PageContainer.vue';
 import { problemCaseService, problemService } from '@/services/modules/problem';
 import type { Problem, ProblemDifficulty, ProblemQuery } from '@/types';
 import { extractErrorMessage } from '@/utils/error';
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
+const authStore = useAuthStore();
+const isTeacher = computed(() => authStore.role === 'teacher');
 
 const query = reactive<ProblemQuery>({ page: 1, size: 10, keyword: '', difficulty: undefined, isActive: undefined });
 const list = ref<Problem[]>([]);

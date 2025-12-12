@@ -43,7 +43,7 @@
           <a-button type="primary" @click="handleSearch">查询</a-button>
           <a-button style="margin-left: 8px" @click="resetQuery">重置</a-button>
         </a-form-item>
-        <a-form-item style="margin-left:auto;">
+        <a-form-item style="margin-left:auto;" v-if="!isTeacher">
           <a-button type="primary" @click="goCreate">新建题解</a-button>
         </a-form-item>
       </a-form>
@@ -52,7 +52,7 @@
     <a-card class="mt-16">
       <a-table
         row-key="id"
-        :columns="columns"
+        :columns="tableColumns"
         :data-source="list"
         :loading="loading"
         :pagination="paginationConfig"
@@ -98,8 +98,11 @@ import { studentService } from '@/services/modules/student';
 import type { Solution, SolutionQuery, Student, Problem } from '@/types';
 import type { TableColumnType } from 'ant-design-vue';
 import { extractErrorMessage } from '@/utils/error';
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
+const authStore = useAuthStore();
+const isTeacher = computed(() => authStore.role === 'teacher');
 
 const languageLabel = (lang?: string) => {
   const map: Record<string, string> = {
@@ -148,6 +151,7 @@ const columns: TableColumnType<Solution>[] = [
   { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 180 },
   { title: '操作', key: 'actions', width: 180 },
 ];
+const tableColumns = computed(() => (isTeacher.value ? columns.filter((c) => c.key !== 'actions') : columns));
 
 const loadData = async () => {
   loading.value = true;

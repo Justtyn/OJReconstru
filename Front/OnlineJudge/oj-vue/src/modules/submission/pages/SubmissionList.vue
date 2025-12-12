@@ -48,7 +48,9 @@
         <a-form-item>
           <a-button type="primary" @click="handleSearch">查询</a-button>
           <a-button style="margin-left: 8px" @click="resetQuery">重置</a-button>
-          <a-button type="primary" ghost style="margin-left: 8px" @click="openCreateModal">新增提交</a-button>
+          <a-button v-if="!isTeacher" type="primary" ghost style="margin-left: 8px" @click="openCreateModal">
+            新增提交
+          </a-button>
         </a-form-item>
       </a-form>
     </a-card>
@@ -233,8 +235,11 @@ import { classesService } from '@/services/modules/classes';
 import { homeworkService } from '@/services/modules/homework';
 import type { Submission, SubmissionQuery, Problem, Student, Homework, HomeworkProblem } from '@/types';
 import { extractErrorMessage } from '@/utils/error';
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
+const authStore = useAuthStore();
+const isTeacher = computed(() => authStore.role === 'teacher');
 
 const languageOptions = [
   { id: 11, name: 'Bosque (latest)' },
@@ -362,6 +367,7 @@ const handleSearch = () => {
 };
 
 const openCreateModal = () => {
+  if (isTeacher.value) return;
   submissionMode.value = 'problem';
   resetCreateForm();
   createVisible.value = true;

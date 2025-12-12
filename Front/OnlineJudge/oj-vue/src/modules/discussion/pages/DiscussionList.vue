@@ -42,7 +42,9 @@
         <a-form-item>
           <a-button type="primary" @click="handleSearch">查询</a-button>
           <a-button style="margin-left: 8px" @click="resetQuery">重置</a-button>
-          <a-button type="primary" ghost style="margin-left: 8px" @click="goCreate">新增讨论</a-button>
+          <a-button v-if="!isTeacher" type="primary" ghost style="margin-left: 8px" @click="goCreate">
+            新增讨论
+          </a-button>
         </a-form-item>
       </a-form>
     </a-card>
@@ -74,9 +76,11 @@
                 {{ text ? format(new Date(text), 'yyyy-MM-dd HH:mm') : '-' }}
               </template>
               <template v-else-if="column.key === 'actions'">
-                <a-button danger type="link" size="small" @click="confirmRemoveComment(record.id, comment)">
-                  删除评论
-                </a-button>
+                <template v-if="!isTeacher">
+                  <a-button danger type="link" size="small" @click="confirmRemoveComment(record.id, comment)">
+                    删除评论
+                  </a-button>
+                </template>
               </template>
             </template>
           </a-table>
@@ -96,11 +100,14 @@
           </template>
           <template v-else-if="column.key === 'actions'">
             <a-space>
-              <a-button type="link" size="small" @click="edit(record)">编辑</a-button>
-              <a-divider type="vertical" />
-              <a-button type="link" size="small" @click="openCommentModal(record.id)">评论</a-button>
-              <a-divider type="vertical" />
-              <a-button danger type="link" size="small" @click="confirmRemove(record)">删除</a-button>
+              <template v-if="!isTeacher">
+                <a-button type="link" size="small" @click="edit(record)">编辑</a-button>
+                <a-divider type="vertical" />
+                <a-button type="link" size="small" @click="openCommentModal(record.id)">评论</a-button>
+                <a-divider type="vertical" />
+                <a-button danger type="link" size="small" @click="confirmRemove(record)">删除</a-button>
+              </template>
+              <span v-else class="muted">仅浏览</span>
             </a-space>
           </template>
         </template>
@@ -155,8 +162,11 @@ import { problemService } from '@/services/modules/problem';
 import { studentService } from '@/services/modules/student';
 import type { Discussion, DiscussionComment, DiscussionQuery, Problem, Student } from '@/types';
 import { extractErrorMessage } from '@/utils/error';
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
+const authStore = useAuthStore();
+const isTeacher = computed(() => authStore.role === 'teacher');
 
 const query = reactive<DiscussionQuery>({
   page: 1,
@@ -267,6 +277,7 @@ const edit = (record: Discussion) => {
 };
 
 const openCommentModal = (discussionId: string) => {
+  if (isTeacher) return;
   commentTargetId.value = discussionId;
   commentForm.content = '';
   commentForm.authorId = undefined;
@@ -404,7 +415,7 @@ const paginationConfig = computed(() => ({
 }));
 
 const submitComment = async () => {
-  if (!commentTargetId.value) return;
+  if (!commentTargetId.value || isTeacher) return;
   if (!commentForm.content.trim()) {
     message.warning('请输入评论内容');
     return;

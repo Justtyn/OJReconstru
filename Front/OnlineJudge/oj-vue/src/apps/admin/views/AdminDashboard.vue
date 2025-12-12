@@ -28,77 +28,130 @@
 
     <a-tabs v-model:activeKey="activeTab" type="card">
       <a-tab-pane key="overview" tab="概览">
-        <a-row :gutter="[16, 16]">
-          <a-col :xs="24" :lg="14">
-            <a-card title="近期提交" :loading="recentLoading" body-style="{ padding: '0 16px 16px' }">
-              <div class="tab-tools">
-                <span>时间范围：</span>
-                <a-radio-group size="small" v-model:value="timeRange">
-                  <a-radio-button value="24h">近24小时</a-radio-button>
-                  <a-radio-button value="7d">近7天</a-radio-button>
-                  <a-radio-button value="all">全部</a-radio-button>
-                </a-radio-group>
-              </div>
-              <a-table
-                size="small"
-                :columns="recentColumns"
-                :data-source="filteredSubmissions"
-                :pagination="false"
-                row-key="id"
-                :scroll="{ y: 'calc(100% - 40px)' }"
-              >
-                <template #bodyCell="{ column, record }">
-                  <template v-if="column.key === 'problemId'">
-                    {{ problemLabel(record.problemId) }}
-                  </template>
-                  <template v-else-if="column.key === 'studentId'">
-                    {{ studentLabel(record.studentId) }}
-                  </template>
-                  <template v-else-if="column.key === 'status'">
-                    <a-badge :status="statusBadge(record.overallStatusCode)" :text="record.overallStatusName || record.overallStatusCode" />
-                  </template>
-                  <template v-else-if="column.key === 'time'">
-                    {{ record.createdAt ? format(new Date(record.createdAt), 'MM-dd HH:mm') : '-' }}
-                  </template>
-                </template>
-              </a-table>
-            </a-card>
-          </a-col>
-          <a-col :xs="24" :lg="10">
-            <a-card title="提交质量摘要" :loading="recentLoading">
-              <div class="quality-grid">
-                <div class="quality-item">
-                  <div class="label">通过率</div>
-                  <div class="value">{{ submissionSummary.passRate }}%</div>
-                  <a-progress :percent="submissionSummary.passRate" size="small" status="active" />
+        <template v-if="!isTeacher">
+          <a-row :gutter="[16, 16]">
+            <a-col :xs="24" :lg="14">
+              <a-card title="近期提交" :loading="recentLoading" body-style="{ padding: '0 16px 16px' }">
+                <div class="tab-tools">
+                  <span>时间范围：</span>
+                  <a-radio-group size="small" v-model:value="timeRange">
+                    <a-radio-button value="24h">近24小时</a-radio-button>
+                    <a-radio-button value="7d">近7天</a-radio-button>
+                    <a-radio-button value="all">全部</a-radio-button>
+                  </a-radio-group>
                 </div>
-                <div class="quality-item">
-                  <div class="label">AC</div>
-                  <div class="value">{{ submissionSummary.accepted }}</div>
+                <a-table
+                  size="small"
+                  :columns="recentColumns"
+                  :data-source="filteredSubmissions"
+                  :pagination="false"
+                  row-key="id"
+                  :scroll="{ y: 'calc(100% - 40px)' }"
+                >
+                  <template #bodyCell="{ column, record }">
+                    <template v-if="column.key === 'problemId'">
+                      {{ problemLabel(record.problemId) }}
+                    </template>
+                    <template v-else-if="column.key === 'studentId'">
+                      {{ studentLabel(record.studentId) }}
+                    </template>
+                    <template v-else-if="column.key === 'status'">
+                      <a-badge :status="statusBadge(record.overallStatusCode)" :text="record.overallStatusName || record.overallStatusCode" />
+                    </template>
+                    <template v-else-if="column.key === 'time'">
+                      {{ record.createdAt ? format(new Date(record.createdAt), 'MM-dd HH:mm') : '-' }}
+                    </template>
+                  </template>
+                </a-table>
+              </a-card>
+            </a-col>
+            <a-col :xs="24" :lg="10">
+              <a-card title="提交质量摘要" :loading="recentLoading">
+                <div class="quality-grid">
+                  <div class="quality-item">
+                    <div class="label">通过率</div>
+                    <div class="value">{{ submissionSummary.passRate }}%</div>
+                    <a-progress :percent="submissionSummary.passRate" size="small" status="active" />
+                  </div>
+                  <div class="quality-item">
+                    <div class="label">AC</div>
+                    <div class="value">{{ submissionSummary.accepted }}</div>
+                  </div>
+                  <div class="quality-item">
+                    <div class="label">错误/编译</div>
+                    <div class="value">{{ submissionSummary.failed }}</div>
+                  </div>
+                  <div class="quality-item">
+                    <div class="label">运行中</div>
+                    <div class="value">{{ submissionSummary.pending }}</div>
+                  </div>
                 </div>
-                <div class="quality-item">
-                  <div class="label">错误/编译</div>
-                  <div class="value">{{ submissionSummary.failed }}</div>
-                </div>
-                <div class="quality-item">
-                  <div class="label">运行中</div>
-                  <div class="value">{{ submissionSummary.pending }}</div>
-                </div>
-              </div>
-            </a-card>
+              </a-card>
 
-            <a-card title="快捷入口" class="mt-16" body-style="{ padding: '12px 16px' }">
-              <a-list :data-source="quickLinks" :split="false">
-                <template #renderItem="{ item }">
-                  <a-list-item class="quick-link" @click="go(item.path)">
-                    <div class="quick-link__title">{{ item.title }}</div>
-                    <div class="quick-link__desc">{{ item.desc }}</div>
-                  </a-list-item>
-                </template>
-              </a-list>
-            </a-card>
-          </a-col>
-        </a-row>
+              <a-card title="快捷入口" class="mt-16" body-style="{ padding: '12px 16px' }">
+                <a-list :data-source="visibleQuickLinks" :split="false">
+                  <template #renderItem="{ item }">
+                    <a-list-item class="quick-link" @click="go(item.path)">
+                      <div class="quick-link__title">{{ item.title }}</div>
+                      <div class="quick-link__desc">{{ item.desc }}</div>
+                    </a-list-item>
+                  </template>
+                </a-list>
+              </a-card>
+            </a-col>
+          </a-row>
+        </template>
+        <template v-else>
+          <a-row :gutter="[16, 16]">
+            <a-col :xs="24" :lg="14">
+              <a-card title="班级作业进度" :loading="recentLoading">
+                <a-list :data-source="teacherHomeworks" :locale="{ emptyText: '暂无作业' }">
+                  <template #renderItem="{ item }">
+                    <a-list-item>
+                      <div class="homework-item">
+                        <div>
+                          <div class="homework-title">{{ item.title }}</div>
+                          <div class="homework-desc">
+                            <a-tag :color="progressColor(item.startTime, item.endTime)">
+                              {{ progressLabel(item.startTime, item.endTime) }}
+                            </a-tag>
+                            <span class="muted" v-if="item.endTime">截止：{{ format(new Date(item.endTime), 'MM-dd HH:mm') }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </a-list-item>
+                  </template>
+                </a-list>
+              </a-card>
+            </a-col>
+            <a-col :xs="24" :lg="10">
+              <a-card title="提交榜（所授班级）" :loading="recentLoading">
+                <a-list :data-source="topStudents" :locale="{ emptyText: '暂无提交' }" :split="false">
+                  <template #renderItem="{ item }">
+                    <a-list-item>
+                      <div class="rank-item">
+                        <div class="rank-title">{{ studentLabel(item.studentId) }}</div>
+                        <div class="rank-desc">总提交 {{ item.total }} · AC {{ item.accepted }}</div>
+                        <a-progress :percent="item.passRate" size="small" />
+                      </div>
+                    </a-list-item>
+                  </template>
+                </a-list>
+              </a-card>
+
+              <a-card title="快捷入口" class="mt-16" body-style="{ padding: '12px 16px' }">
+                <a-list :data-source="visibleQuickLinks" :split="false">
+                  <template #renderItem="{ item }">
+                    <a-list-item class="quick-link" @click="go(item.path)">
+                      <div class="quick-link__title">{{ item.title }}</div>
+                      <div class="quick-link__desc">{{ item.desc }}</div>
+                    </a-list-item>
+                  </template>
+                </a-list>
+              </a-card>
+            </a-col>
+          </a-row>
+        </template>
       </a-tab-pane>
 
       <a-tab-pane key="quality" tab="质量与排行">
@@ -216,11 +269,12 @@ import { solutionService } from '@/services/modules/solution';
 import { discussionService } from '@/services/modules/discussion';
 import { submissionService } from '@/services/modules/submission';
 import { fetchPublicAnnouncements } from '@/services/modules/announcement';
-import type { Submission, SubmissionQuery, AnnouncementVO, Discussion, Solution } from '@/types';
+import type { Submission, SubmissionQuery, AnnouncementVO, Discussion, Solution, Homework } from '@/types';
 import { extractErrorMessage } from '@/utils/error';
 
 const authStore = useAuthStore();
 const router = useRouter();
+const isTeacher = computed(() => authStore.role === 'teacher');
 
 const statsLoading = ref(false);
 const stats = reactive({
@@ -244,17 +298,27 @@ const activeTab = ref('overview');
 const timeRange = ref<'24h' | '7d' | 'all'>('24h');
 const problemCache = reactive<Record<string, any>>({});
 const studentCache = reactive<Record<string, any>>({});
+const teacherHomeworks = ref<Homework[]>([]);
 
-const statCards = computed(() => [
-  { key: 'students', title: '学生数', value: stats.students, desc: '活跃/总学生', icon: TeamOutlined },
-  { key: 'teachers', title: '教师数', value: stats.teachers, desc: '可管理教师', icon: UserOutlined },
-  { key: 'classes', title: '班级数', value: stats.classes, desc: '正在使用的班级', icon: BookOutlined },
-  { key: 'homeworks', title: '作业数', value: stats.homeworks, desc: '布置中的作业', icon: ScheduleOutlined },
-  { key: 'problems', title: '题目数', value: stats.problems, desc: '题库总量', icon: CodeOutlined },
-  { key: 'submissions', title: '提交数', value: stats.submissions, desc: '历史提交总计', icon: LaptopOutlined },
-  { key: 'solutions', title: '题解数', value: stats.solutions, desc: '已发布题解', icon: SolutionOutlined },
-  { key: 'discussions', title: '讨论数', value: stats.discussions, desc: '讨论与回复', icon: CommentOutlined },
-]);
+const statCards = computed(() =>
+  isTeacher.value
+    ? [
+        { key: 'classes', title: '班级数', value: stats.classes, desc: '所授班级', icon: BookOutlined },
+        { key: 'homeworks', title: '作业数', value: stats.homeworks, desc: '布置中的作业', icon: ScheduleOutlined },
+        { key: 'submissions', title: '提交数', value: stats.submissions, desc: '近期提交', icon: LaptopOutlined },
+        { key: 'problems', title: '题目数', value: stats.problems, desc: '题库量', icon: CodeOutlined },
+      ]
+    : [
+        { key: 'students', title: '学生数', value: stats.students, desc: '活跃/总学生', icon: TeamOutlined },
+        { key: 'teachers', title: '教师数', value: stats.teachers, desc: '可管理教师', icon: UserOutlined },
+        { key: 'classes', title: '班级数', value: stats.classes, desc: '正在使用的班级', icon: BookOutlined },
+        { key: 'homeworks', title: '作业数', value: stats.homeworks, desc: '布置中的作业', icon: ScheduleOutlined },
+        { key: 'problems', title: '题目数', value: stats.problems, desc: '题库总量', icon: CodeOutlined },
+        { key: 'submissions', title: '提交数', value: stats.submissions, desc: '历史提交总计', icon: LaptopOutlined },
+        { key: 'solutions', title: '题解数', value: stats.solutions, desc: '已发布题解', icon: SolutionOutlined },
+        { key: 'discussions', title: '讨论数', value: stats.discussions, desc: '讨论与回复', icon: CommentOutlined },
+      ],
+);
 
 const recentColumns = [
   { title: 'ID', dataIndex: 'id', key: 'id', width: 160 },
@@ -272,13 +336,16 @@ const problemColumns = [
 ];
 
 const quickLinks = [
-  { title: '题目管理', desc: '维护题库、标签与限制', path: '/admin/problems' },
-  { title: '作业管理', desc: '布置/编辑班级作业', path: '/admin/classes' },
-  { title: '提交记录', desc: '查看判题与重新提交', path: '/admin/submissions' },
-  { title: '讨论/题解', desc: '社区内容审核与维护', path: '/admin/discussions' },
-  { title: '学生管理', desc: '用户资料与授权', path: '/admin/students' },
-  { title: '教师管理', desc: '教师账户与权限', path: '/admin/teachers' },
+  { key: 'problems', title: '题目管理', desc: '维护题库、标签与限制', path: '/admin/problems' },
+  { key: 'classes', title: '作业管理', desc: '布置/编辑班级作业', path: '/admin/classes' },
+  { key: 'submissions', title: '提交记录', desc: '查看判题与重新提交', path: '/admin/submissions' },
+  { key: 'content', title: '讨论/题解', desc: '社区内容审核与维护', path: '/admin/discussions' },
+  { key: 'students', title: '学生管理', desc: '用户资料与授权', path: '/admin/students' },
+  { key: 'teachers', title: '教师管理', desc: '教师账户与权限', path: '/admin/teachers' },
 ];
+const visibleQuickLinks = computed(() =>
+  isTeacher.value ? quickLinks.filter((l) => !['students', 'teachers'].includes(l.key)) : quickLinks,
+);
 
 const roleLabel = computed(() => {
   if (authStore.role === 'admin') return '管理员';
@@ -345,6 +412,16 @@ const loadContent = async () => {
   }
 };
 
+const loadTeacherHomeworks = async () => {
+  if (!isTeacher.value) return;
+  try {
+    const data = await homeworkService.fetchList({ page: 1, size: 8 });
+    teacherHomeworks.value = data.records || [];
+  } catch (error: any) {
+    message.error(extractErrorMessage(error, '获取班级作业失败'));
+  }
+};
+
 const statusBadge = (code?: string) => {
   if (code === 'ACCEPTED') return 'success';
   if (code === 'WRONG') return 'error';
@@ -353,10 +430,28 @@ const statusBadge = (code?: string) => {
 
 const go = (path: string) => router.push(path);
 
+const progressLabel = (start?: string, end?: string) => {
+  if (!start && !end) return '未设置';
+  const now = Date.now();
+  const startAt = start ? new Date(start).getTime() : undefined;
+  const endAt = end ? new Date(end).getTime() : undefined;
+  if (startAt && now < startAt) return '未开始';
+  if (endAt && now > endAt) return '已结束';
+  return '进行中';
+};
+
+const progressColor = (start?: string, end?: string) => {
+  const label = progressLabel(start, end);
+  if (label === '未开始') return 'default';
+  if (label === '进行中') return 'blue';
+  if (label === '已结束') return 'red';
+  return 'default';
+};
+
 const filteredSubmissions = computed(() => {
   if (!submissionPool.value.length) return [];
   const now = Date.now();
-  const rangeMs = timeRange.value === '24h' ? 24 * 3600 * 1000 : timeRange.value === '7d' ? 7 * 24 * 3600 * 1000 : 0;
+  const rangeMs = timeRange.value === '24h' ? 24 * 3600 * 1000 : timeRange.value === '7d' ? 7 * 24 * 3600 * 1000 : Infinity;
   return submissionPool.value.filter((s) => {
     if (!s.createdAt || timeRange.value === 'all') return true;
     const ts = new Date(s.createdAt).getTime();
@@ -454,6 +549,7 @@ onMounted(() => {
   loadStats();
   loadRecent();
   loadContent();
+  loadTeacherHomeworks();
 });
 </script>
 
@@ -673,6 +769,28 @@ onMounted(() => {
 }
 
 .quick-link__desc {
+  color: var(--text-muted, #94a3b8);
+  font-size: 12px;
+}
+
+.homework-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.homework-title {
+  font-weight: 600;
+}
+
+.homework-desc {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted, #94a3b8);
+}
+
+.muted {
   color: var(--text-muted, #94a3b8);
   font-size: 12px;
 }

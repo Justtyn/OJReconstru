@@ -208,6 +208,8 @@
               v-model="createForm.sourceCode"
               :language="languageLabel(createForm.languageId)"
               placeholder="在此编写或粘贴代码，支持行号与基础高亮"
+              :max-height="400"
+              :resizable="false"
             />
           </a-form-item>
         </a-form>

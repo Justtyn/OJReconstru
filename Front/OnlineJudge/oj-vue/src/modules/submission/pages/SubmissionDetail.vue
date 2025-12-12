@@ -25,7 +25,14 @@
       <template #extra>
         <a-button type="link" size="small" @click="copyCode">复制代码</a-button>
       </template>
-      <CodeEditor :model-value="submission?.sourceCode || ''" :language="languageLabel(submission?.languageId)" :readonly="true" />
+      <CodeEditor
+        :model-value="submission?.sourceCode || ''"
+        :language="languageLabel(submission?.languageId)"
+        :readonly="true"
+        :resizable="false"
+        :auto-height="true"
+        :max-height="560"
+      />
     </a-card>
 
     <a-card class="mt-16" title="测试点结果" v-if="submission?.testcaseResults?.length">

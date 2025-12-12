@@ -1,6 +1,6 @@
 <template>
   <div class="code-editor">
-    <div class="code-editor__wrapper">
+    <div class="code-editor__wrapper" :style="wrapperStyle">
       <div class="code-editor__gutter" ref="gutterRef">
         <span v-for="line in lineNumbers" :key="line">{{ line }}</span>
       </div>
@@ -9,6 +9,7 @@
         ref="textareaRef"
         v-model="localValue"
         class="code-editor__input"
+        :class="{ 'no-resize': resizable === false }"
         :placeholder="placeholder"
         :disabled="disabled || readonly"
         :readonly="readonly"
@@ -28,6 +29,10 @@ const props = defineProps<{
   placeholder?: string;
   disabled?: boolean;
   readonly?: boolean;
+  minHeight?: number;
+  maxHeight?: number;
+  resizable?: boolean;
+  autoHeight?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -51,6 +56,26 @@ watch(
 const lineNumbers = computed(() => {
   const lines = localValue.value.split('\n').length || 1;
   return Array.from({ length: lines }, (_, i) => i + 1);
+});
+
+const minHeight = computed(() => props.minHeight ?? 260);
+const maxHeight = computed(() => props.maxHeight ?? 560);
+const resizable = computed(() => props.resizable ?? true);
+const lineHeightPx = 20;
+const paddingPx = 24; // highlight/input padding top+bottom
+const wrapperStyle = computed(() => {
+  const style: Record<string, string> = {
+    '--min-height': `${minHeight.value}px`,
+    '--max-height': `${maxHeight.value}px`,
+  };
+  if (props.autoHeight) {
+    const desired = lineNumbers.value.length * lineHeightPx + paddingPx;
+    const clamped = Math.min(maxHeight.value, Math.max(minHeight.value, desired));
+    style['--auto-height'] = `${clamped}px`;
+  } else {
+    style['--auto-height'] = 'auto';
+  }
+  return style;
 });
 
 const escapeHtml = (input: string) =>
@@ -111,8 +136,8 @@ const syncScroll = () => {
   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
   font-size: 13px;
   line-height: 1.5;
-  min-height: 260px;
-  max-height: 560px;
+  min-height: var(--min-height, 260px);
+  max-height: var(--max-height, 560px);
 }
 
 .code-editor__gutter {
@@ -143,6 +168,9 @@ const syncScroll = () => {
   white-space: pre;
   word-break: normal;
   overflow: auto;
+  min-height: inherit;
+  max-height: inherit;
+  height: var(--auto-height, auto);
   color: var(--text-color, #0f172a);
 }
 
@@ -163,8 +191,9 @@ const syncScroll = () => {
   caret-color: var(--text-color, #0f172a);
   text-shadow: none;
   line-height: 1.5;
-  min-height: 260px;
-  max-height: 560px;
+  min-height: inherit;
+  max-height: inherit;
+  height: var(--auto-height, auto);
   overflow: auto;
   white-space: pre;
   word-break: normal;
@@ -206,5 +235,9 @@ const syncScroll = () => {
 .code-editor__highlight::-webkit-scrollbar-thumb:hover,
 .code-editor__input::-webkit-scrollbar-thumb:hover {
   background: rgba(99, 102, 241, 0.5);
+}
+
+.no-resize {
+  resize: none;
 }
 </style>

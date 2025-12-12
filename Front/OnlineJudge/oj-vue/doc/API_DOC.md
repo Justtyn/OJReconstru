@@ -450,7 +450,8 @@ PUT /api/solutions/{id}
   "title": "string",
   "content": "string",
   "language": "string",
-  "isActive": true
+  "isActive": true,
+  "authorId": 0
 }
 ```
 
@@ -546,7 +547,7 @@ GET /api/problems/{problemId}/solutions
 
 POST /api/problems/{problemId}/solutions
 
-仅学生可发布，路径参数指定题目ID
+学生或管理员可发布，管理员需指定 authorId 为学生ID，路径参数指定题目ID
 
 > Body 请求参数
 
@@ -556,7 +557,8 @@ POST /api/problems/{problemId}/solutions
   "title": "string",
   "content": "string",
   "language": "string",
-  "isActive": true
+  "isActive": true,
+  "authorId": 0
 }
 ```
 
@@ -1133,7 +1135,8 @@ PUT /api/discussions/{id}
   "title": "string",
   "content": "string",
   "problemId": 0,
-  "isActive": true
+  "isActive": true,
+  "authorId": 0
 }
 ```
 
@@ -1225,9 +1228,11 @@ GET /api/discussions
 
 <a id="opIdcreate_6"></a>
 
-## POST 讨论-创建（学生）
+## POST 讨论-创建（学生/管理员）
 
 POST /api/discussions
+
+管理员发布需指定 authorId 为学生ID
 
 > Body 请求参数
 
@@ -1236,7 +1241,8 @@ POST /api/discussions
   "title": "string",
   "content": "string",
   "problemId": 0,
-  "isActive": true
+  "isActive": true,
+  "authorId": 0
 }
 ```
 
@@ -2855,6 +2861,7 @@ GET /api/problems
 |difficulty|query|string| 否 |难度过滤：easy/medium/hard|
 |dailyChallenge|query|string| 否 |日常挑战标识|
 |activeOnly|query|boolean| 否 |是否仅返回启用题目|
+|isActive|query|boolean| 否 |按启用状态过滤，管理员/教师可用|
 
 > 返回示例
 
@@ -3287,7 +3294,8 @@ GET /api/announcements/{id}
   "title": "string",
   "content": "string",
   "language": "string",
-  "isActive": true
+  "isActive": true,
+  "authorId": 0
 }
 
 ```
@@ -3303,6 +3311,7 @@ GET /api/announcements/{id}
 |content|string|true|none||none|
 |language|string|false|none||语言|
 |isActive|boolean|false|none||是否启用|
+|authorId|integer(int64)|false|none||管理员代学生发布时指定学生ID，仅创建时使用|
 
 <h2 id="tocS_ApiResponseSolution">ApiResponseSolution</h2>
 
@@ -3625,7 +3634,8 @@ GET /api/announcements/{id}
   "title": "string",
   "content": "string",
   "problemId": 0,
-  "isActive": true
+  "isActive": true,
+  "authorId": 0
 }
 
 ```
@@ -3640,6 +3650,7 @@ GET /api/announcements/{id}
 |content|string|true|none||none|
 |problemId|integer(int64)|false|none||none|
 |isActive|boolean|false|none||none|
+|authorId|integer(int64)|false|none||管理员代学生发布时指定学生ID，仅创建时使用|
 
 <h2 id="tocS_ApiResponseDiscussion">ApiResponseDiscussion</h2>
 

@@ -51,7 +51,12 @@
           </a-col>
         </a-row>
         <a-form-item label="内容" name="content">
-          <a-textarea v-model:value="formState.content" :rows="6" placeholder="请输入题解内容" />
+          <CodeEditor
+            v-model="formState.content"
+            placeholder="请输入题解内容，支持多行"
+            :min-height="220"
+            :max-height="500"
+          />
         </a-form-item>
         <a-form-item label="状态">
           <a-switch v-model:checked="formState.isActive" checked-children="启用" un-checked-children="禁用" />
@@ -73,6 +78,7 @@ import { useRoute, useRouter } from 'vue-router';
 import type { FormInstance, FormProps } from 'ant-design-vue';
 import { message } from 'ant-design-vue';
 import PageContainer from '@/components/common/PageContainer.vue';
+import CodeEditor from '@/components/common/CodeEditor.vue';
 import { solutionService } from '@/services/modules/solution';
 import { problemService } from '@/services/modules/problem';
 import { studentService } from '@/services/modules/student';

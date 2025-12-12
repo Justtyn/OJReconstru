@@ -455,7 +455,11 @@ const searchProblems = async (keyword: string) => {
   problemLoading.value = true;
   try {
     const data = await problemService.fetchList({ page: 1, size: 50, keyword });
-    problemOptions.value = data.records.map((p: Problem) => ({ label: `${p.name}（ID: ${p.id}）`, value: p.id }));
+    problemOptions.value = data.records.map((p: Problem) => ({
+      label: `${p.name}（ID: ${p.id}）${p.isActive ? '' : '【已禁用】'}`,
+      value: p.id,
+      disabled: p.isActive === false,
+    }));
   } catch (error: any) {
     message.error(extractErrorMessage(error, '搜索题目失败'));
   } finally {
@@ -500,8 +504,9 @@ const loadHomeworkProblems = async (homeworkId?: string) => {
   try {
     const data = await homeworkService.fetchProblems(homeworkId);
     homeworkProblemOptions.value = data.map((p: HomeworkProblem) => ({
-      label: `${p.name || p.id}`,
+      label: `${p.name || p.id}${p.isActive ? '' : '【已禁用】'}`,
       value: p.id as string,
+      disabled: p.isActive === false,
     }));
   } catch (error: any) {
     message.error(extractErrorMessage(error, '获取作业题目失败'));

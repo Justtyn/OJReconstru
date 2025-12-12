@@ -20,12 +20,12 @@
         </a-row>
         <a-row :gutter="16">
           <a-col :xs="24" :md="12">
-            <a-form-item label="时间限制 (ms)">
+            <a-form-item label="时间限制 (ms)" name="timeLimitMs">
               <a-input-number v-model:value="formState.timeLimitMs" :min="0" style="width: 100%" />
             </a-form-item>
           </a-col>
           <a-col :xs="24" :md="12">
-            <a-form-item label="内存限制 (KB)">
+            <a-form-item label="内存限制 (KB)" name="memoryLimitKb">
               <a-input-number v-model:value="formState.memoryLimitKb" :min="0" style="width: 100%" />
             </a-form-item>
           </a-col>
@@ -37,14 +37,14 @@
             </a-form-item>
           </a-col>
           <a-col :xs="24" :md="12">
-            <a-form-item label="输入描述">
+            <a-form-item label="输入描述" name="descriptionInput">
               <a-textarea v-model:value="formState.descriptionInput" :rows="2" placeholder="说明输入格式" />
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="16">
           <a-col :xs="24" :md="12">
-            <a-form-item label="输出描述">
+            <a-form-item label="输出描述" name="descriptionOutput">
               <a-textarea v-model:value="formState.descriptionOutput" :rows="2" placeholder="说明输出格式" />
             </a-form-item>
           </a-col>
@@ -56,12 +56,12 @@
         </a-row>
         <a-row :gutter="16">
           <a-col :xs="24" :md="12">
-            <a-form-item label="样例输入">
+            <a-form-item label="样例输入" name="sampleInput">
               <a-textarea v-model:value="formState.sampleInput" :rows="2" placeholder="样例输入" />
             </a-form-item>
           </a-col>
           <a-col :xs="24" :md="12">
-            <a-form-item label="样例输出">
+            <a-form-item label="样例输出" name="sampleOutput">
               <a-textarea v-model:value="formState.sampleOutput" :rows="2" placeholder="样例输出" />
             </a-form-item>
           </a-col>
@@ -223,6 +223,13 @@ const formState = reactive<ProblemUpsertRequest>({
 const rules: FormProps['rules'] = {
   name: [{ required: true, message: '请输入名称' }],
   difficulty: [{ required: true, message: '请选择难度' }],
+  description: [{ required: true, message: '请输入题目描述' }],
+  descriptionInput: [{ required: true, message: '请输入输入描述' }],
+  descriptionOutput: [{ required: true, message: '请输入输出描述' }],
+  sampleInput: [{ required: true, message: '请输入样例输入' }],
+  sampleOutput: [{ required: true, message: '请输入样例输出' }],
+  timeLimitMs: [{ required: true, message: '请输入时间限制' }],
+  memoryLimitKb: [{ required: true, message: '请输入内存限制' }],
 };
 
 const pageTitle = computed(() => (isEdit.value ? '编辑题目' : '新建题目'));

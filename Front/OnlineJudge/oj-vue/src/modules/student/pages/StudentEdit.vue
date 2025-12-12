@@ -78,7 +78,17 @@
         <a-row :gutter="16">
           <a-col :xs="24" :md="12">
             <a-form-item label="学校" name="school">
-              <a-input v-model:value="formState.school" placeholder="请输入学校" />
+              <a-select
+                v-model:value="formState.school"
+                show-search
+                allow-clear
+                :options="schoolOptions"
+                :loading="schoolLoading"
+                placeholder="搜索或选择学校"
+                :filter-option="false"
+                @search="handleSchoolSearch"
+                @dropdownVisibleChange="handleSchoolDropdown"
+              />
             </a-form-item>
           </a-col>
           <a-col :xs="24" :md="12">
@@ -194,6 +204,9 @@ const rules: FormProps['rules'] = {
 const passwordLabel = computed(() => (isEdit.value ? '密码（留空表示不修改）' : '密码'));
 const passwordPlaceholder = computed(() => (isEdit.value ? '不修改可留空' : '请输入密码'));
 const pageTitle = computed(() => (isEdit.value ? '编辑学生' : '新建学生'));
+const allSchools = ref<{ label: string; value: string; keyword: string }[]>([]);
+const schoolOptions = ref<{ label: string; value: string }[]>([]);
+const schoolLoading = ref(false);
 
 const loadDetail = async () => {
   if (!isEdit.value) return;
@@ -207,6 +220,7 @@ const loadDetail = async () => {
     formState.phone = data.phone ?? '';
     formState.email = data.email ?? '';
     formState.school = data.school ?? '';
+    ensureSchoolOption(formState.school);
     formState.score = data.score ?? 0;
     formState.bio = data.bio ?? '';
     formState.avatar = data.avatar ?? '';
@@ -271,6 +285,7 @@ const goBack = () => {
 
 onMounted(() => {
   loadDetail();
+  loadSchools();
 });
 
 const beforeUpload: UploadProps['beforeUpload'] = async (file) => {
@@ -325,6 +340,85 @@ const resolveAvatar = (url?: unknown) => {
   const str = typeof url === 'string' ? url : '';
   if (!str) return `${avatarPrefix.value}/files/avatars/DefaultAvatar.jpg`;
   return withPrefix(str);
+};
+
+const parseSchools = (rawText: string) => {
+  try {
+    const parsed = JSON.parse(rawText || '{}');
+    const rawList: string =
+      typeof parsed.schools === 'string' ? parsed.schools : Array.isArray(parsed.schools) ? parsed.schools.join(',') : '';
+    const seen = new Set<string>();
+    const list = rawList
+      .split(',')
+      .map((item: string) => item.trim())
+      .filter(Boolean)
+      .map((item: string) => {
+        const match = item.match(/^(.+?)\\((.+)\\)$/);
+        if (match) {
+          return {
+            label: `${match[1]}（${match[2]}）`,
+            value: match[1],
+            keyword: `${match[1]}${match[2]}`.toLowerCase(),
+          };
+        }
+        return { label: item, value: item, keyword: item.toLowerCase() };
+      })
+      .filter((item) => {
+        if (seen.has(item.value)) return false;
+        seen.add(item.value);
+        return true;
+      });
+    return list;
+  } catch (error) {
+    console.error('parse schools error', error);
+    return [];
+  }
+};
+
+const loadSchools = async () => {
+  if (allSchools.value.length) return;
+  schoolLoading.value = true;
+  try {
+    const response = await fetch('/schools.json.txt');
+    const text = await response.text();
+    allSchools.value = parseSchools(text);
+    schoolOptions.value = filterSchools('');
+    ensureSchoolOption(formState.school);
+  } catch (error: any) {
+    message.error('加载学校列表失败');
+  } finally {
+    schoolLoading.value = false;
+  }
+};
+
+const filterSchools = (keyword: string) => {
+  const lower = keyword.trim().toLowerCase();
+  const filtered = lower
+    ? allSchools.value.filter((item) => item.keyword.includes(lower) || item.label.toLowerCase().includes(lower))
+    : allSchools.value;
+  return filtered.slice(0, 80).map(({ label, value }) => ({ label, value }));
+};
+
+const handleSchoolSearch = (value: string) => {
+  schoolOptions.value = filterSchools(value);
+};
+
+const handleSchoolDropdown = (open: boolean) => {
+  if (open && !allSchools.value.length) {
+    loadSchools();
+  }
+};
+
+const ensureSchoolOption = (value?: string) => {
+  if (!value) return;
+  if (!allSchools.value.length) {
+    allSchools.value = [{ label: value, value, keyword: value.toLowerCase() }];
+  } else if (!allSchools.value.some((item) => item.value === value)) {
+    allSchools.value.unshift({ label: value, value, keyword: value.toLowerCase() });
+  }
+  if (!schoolOptions.value.some((item) => item.value === value)) {
+    schoolOptions.value = [{ label: value, value }, ...schoolOptions.value].slice(0, 80);
+  }
 };
 </script>
 

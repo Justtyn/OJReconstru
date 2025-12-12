@@ -2,8 +2,8 @@
   <PageContainer title="讨论管理">
     <a-card>
       <a-form layout="inline" :model="query">
-        <a-form-item label="关键词">
-          <a-input v-model:value="query.keyword" allow-clear placeholder="标题/内容" @pressEnter="handleSearch" />
+        <a-form-item label="标题">
+          <a-input v-model:value="query.title" allow-clear placeholder="标题模糊查询" @pressEnter="handleSearch" />
         </a-form-item>
         <a-form-item label="题目">
           <a-select
@@ -158,7 +158,14 @@ import { extractErrorMessage } from '@/utils/error';
 
 const router = useRouter();
 
-const query = reactive<DiscussionQuery>({ page: 1, size: 10, keyword: '', isActive: undefined });
+const query = reactive<DiscussionQuery>({
+  page: 1,
+  size: 10,
+  title: '',
+  problemId: undefined,
+  userId: undefined,
+  isActive: undefined,
+});
 const list = ref<Discussion[]>([]);
 const total = ref(0);
 const loading = ref(false);
@@ -248,7 +255,7 @@ const handleSearch = () => {
 };
 
 const resetQuery = () => {
-  query.keyword = '';
+  query.title = '';
   query.problemId = undefined;
   query.userId = undefined;
   query.isActive = undefined;

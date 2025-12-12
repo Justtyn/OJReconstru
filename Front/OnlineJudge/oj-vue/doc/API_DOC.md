@@ -1216,8 +1216,8 @@ GET /api/discussions
 |size|query|integer(int64)| 否 |none|
 |problemId|query|integer(int64)| 否 |关联题目过滤|
 |userId|query|integer(int64)| 否 |作者过滤|
+|authorId|query|integer(int64)| 否 |作者学生ID过滤|
 |title|query|string| 否 |标题模糊查询|
-|content|query|string| 否 |内容模糊查询|
 |isActive|query|boolean| 否 |按启用状态过滤（管理员/教师可用）|
 |includeInactive|query|boolean| 否 |管理员专用：是否包含未启用讨论|
 
@@ -6508,4 +6508,3 @@ GET /api/announcements/{id}
 |code|integer(int32)|false|none||none|
 |message|string|false|none||none|
 |data|[[ProblemTestcase](#schemaproblemtestcase)]|false|none||[题目测试用例实体]|
-

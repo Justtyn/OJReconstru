@@ -24,7 +24,9 @@ export interface SolutionRequest {
 
 export interface SolutionQuery extends PageQuery {
   keyword?: string;
+  title?: string;
   problemId?: string | number;
   userId?: string | number;
+  authorId?: string | number;
   isActive?: boolean;
 }

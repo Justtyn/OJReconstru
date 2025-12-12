@@ -1,8 +1,5 @@
 <template>
   <a-form layout="vertical" :model="formState" :rules="rules" ref="formRef">
-    <a-form-item label="是否样例" name="isSample">
-      <a-switch v-model:checked="formState.isSample" />
-    </a-form-item>
     <a-form-item label="输入" name="inputData">
       <a-textarea v-model:value="formState.inputData" :rows="8" show-count placeholder="请输入测试用例输入" />
     </a-form-item>
@@ -30,7 +27,6 @@ const formRef = ref<FormInstance>();
 const formState = reactive<ProblemCaseUpsertRequest>({
   inputData: '',
   outputData: '',
-  isSample: false,
 });
 
 const rules: FormProps['rules'] = {
@@ -44,7 +40,6 @@ watch(
     if (val) {
       formState.inputData = (val as any).inputData ?? (val as any).input ?? '';
       formState.outputData = (val as any).outputData ?? (val as any).output ?? '';
-      formState.isSample = Boolean(val.isSample);
     }
   },
   { immediate: true },

@@ -308,13 +308,11 @@ const caseFormRef = ref<InstanceType<typeof ProblemCaseForm>>();
 const caseFormState = ref<ProblemCaseUpsertRequest>({
   inputData: '',
   outputData: '',
-  isSample: false,
 });
 const caseSubmitting = ref(false);
 const editingCaseId = ref<string | null>(null);
 
 const caseColumns: TableColumnType<ProblemCase>[] = [
-  { title: '类型', dataIndex: 'isSample', key: 'isSample', width: 100 },
   { title: '输入', dataIndex: 'inputData', key: 'inputData' },
   { title: '输出', dataIndex: 'outputData', key: 'outputData' },
   { title: '操作', key: 'actions', width: 150 },
@@ -355,7 +353,6 @@ const openCreateCase = () => {
   caseFormState.value = {
     inputData: '',
     outputData: '',
-    isSample: false,
   };
   caseDrawerVisible.value = true;
 };
@@ -368,7 +365,6 @@ const openEditCase = async (record: ProblemCase) => {
     caseFormState.value = {
       inputData: (data as any).inputData ?? (data as any).input ?? '',
       outputData: (data as any).outputData ?? (data as any).output ?? '',
-      isSample: data.isSample ?? false,
     };
   } catch (error: any) {
     message.error(extractErrorMessage(error, '获取用例详情失败'));

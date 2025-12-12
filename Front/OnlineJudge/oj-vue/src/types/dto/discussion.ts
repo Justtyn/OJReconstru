@@ -22,6 +22,7 @@ export interface DiscussionRequest {
 
 export interface DiscussionQuery extends PageQuery {
   keyword?: string;
+  title?: string;
   problemId?: string | number;
   userId?: string | number;
   isActive?: boolean;

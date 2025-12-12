@@ -2,8 +2,8 @@
   <PageContainer title="题解管理">
     <a-card>
       <a-form layout="inline" :model="query">
-        <a-form-item label="关键词">
-          <a-input v-model:value="query.keyword" allow-clear placeholder="标题/题目ID/作者ID" @pressEnter="handleSearch" />
+        <a-form-item label="标题">
+          <a-input v-model:value="query.title" allow-clear placeholder="标题模糊查询" @pressEnter="handleSearch" />
         </a-form-item>
         <a-form-item label="题目">
           <a-select
@@ -21,7 +21,7 @@
         </a-form-item>
         <a-form-item label="作者">
           <a-select
-            v-model:value="query.userId"
+            v-model:value="query.authorId"
             show-search
             allow-clear
             :filter-option="false"
@@ -119,7 +119,14 @@ const languageLabel = (lang?: string) => {
   return map[lang || ''] || lang || '-';
 };
 
-const query = reactive<SolutionQuery>({ page: 1, size: 10, keyword: '', isActive: undefined });
+const query = reactive<SolutionQuery>({
+  page: 1,
+  size: 10,
+  title: '',
+  problemId: undefined,
+  authorId: undefined,
+  isActive: undefined,
+});
 const list = ref<Solution[]>([]);
 const total = ref(0);
 const loading = ref(false);
@@ -197,7 +204,10 @@ const handleSearch = () => {
 };
 
 const resetQuery = () => {
-  query.keyword = '';
+  query.title = '';
+  query.problemId = undefined;
+  query.authorId = undefined;
+  query.isActive = undefined;
   query.problemId = undefined;
   query.userId = undefined;
   query.isActive = undefined;

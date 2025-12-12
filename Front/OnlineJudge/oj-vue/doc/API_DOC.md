@@ -1300,15 +1300,19 @@ GET /api/discussions/{id}/comments
 
 <a id="opIdcreateComment"></a>
 
-## POST 讨论评论-创建（学生）
+## POST 讨论评论-创建（学生/管理员）
 
 POST /api/discussions/{id}/comments
+
+管理员评论需指定 authorId 为学生ID
+评论内容最长 200 字；讨论列表可通过“评论”按钮调用本接口。
 
 > Body 请求参数
 
 ```json
 {
-  "content": "string"
+  "content": "string",
+  "authorId": 0
 }
 ```
 
@@ -4630,7 +4634,8 @@ GET /api/announcements/{id}
 
 ```json
 {
-  "content": "string"
+  "content": "string",
+  "authorId": 0
 }
 
 ```
@@ -4642,6 +4647,7 @@ GET /api/announcements/{id}
 |名称|类型|必选|约束|中文名|说明|
 |---|---|---|---|---|---|
 |content|string|true|none||none|
+|authorId|integer(int64)|false|none||管理员代学生评论时指定学生ID|
 
 <h2 id="tocS_ApiResponseDiscussionComment">ApiResponseDiscussionComment</h2>
 
@@ -6489,4 +6495,3 @@ GET /api/announcements/{id}
 |code|integer(int32)|false|none||none|
 |message|string|false|none||none|
 |data|[[ProblemTestcase](#schemaproblemtestcase)]|false|none||[题目测试用例实体]|
-

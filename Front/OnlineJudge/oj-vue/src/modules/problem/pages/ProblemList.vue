@@ -91,6 +91,7 @@ const loading = ref(false);
 const caseCountMap = reactive<Record<string, number | undefined>>({});
 
 const columns: TableColumnType<Problem>[] = [
+  { title: '题目ID', dataIndex: 'id', key: 'id', width: 180 },
   { title: '名称', dataIndex: 'name', key: 'name' },
   { title: '难度', dataIndex: 'difficulty', key: 'difficulty', width: 100 },
   { title: '来源', dataIndex: 'source', key: 'source', width: 140 },

@@ -37,5 +37,5 @@ export interface DiscussionComment {
 
 export interface DiscussionCommentRequest {
   content: string;
-  userId?: string | number;
+  authorId?: string | number;
 }

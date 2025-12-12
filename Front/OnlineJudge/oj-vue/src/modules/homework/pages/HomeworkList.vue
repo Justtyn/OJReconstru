@@ -68,6 +68,11 @@
           <template v-if="column.key === 'startTime' || column.key === 'endTime'">
             {{ text ? format(new Date(text), 'yyyy-MM-dd HH:mm') : '-' }}
           </template>
+          <template v-else-if="column.key === 'progress'">
+            <a-tag :color="progressColor(record.startTime, record.endTime)">
+              {{ progressLabel(record.startTime, record.endTime) }}
+            </a-tag>
+          </template>
           <template v-else-if="column.key === 'isActive'">
             <a-tag :color="record.isActive ? 'green' : 'default'">
               {{ record.isActive ? '启用' : '停用' }}
@@ -116,6 +121,7 @@ const columns: TableColumnType<Homework>[] = [
   { title: '标题', dataIndex: 'title', key: 'title', width: 220 },
   { title: '开始时间', dataIndex: 'startTime', key: 'startTime', width: 180 },
   { title: '结束时间', dataIndex: 'endTime', key: 'endTime', width: 180 },
+  { title: '进度', dataIndex: 'progress', key: 'progress', width: 140 },
   { title: '状态', dataIndex: 'isActive', key: 'isActive', width: 100 },
   { title: '描述', dataIndex: 'description', key: 'description' },
   { title: '操作', key: 'actions', width: 160 },
@@ -199,6 +205,24 @@ const handleExpand = (expanded: boolean, record: Homework) => {
   } else {
     expandedRowKeys.value = expandedRowKeys.value.filter((k) => k !== record.id);
   }
+};
+
+const progressLabel = (start?: string, end?: string) => {
+  if (!start && !end) return '未设置';
+  const now = new Date().getTime();
+  const startAt = start ? new Date(start).getTime() : undefined;
+  const endAt = end ? new Date(end).getTime() : undefined;
+  if (startAt && now < startAt) return '未开始';
+  if (endAt && now > endAt) return '已结束';
+  return '进行中';
+};
+
+const progressColor = (start?: string, end?: string) => {
+  const label = progressLabel(start, end);
+  if (label === '未开始') return 'default';
+  if (label === '进行中') return 'blue';
+  if (label === '已结束') return 'red';
+  return 'default';
 };
 
 const goCreate = () => {

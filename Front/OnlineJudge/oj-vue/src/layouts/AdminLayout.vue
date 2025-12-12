@@ -10,7 +10,7 @@
         @click="handleMenuClick"
       />
     </a-layout-sider>
-    <a-layout>
+    <a-layout class="admin-layout__main">
       <a-layout-header class="admin-layout__header">
         <div class="admin-layout__user">
           <strong>{{ authStore.user?.username }}</strong>
@@ -191,6 +191,13 @@ const backToClient = () => {
   font-weight: 600;
 }
 
+.admin-layout__main {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .admin-layout__header {
   display: flex;
   align-items: center;
@@ -202,9 +209,10 @@ const backToClient = () => {
 }
 
 .admin-layout__content {
+  flex: 1;
   padding: 24px;
-  min-height: calc(100vh - 64px);
   background: var(--body-bg);
+  overflow: auto;
 }
 
 .role-badge {

@@ -174,17 +174,17 @@ public class DiscussionController {
         return ApiResponse.success(comments);
     }
 
-    @Operation(summary = "讨论评论-创建（学生）")
+    @Operation(summary = "讨论评论-创建（学生/管理员）", description = "管理员评论需指定 authorId 为学生ID")
     @PostMapping("/{id}/comments")
     public ApiResponse<DiscussionComment> createComment(
-            @Parameter(description = "当前学生") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
+            @Parameter(description = "当前登录用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @PathVariable Long id,
             @Valid @RequestBody DiscussionCommentRequest request) {
-        ensureStudent(current);
+        ensureStudentOrAdmin(current);
         Discussion discussion = ensureVisibleDiscussion(id, current);
         DiscussionComment comment = new DiscussionComment();
         comment.setDiscussId(discussion.getId());
-        comment.setUserId(current.getUserId());
+        comment.setUserId(resolveAuthorId(current, request.getAuthorId()));
         comment.setContent(request.getContent());
         comment.setCreateTime(LocalDateTime.now());
         discussionCommentService.save(comment);

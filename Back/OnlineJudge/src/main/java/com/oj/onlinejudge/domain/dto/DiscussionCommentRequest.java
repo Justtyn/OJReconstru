@@ -10,4 +10,7 @@ public class DiscussionCommentRequest {
 
     @NotBlank(message = "评论内容不能为空")
     private String content;
+
+    @Schema(description = "管理员代学生评论时指定学生ID")
+    private Long authorId;
 }

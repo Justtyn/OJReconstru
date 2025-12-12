@@ -98,6 +98,8 @@
             <a-space>
               <a-button type="link" size="small" @click="edit(record)">编辑</a-button>
               <a-divider type="vertical" />
+              <a-button type="link" size="small" @click="openCommentModal(record.id)">评论</a-button>
+              <a-divider type="vertical" />
               <a-button danger type="link" size="small" @click="confirmRemove(record)">删除</a-button>
             </a-space>
           </template>
@@ -105,6 +107,40 @@
       </a-table>
     </a-card>
   </PageContainer>
+
+  <a-modal
+    v-model:open="commentModalVisible"
+    title="发布评论"
+    :confirm-loading="commentSubmitting"
+    @ok="submitComment"
+    @cancel="commentModalVisible = false"
+    destroy-on-close
+  >
+    <a-form layout="vertical">
+      <a-form-item label="评论内容" required>
+        <a-textarea
+          v-model:value="commentForm.content"
+          :maxlength="200"
+          show-count
+          :rows="4"
+          placeholder="请输入评论内容（不超过200字）"
+        />
+      </a-form-item>
+      <a-form-item label="发布学生" required>
+        <a-select
+          v-model:value="commentForm.authorId"
+          show-search
+          allow-clear
+          :filter-option="false"
+          :options="studentOptions"
+          :loading="studentLoading"
+          placeholder="搜索并选择学生"
+          @search="searchStudents"
+          @dropdownVisibleChange="handleStudentDropdown"
+        />
+      </a-form-item>
+    </a-form>
+  </a-modal>
 </template>
 
 <script setup lang="ts">
@@ -127,6 +163,10 @@ const list = ref<Discussion[]>([]);
 const total = ref(0);
 const loading = ref(false);
 const expandedRowKeys = ref<string[]>([]);
+const commentModalVisible = ref(false);
+const commentSubmitting = ref(false);
+const commentTargetId = ref<string>('');
+const commentForm = reactive<{ content: string; authorId?: string }>({ content: '', authorId: undefined });
 
 const problemOptions = ref<{ label: string; value: string }[]>([]);
 const problemLoading = ref(false);
@@ -152,7 +192,7 @@ const commentColumns: TableColumnType<DiscussionComment>[] = [
   { title: '评论人', dataIndex: 'userId', key: 'userId', width: 180 },
   { title: '内容', dataIndex: 'content', key: 'content' },
   { title: '时间', dataIndex: 'createTime', key: 'createTime', width: 180 },
-  { title: '操作', key: 'actions', width: 120 },
+  { title: '操作', key: 'actions', width: 160 },
 ];
 
 const loadData = async () => {
@@ -217,6 +257,13 @@ const resetQuery = () => {
 
 const edit = (record: Discussion) => {
   router.push(`/admin/discussions/${record.id}/edit`);
+};
+
+const openCommentModal = (discussionId: string) => {
+  commentTargetId.value = discussionId;
+  commentForm.content = '';
+  commentForm.authorId = undefined;
+  commentModalVisible.value = true;
 };
 
 const goCreate = () => {
@@ -348,6 +395,32 @@ const paginationConfig = computed(() => ({
     loadData();
   },
 }));
+
+const submitComment = async () => {
+  if (!commentTargetId.value) return;
+  if (!commentForm.content.trim()) {
+    message.warning('请输入评论内容');
+    return;
+  }
+  if (!commentForm.authorId) {
+    message.warning('请选择发布学生');
+    return;
+  }
+  commentSubmitting.value = true;
+  try {
+    await discussionService.createComment(commentTargetId.value, {
+      content: commentForm.content.slice(0, 200),
+      authorId: commentForm.authorId,
+    });
+    message.success('评论已发布');
+    commentModalVisible.value = false;
+    loadComments(commentTargetId.value);
+  } catch (error: any) {
+    message.error(extractErrorMessage(error, '发布评论失败'));
+  } finally {
+    commentSubmitting.value = false;
+  }
+};
 
 loadData();
 </script>

@@ -1216,8 +1216,8 @@ GET /api/discussions
 |size|query|integer(int64)| 否 |none|
 |problemId|query|integer(int64)| 否 |关联题目过滤|
 |userId|query|integer(int64)| 否 |作者过滤|
-|authorId|query|integer(int64)| 否 |作者学生ID过滤|
 |title|query|string| 否 |标题模糊查询|
+|content|query|string| 否 |内容模糊查询|
 |isActive|query|boolean| 否 |按启用状态过滤（管理员/教师可用）|
 |includeInactive|query|boolean| 否 |管理员专用：是否包含未启用讨论|
 
@@ -2990,6 +2990,108 @@ GET /api/announcements/{id}
 |状态码|状态码含义|说明|数据模型|
 |---|---|---|---|
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseAnnouncement](#schemaapiresponseannouncement)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+# 可视化数据
+
+<a id="opIdsummary"></a>
+
+## GET 全局概览
+
+GET /api/analytics/summary
+
+返回提交、题目、题解、讨论、登录等核心计数
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":{"submissionTotal":0,"submissionAccepted":0,"problemActive":0,"problemInactive":0,"solutionTotal":0,"solutionActive":0,"discussionTotal":0,"discussionActive":0,"loginSuccess":0,"loginFail":0}}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseAnalyticsSummaryVO](#schemaapiresponseanalyticssummaryvo)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+<a id="opIdsubmissionStatus"></a>
+
+## GET 提交状态分布
+
+GET /api/analytics/submissions/status
+
+按 overallStatusId 聚合提交数量，供图表展示
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":[{"statusId":0,"total":0,"name":"string"}]}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseListAnalyticsStatusCountVO](#schemaapiresponselistanalyticsstatuscountvo)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+<a id="opIdproblemStatus"></a>
+
+## GET 题目启用状态分布
+
+GET /api/analytics/problems/status
+
+统计题目启用/禁用数量
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":[{"statusId":0,"total":0,"name":"string"}]}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseListAnalyticsStatusCountVO](#schemaapiresponselistanalyticsstatuscountvo)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+<a id="opIdloginStatus"></a>
+
+## GET 登录结果分布
+
+GET /api/analytics/logins/status
+
+统计登录成功/失败次数，供安全审计图表使用
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":[{"statusId":0,"total":0,"name":"string"}]}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseListAnalyticsStatusCountVO](#schemaapiresponselistanalyticsstatuscountvo)|
 |400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
 |409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
 |500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
@@ -6417,6 +6519,46 @@ GET /api/announcements/{id}
 |message|string|false|none||none|
 |data|[PageAdmin](#schemapageadmin)|false|none||none|
 
+<h2 id="tocS_AnalyticsSummaryVO">AnalyticsSummaryVO</h2>
+
+<a id="schemaanalyticssummaryvo"></a>
+<a id="schema_AnalyticsSummaryVO"></a>
+<a id="tocSanalyticssummaryvo"></a>
+<a id="tocsanalyticssummaryvo"></a>
+
+```json
+{
+  "submissionTotal": 0,
+  "submissionAccepted": 0,
+  "problemActive": 0,
+  "problemInactive": 0,
+  "solutionTotal": 0,
+  "solutionActive": 0,
+  "discussionTotal": 0,
+  "discussionActive": 0,
+  "loginSuccess": 0,
+  "loginFail": 0
+}
+
+```
+
+可视化-全局概览
+
+### 属性
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|submissionTotal|integer(int64)|false|none||提交总数|
+|submissionAccepted|integer(int64)|false|none||AC 提交数|
+|problemActive|integer(int64)|false|none||启用题目数|
+|problemInactive|integer(int64)|false|none||禁用题目数|
+|solutionTotal|integer(int64)|false|none||题解总数|
+|solutionActive|integer(int64)|false|none||启用题解数|
+|discussionTotal|integer(int64)|false|none||讨论总数|
+|discussionActive|integer(int64)|false|none||启用讨论数|
+|loginSuccess|integer(int64)|false|none||登录成功次数|
+|loginFail|integer(int64)|false|none||登录失败次数|
+
 <h2 id="tocS_PageAdmin">PageAdmin</h2>
 
 <a id="schemapageadmin"></a>
@@ -6478,6 +6620,41 @@ GET /api/announcements/{id}
 |countId|string|false|none||none|
 |pages|integer(int64)|false|none||none|
 
+<h2 id="tocS_ApiResponseAnalyticsSummaryVO">ApiResponseAnalyticsSummaryVO</h2>
+
+<a id="schemaapiresponseanalyticssummaryvo"></a>
+<a id="schema_ApiResponseAnalyticsSummaryVO"></a>
+<a id="tocSapiresponseanalyticssummaryvo"></a>
+<a id="tocsapiresponseanalyticssummaryvo"></a>
+
+```json
+{
+  "code": 0,
+  "message": "string",
+  "data": {
+    "submissionTotal": 0,
+    "submissionAccepted": 0,
+    "problemActive": 0,
+    "problemInactive": 0,
+    "solutionTotal": 0,
+    "solutionActive": 0,
+    "discussionTotal": 0,
+    "discussionActive": 0,
+    "loginSuccess": 0,
+    "loginFail": 0
+  }
+}
+
+```
+
+### 属性
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|code|integer(int32)|false|none||none|
+|message|string|false|none||none|
+|data|[AnalyticsSummaryVO](#schemaanalyticssummaryvo)|false|none||可视化-全局概览|
+
 <h2 id="tocS_ApiResponseListProblemTestcase">ApiResponseListProblemTestcase</h2>
 
 <a id="schemaapiresponselistproblemtestcase"></a>
@@ -6508,3 +6685,60 @@ GET /api/announcements/{id}
 |code|integer(int32)|false|none||none|
 |message|string|false|none||none|
 |data|[[ProblemTestcase](#schemaproblemtestcase)]|false|none||[题目测试用例实体]|
+
+<h2 id="tocS_AnalyticsStatusCountVO">AnalyticsStatusCountVO</h2>
+
+<a id="schemaanalyticsstatuscountvo"></a>
+<a id="schema_AnalyticsStatusCountVO"></a>
+<a id="tocSanalyticsstatuscountvo"></a>
+<a id="tocsanalyticsstatuscountvo"></a>
+
+```json
+{
+  "statusId": 0,
+  "total": 0,
+  "name": "string"
+}
+
+```
+
+可视化-状态计数
+
+### 属性
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|statusId|integer(int32)|false|none||状态ID/枚举|
+|total|integer(int64)|false|none||数量|
+|name|string|false|none||状态名称或别名（可选）|
+
+<h2 id="tocS_ApiResponseListAnalyticsStatusCountVO">ApiResponseListAnalyticsStatusCountVO</h2>
+
+<a id="schemaapiresponselistanalyticsstatuscountvo"></a>
+<a id="schema_ApiResponseListAnalyticsStatusCountVO"></a>
+<a id="tocSapiresponselistanalyticsstatuscountvo"></a>
+<a id="tocsapiresponselistanalyticsstatuscountvo"></a>
+
+```json
+{
+  "code": 0,
+  "message": "string",
+  "data": [
+    {
+      "statusId": 0,
+      "total": 0,
+      "name": "string"
+    }
+  ]
+}
+
+```
+
+### 属性
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|code|integer(int32)|false|none||none|
+|message|string|false|none||none|
+|data|[[AnalyticsStatusCountVO](#schemaanalyticsstatuscountvo)]|false|none||[可视化-状态计数]|
+

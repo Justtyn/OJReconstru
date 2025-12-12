@@ -31,7 +31,7 @@
         <template v-if="!isTeacher">
           <a-row :gutter="[16, 16]">
             <a-col :xs="24" :lg="14">
-              <a-card title="近期提交" :loading="recentLoading" body-style="{ padding: '0 16px 16px' }">
+              <a-card title="近期提交" :loading="recentLoading" :body-style="{ padding: '0 16px 16px' }">
                 <div class="tab-tools">
                   <span>时间范围：</span>
                   <a-radio-group size="small" v-model:value="timeRange">
@@ -88,7 +88,7 @@
                 </div>
               </a-card>
 
-              <a-card title="快捷入口" class="mt-16" body-style="{ padding: '12px 16px' }">
+              <a-card title="快捷入口" class="mt-16" :body-style="{ padding: '12px 16px' }">
                 <a-list :data-source="visibleQuickLinks" :split="false">
                   <template #renderItem="{ item }">
                     <a-list-item class="quick-link" @click="go(item.path)">
@@ -139,7 +139,7 @@
                 </a-list>
               </a-card>
 
-              <a-card title="快捷入口" class="mt-16" body-style="{ padding: '12px 16px' }">
+              <a-card title="快捷入口" class="mt-16" :body-style="{ padding: '12px 16px' }">
                 <a-list :data-source="visibleQuickLinks" :split="false">
                   <template #renderItem="{ item }">
                     <a-list-item class="quick-link" @click="go(item.path)">
@@ -155,15 +155,54 @@
       </a-tab-pane>
 
       <a-tab-pane key="charts" tab="数据可视化">
-        <a-card>
-          <p class="muted">数据可视化模块预留，待后端统计接口完成后接入图表。</p>
-        </a-card>
+        <a-empty description="暂无概览指标" />
+        <a-row :gutter="[16, 16]" class="mt-16">
+          <a-col :xs="24" :lg="8">
+            <a-card title="提交状态分布" :loading="analyticsLoading" :body-style="{ padding: '14px 16px' }">
+              <div class="stat-list">
+                <div v-for="item in submissionStatusView" :key="item.key" class="chart-item">
+                  <div class="chart-label">
+                    <span class="dot" :style="{ background: item.color }"></span>
+                    <span>{{ item.label }}</span>
+                  </div>
+                  <a-progress :percent="item.percent" :format="() => item.value" size="small" :strokeColor="item.color" />
+                </div>
+              </div>
+            </a-card>
+          </a-col>
+          <a-col :xs="24" :lg="8">
+            <a-card title="题目启用情况" :loading="analyticsLoading" :body-style="{ padding: '14px 16px' }">
+              <div class="stat-list">
+                <div v-for="item in problemStatusView" :key="item.key" class="chart-item">
+                  <div class="chart-label">
+                    <span class="dot" :style="{ background: item.color }"></span>
+                    <span>{{ item.label }}</span>
+                  </div>
+                  <a-progress :percent="item.percent" :format="() => item.value" size="small" :strokeColor="item.color" />
+                </div>
+              </div>
+            </a-card>
+          </a-col>
+          <a-col :xs="24" :lg="8">
+            <a-card title="登录结果" :loading="analyticsLoading" :body-style="{ padding: '14px 16px' }">
+              <div class="stat-list">
+                <div v-for="item in loginStatusView" :key="item.key" class="chart-item">
+                  <div class="chart-label">
+                    <span class="dot" :style="{ background: item.color }"></span>
+                    <span>{{ item.label }}</span>
+                  </div>
+                  <a-progress :percent="item.percent" :format="() => item.value" size="small" :strokeColor="item.color" />
+                </div>
+              </div>
+            </a-card>
+          </a-col>
+        </a-row>
       </a-tab-pane>
 
       <a-tab-pane key="quality" tab="质量与排行">
         <a-row :gutter="[16, 16]">
           <a-col :xs="24" :lg="14">
-            <a-card title="高错误率题目（本周期）" :loading="recentLoading" body-style="{ padding: '0 16px 16px' }">
+            <a-card title="高错误率题目（本周期）" :loading="recentLoading" :body-style="{ padding: '0 16px 16px' }">
               <a-table
                 :columns="problemColumns"
                 :data-source="problemAlerts"
@@ -275,7 +314,17 @@ import { solutionService } from '@/services/modules/solution';
 import { discussionService } from '@/services/modules/discussion';
 import { submissionService } from '@/services/modules/submission';
 import { fetchPublicAnnouncements } from '@/services/modules/announcement';
-import type { Submission, SubmissionQuery, AnnouncementVO, Discussion, Solution, Homework } from '@/types';
+import { analyticsService } from '@/services/modules/analytics';
+import type {
+  Submission,
+  SubmissionQuery,
+  AnnouncementVO,
+  Discussion,
+  Solution,
+  Homework,
+  AnalyticsSummary,
+  AnalyticsStatusCount,
+} from '@/types';
 import { extractErrorMessage } from '@/utils/error';
 
 const authStore = useAuthStore();
@@ -305,6 +354,72 @@ const timeRange = ref<'24h' | '7d' | 'all'>('24h');
 const problemCache = reactive<Record<string, any>>({});
 const studentCache = reactive<Record<string, any>>({});
 const teacherHomeworks = ref<Homework[]>([]);
+const analyticsLoading = ref(false);
+const analyticsSummary = reactive<AnalyticsSummary>({
+  submissionTotal: 0,
+  submissionAccepted: 0,
+  problemActive: 0,
+  problemInactive: 0,
+  solutionTotal: 0,
+  solutionActive: 0,
+  discussionTotal: 0,
+  discussionActive: 0,
+  loginSuccess: 0,
+  loginFail: 0,
+});
+const submissionStatus = ref<AnalyticsStatusCount[]>([]);
+const problemStatus = ref<AnalyticsStatusCount[]>([]);
+const loginStatus = ref<AnalyticsStatusCount[]>([]);
+
+const submissionStatusTotal = computed(() => submissionStatus.value.reduce((sum, i) => sum + (i.total || 0), 0));
+const problemStatusTotal = computed(() => problemStatus.value.reduce((sum, i) => sum + (i.total || 0), 0));
+const loginStatusTotal = computed(() => loginStatus.value.reduce((sum, i) => sum + (i.total || 0), 0));
+
+const summaryCards = computed(() => [
+  // 已按需求精简，暂无概览卡片
+]);
+
+const submissionStatusView = computed(() =>
+  submissionStatus.value.map((item) => ({
+    key: item.statusId,
+    label: statusLabelMap[item.statusId] || item.name || item.statusId,
+    value: item.total,
+    percent: percentOf(item.total, submissionStatusTotal.value),
+    color: statusColorMap[item.statusId] || '#3b82f6',
+  })),
+);
+
+const problemStatusView = computed(() =>
+  problemStatus.value.map((item) => ({
+    key: item.statusId,
+    label: item.name || item.statusId,
+    value: item.total,
+    percent: percentOf(item.total, problemStatusTotal.value),
+    color: item.name === 'active' ? '#22c55e' : '#ef4444',
+  })),
+);
+
+const loginStatusView = computed(() =>
+  loginStatus.value.map((item) => ({
+    key: item.statusId,
+    label: item.name || item.statusId,
+    value: item.total,
+    percent: percentOf(item.total, loginStatusTotal.value),
+    color: item.name === 'success' ? '#22c55e' : '#ef4444',
+  })),
+);
+
+const statusLabelMap: Record<string | number, string> = {
+  3: '通过',
+  4: '编译错误',
+  5: '错误',
+};
+
+const statusColorMap: Record<string | number, string> = {
+  3: '#22c55e',
+  4: '#f59e0b',
+  5: '#ef4444',
+};
 
 const statCards = computed(() =>
   isTeacher.value
@@ -428,6 +543,8 @@ const loadTeacherHomeworks = async () => {
   }
 };
 
+const percentOf = (part: number, total: number) => (total ? Math.round((part / total) * 100) : 0);
+
 const statusBadge = (code?: string) => {
   if (code === 'ACCEPTED') return 'success';
   if (code === 'WRONG') return 'error';
@@ -454,8 +571,30 @@ const progressColor = (start?: string, end?: string) => {
   return 'default';
 };
 
+
+const loadAnalytics = async () => {
+  analyticsLoading.value = true;
+  try {
+    const [summary, subStatus, probStatus, loginStats] = await Promise.all([
+      analyticsService.fetchSummary(),
+      analyticsService.fetchSubmissionStatus(),
+      analyticsService.fetchProblemStatus(),
+      analyticsService.fetchLoginStatus(),
+    ]);
+    Object.assign(analyticsSummary, summary);
+    submissionStatus.value = subStatus;
+    problemStatus.value = probStatus;
+    loginStatus.value = loginStats;
+  } catch (error: any) {
+    message.error(extractErrorMessage(error, '获取可视化数据失败'));
+  } finally {
+    analyticsLoading.value = false;
+  }
+};
+
+
 const filteredSubmissions = computed(() => {
-  if (!submissionPool.value.length) return [];
+  if (!submissionPool.value?.length) return [];
   const now = Date.now();
   const rangeMs = timeRange.value === '24h' ? 24 * 3600 * 1000 : timeRange.value === '7d' ? 7 * 24 * 3600 * 1000 : Infinity;
   return submissionPool.value.filter((s) => {
@@ -556,6 +695,7 @@ onMounted(() => {
   loadRecent();
   loadContent();
   loadTeacherHomeworks();
+  loadAnalytics();
 });
 </script>
 
@@ -777,6 +917,36 @@ onMounted(() => {
 .quick-link__desc {
   color: var(--text-muted, #94a3b8);
   font-size: 12px;
+}
+
+.chart-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.chart-item .ant-progress {
+  flex: 1;
+}
+
+.chart-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.chart-block__title {
+  font-weight: 600;
+  margin-bottom: 6px;
 }
 
 .homework-item {

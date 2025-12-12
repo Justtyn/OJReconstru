@@ -11,23 +11,23 @@
       </a-col>
     </a-row>
 
-    <a-row :gutter="[16, 16]" class="mb-16">
-      <a-col v-for="card in statCards" :key="card.key" :xs="12" :md="6">
-        <a-card :bordered="false" class="stat-card" :loading="statsLoading">
-          <div class="stat-card__title">
-            <component :is="card.icon" />
-            <span>{{ card.title }}</span>
-          </div>
-          <div class="stat-card__value">
-            <a-statistic :value="card.value" />
-          </div>
-          <div class="stat-card__desc">{{ card.desc }}</div>
-        </a-card>
-      </a-col>
-    </a-row>
-
     <a-tabs v-model:activeKey="activeTab" type="card">
       <a-tab-pane key="overview" tab="概览">
+        <a-row :gutter="[16, 16]" class="mb-16">
+          <a-col v-for="card in statCards" :key="card.key" :xs="12" :md="6">
+            <a-card :bordered="false" class="stat-card" :loading="statsLoading">
+              <div class="stat-card__title">
+                <component :is="card.icon" />
+                <span>{{ card.title }}</span>
+              </div>
+              <div class="stat-card__value">
+                <a-statistic :value="card.value" />
+              </div>
+              <div class="stat-card__desc">{{ card.desc }}</div>
+            </a-card>
+          </a-col>
+        </a-row>
+
         <template v-if="!isTeacher">
           <a-row :gutter="[16, 16]">
             <a-col :xs="24" :lg="14">
@@ -152,6 +152,12 @@
             </a-col>
           </a-row>
         </template>
+      </a-tab-pane>
+
+      <a-tab-pane key="charts" tab="数据可视化">
+        <a-card>
+          <p class="muted">数据可视化模块预留，待后端统计接口完成后接入图表。</p>
+        </a-card>
       </a-tab-pane>
 
       <a-tab-pane key="quality" tab="质量与排行">

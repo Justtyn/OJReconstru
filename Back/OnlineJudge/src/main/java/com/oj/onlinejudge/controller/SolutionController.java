@@ -12,6 +12,7 @@ import com.oj.onlinejudge.exception.ApiException;
 import com.oj.onlinejudge.security.AuthenticatedUser;
 import com.oj.onlinejudge.service.ProblemService;
 import com.oj.onlinejudge.service.SolutionService;
+import com.oj.onlinejudge.service.StudentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import java.time.LocalDateTime;
@@ -36,6 +37,7 @@ public class SolutionController {
 
     private final SolutionService solutionService;
     private final ProblemService problemService;
+    private final StudentService studentService;
 
     @Operation(summary = "题解-列表", description = "学生/教师/管理员均可查看，可按题目或作者筛选")
     @GetMapping("/solutions")
@@ -82,19 +84,19 @@ public class SolutionController {
         return ApiResponse.success(solution);
     }
 
-    @Operation(summary = "题解-创建", description = "仅学生可发布，路径参数指定题目ID")
+    @Operation(summary = "题解-创建", description = "学生或管理员可发布，管理员需指定 authorId 为学生ID，路径参数指定题目ID")
     @PostMapping("/problems/{problemId}/solutions")
     public ApiResponse<Solution> create(
-            @Parameter(description = "当前登录学生") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
+            @Parameter(description = "当前登录用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @PathVariable Long problemId,
             @Validated(CreateGroup.class) @RequestBody SolutionRequest request) {
-        ensureStudent(current);
+        ensureStudentOrAdmin(current);
         ensureProblemExists(problemId);
         Solution body = new Solution();
         BeanUtils.copyProperties(request, body);
         body.setId(null);
         body.setProblemId(problemId);
-        body.setUserId(current.getUserId());
+        body.setUserId(resolveAuthorId(current, request.getAuthorId()));
         body.setCreateTime(LocalDateTime.now());
         if (body.getIsActive() == null) {
             body.setIsActive(true);
@@ -179,13 +181,27 @@ public class SolutionController {
         }
     }
 
-    private void ensureStudent(AuthenticatedUser current) {
+    private void ensureStudentOrAdmin(AuthenticatedUser current) {
         if (current == null) {
             throw ApiException.unauthorized("未登录或Token失效");
         }
-        if (!"student".equalsIgnoreCase(current.getRole())) {
-            throw ApiException.forbidden("仅学生可执行此操作");
+        String role = current.getRole() == null ? "" : current.getRole().toLowerCase();
+        if (!"student".equals(role) && !"admin".equals(role)) {
+            throw ApiException.forbidden("仅学生或管理员可执行此操作");
         }
+    }
+
+    private Long resolveAuthorId(AuthenticatedUser current, Long requestedAuthorId) {
+        boolean admin = isAdmin(current);
+        if (admin) {
+            if (requestedAuthorId == null) {
+                throw ApiException.badRequest("管理员发布题解需指定 authorId（学生ID）");
+            }
+            ensureStudentExists(requestedAuthorId);
+            return requestedAuthorId;
+        }
+        ensureStudentExists(current.getUserId());
+        return current.getUserId();
     }
 
     private void ensureViewRole(AuthenticatedUser current) {
@@ -210,6 +226,12 @@ public class SolutionController {
     private void ensureOwnerOrAdmin(AuthenticatedUser current, Solution solution) {
         if (!(isAdmin(current) || isOwner(current, solution))) {
             throw ApiException.forbidden("无权操作该题解");
+        }
+    }
+
+    private void ensureStudentExists(Long studentId) {
+        if (studentId == null || studentService.getById(studentId) == null) {
+            throw ApiException.badRequest("指定的学生不存在");
         }
     }
 }

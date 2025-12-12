@@ -14,6 +14,7 @@ import com.oj.onlinejudge.security.AuthenticatedUser;
 import com.oj.onlinejudge.service.DiscussionCommentService;
 import com.oj.onlinejudge.service.DiscussionService;
 import com.oj.onlinejudge.service.ProblemService;
+import com.oj.onlinejudge.service.StudentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 
@@ -44,6 +45,7 @@ public class DiscussionController {
     private final DiscussionService discussionService;
     private final DiscussionCommentService discussionCommentService;
     private final ProblemService problemService;
+    private final StudentService studentService;
 
     @Operation(summary = "讨论-列表")
     @GetMapping
@@ -88,16 +90,16 @@ public class DiscussionController {
         return ApiResponse.success(discussion);
     }
 
-    @Operation(summary = "讨论-创建（学生）")
+    @Operation(summary = "讨论-创建（学生/管理员）", description = "管理员发布需指定 authorId 为学生ID")
     @PostMapping
     public ApiResponse<Discussion> create(
-            @Parameter(description = "当前学生") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
+            @Parameter(description = "当前登录用户") @RequestAttribute(value = AuthenticatedUser.REQUEST_ATTRIBUTE, required = false) AuthenticatedUser current,
             @Valid @RequestBody DiscussionRequest request) {
-        ensureStudent(current);
+        ensureStudentOrAdmin(current);
         Discussion discussion = new Discussion();
         BeanUtils.copyProperties(request, discussion);
         discussion.setId(null);
-        discussion.setUserId(current.getUserId());
+        discussion.setUserId(resolveAuthorId(current, request.getAuthorId()));
         discussion.setCreateTime(LocalDateTime.now());
         discussion.setUpdateTime(LocalDateTime.now());
         if (discussion.getIsActive() == null) {
@@ -243,6 +245,29 @@ public class DiscussionController {
         }
     }
 
+    private void ensureStudentOrAdmin(AuthenticatedUser current) {
+        if (current == null) {
+            throw ApiException.unauthorized("未登录或Token失效");
+        }
+        String role = current.getRole() == null ? "" : current.getRole().toLowerCase();
+        if (!"student".equals(role) && !"admin".equals(role)) {
+            throw ApiException.forbidden("仅学生或管理员可执行此操作");
+        }
+    }
+
+    private Long resolveAuthorId(AuthenticatedUser current, Long requestedAuthorId) {
+        boolean admin = isAdmin(current);
+        if (admin) {
+            if (requestedAuthorId == null) {
+                throw ApiException.badRequest("管理员发布讨论需指定 authorId（学生ID）");
+            }
+            ensureStudentExists(requestedAuthorId);
+            return requestedAuthorId;
+        }
+        ensureStudentExists(current.getUserId());
+        return current.getUserId();
+    }
+
     private boolean isAdmin(AuthenticatedUser current) {
         return current != null && "admin".equalsIgnoreCase(current.getRole());
     }
@@ -261,6 +286,12 @@ public class DiscussionController {
     private void ensureOwnerOrAdmin(AuthenticatedUser current, Discussion discussion) {
         if (!(isAdmin(current) || isOwner(current, discussion))) {
             throw ApiException.forbidden("无权操作该讨论");
+        }
+    }
+
+    private void ensureStudentExists(Long studentId) {
+        if (studentId == null || studentService.getById(studentId) == null) {
+            throw ApiException.badRequest("指定的学生不存在");
         }
     }
 }

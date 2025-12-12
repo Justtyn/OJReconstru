@@ -35,7 +35,8 @@ public class ProblemController {
             @Parameter(description = "按题目名称模糊搜索") @RequestParam(required = false) String keyword,
             @Parameter(description = "难度过滤：easy/medium/hard") @RequestParam(required = false) String difficulty,
             @Parameter(description = "日常挑战标识") @RequestParam(required = false) String dailyChallenge,
-            @Parameter(description = "是否仅返回启用题目") @RequestParam(defaultValue = "true") boolean activeOnly) {
+            @Parameter(description = "是否仅返回启用题目") @RequestParam(defaultValue = "true") boolean activeOnly,
+            @Parameter(description = "按启用状态过滤，管理员/教师可用") @RequestParam(required = false) Boolean isActive) {
         LambdaQueryWrapper<Problem> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(keyword)) {
             wrapper.like(Problem::getName, keyword);
@@ -46,9 +47,18 @@ public class ProblemController {
         if (StringUtils.hasText(dailyChallenge)) {
             wrapper.eq(Problem::getDailyChallenge, dailyChallenge);
         }
-        boolean filterInactive = activeOnly && !isProblemManager(current);
-        if (filterInactive) {
-            wrapper.eq(Problem::getIsActive, true);
+        boolean manager = isProblemManager(current);
+        if (isActive != null) {
+            if (!isActive && !manager) {
+                wrapper.eq(Problem::getIsActive, true);
+            } else {
+                wrapper.eq(Problem::getIsActive, isActive);
+            }
+        } else {
+            boolean filterInactive = activeOnly && !manager;
+            if (filterInactive) {
+                wrapper.eq(Problem::getIsActive, true);
+            }
         }
         wrapper.orderByDesc(Problem::getCreateTime);
         Page<Problem> result = problemService.page(new Page<>(page, size), wrapper);

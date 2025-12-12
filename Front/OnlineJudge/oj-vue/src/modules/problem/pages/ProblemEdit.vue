@@ -80,8 +80,12 @@
             </a-form-item>
           </a-col>
           <a-col :xs="24" :md="12">
-            <a-form-item label="日常挑战标记">
-              <a-input v-model:value="formState.dailyChallenge" placeholder="例如 0/1，依后端约定" />
+            <a-form-item label="每日挑战">
+              <a-switch
+                v-model:checked="dailyChallengeEnabled"
+                checked-children="开启"
+                un-checked-children="关闭"
+              />
             </a-form-item>
           </a-col>
         </a-row>
@@ -209,7 +213,7 @@ const formState = reactive<ProblemUpsertRequest>({
   sampleInput: '',
   sampleOutput: '',
   hint: '',
-  dailyChallenge: '',
+  dailyChallenge: '0',
   timeLimitMs: 1000,
   memoryLimitKb: 131072,
   source: '',
@@ -222,6 +226,7 @@ const rules: FormProps['rules'] = {
 };
 
 const pageTitle = computed(() => (isEdit.value ? '编辑题目' : '新建题目'));
+const dailyChallengeEnabled = ref(false);
 
 const loadDetail = async () => {
   if (!isEdit.value || !recordId.value) return;
@@ -236,6 +241,7 @@ const loadDetail = async () => {
     formState.sampleOutput = data.sampleOutput ?? '';
     formState.hint = data.hint ?? '';
     formState.dailyChallenge = data.dailyChallenge ?? '';
+    dailyChallengeEnabled.value = (data.dailyChallenge ?? '0') === '1';
     formState.source = data.source ?? '';
     ensureSourceOption(formState.source);
     formState.timeLimitMs = data.timeLimitMs ?? 1000;
@@ -251,7 +257,11 @@ const handleSubmit = async () => {
   try {
     await formRef.value?.validate();
     submitting.value = true;
-    const payload: ProblemUpsertRequest = { ...formState, source: formState.source || undefined };
+    const payload: ProblemUpsertRequest = {
+      ...formState,
+      source: formState.source || undefined,
+      dailyChallenge: dailyChallengeEnabled.value ? '1' : '0',
+    };
     if (isEdit.value) {
       await problemService.update(recordId.value!, payload);
       message.success('更新成功');

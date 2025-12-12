@@ -84,8 +84,14 @@ const emitChange = () => {
 };
 
 const syncScroll = () => {
-  const top = textareaRef.value?.scrollTop || 0;
-  if (highlightRef.value) highlightRef.value.scrollTop = top;
+  const target = textareaRef.value;
+  if (!target) return;
+  const top = target.scrollTop || 0;
+  const left = target.scrollLeft || 0;
+  if (highlightRef.value) {
+    highlightRef.value.scrollTop = top;
+    highlightRef.value.scrollLeft = left;
+  }
   if (gutterRef.value) gutterRef.value.scrollTop = top;
 };
 </script>
@@ -134,8 +140,8 @@ const syncScroll = () => {
   padding: 12px;
   margin: 0;
   pointer-events: none;
-  white-space: pre-wrap;
-  word-break: break-word;
+  white-space: pre;
+  word-break: normal;
   overflow: auto;
   color: var(--text-color, #0f172a);
 }
@@ -160,6 +166,8 @@ const syncScroll = () => {
   min-height: 260px;
   max-height: 560px;
   overflow: auto;
+  white-space: pre;
+  word-break: normal;
 }
 
 .code-editor__input::placeholder {

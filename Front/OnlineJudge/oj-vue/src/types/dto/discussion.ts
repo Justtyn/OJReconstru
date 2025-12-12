@@ -16,6 +16,7 @@ export interface DiscussionRequest {
   content: string;
   problemId?: string | number;
   userId?: string | number;
+  authorId?: string | number;
   isActive?: boolean;
 }
 

@@ -19,9 +19,9 @@
             </a-form-item>
           </a-col>
           <a-col :xs="24" :md="12">
-            <a-form-item label="发布学生" name="userId">
+            <a-form-item label="发布学生" name="authorId">
               <a-select
-                v-model:value="formState.userId"
+                v-model:value="formState.authorId"
                 show-search
                 allow-clear
                 :filter-option="false"
@@ -105,6 +105,7 @@ const languageOptions = [
 const formState = reactive<SolutionRequest>({
   problemId: undefined,
   userId: undefined,
+  authorId: undefined,
   title: '',
   content: '',
   language: '',
@@ -118,7 +119,7 @@ const studentLoading = ref(false);
 
 const rules: FormProps['rules'] = {
   problemId: [{ required: true, message: '请选择题目' }],
-  userId: [{ required: true, message: '请选择发布学生' }],
+  authorId: [{ required: true, message: '请选择发布学生' }],
   title: [{ required: true, message: '请输入标题' }],
   content: [{ required: true, message: '请输入内容' }],
 };
@@ -131,6 +132,7 @@ const loadDetail = async () => {
     const data = await solutionService.fetchDetail(recordId.value);
     formState.problemId = data.problemId;
     formState.userId = data.userId;
+    formState.authorId = data.userId;
     formState.title = data.title;
     formState.content = data.content ?? '';
     formState.language = data.language ?? '';
@@ -148,15 +150,15 @@ const loadDetail = async () => {
       }
     }
 
-    if (formState.userId) {
+    if (formState.authorId) {
       try {
-        const s = await studentService.fetchDetail(formState.userId.toString());
+        const s = await studentService.fetchDetail(formState.authorId.toString());
         studentOptions.value = [
           ...studentOptions.value,
           { label: `${s.username}${s.name ? `（${s.name}）` : ''}（ID: ${s.id}）`, value: s.id },
         ];
       } catch {
-        studentOptions.value = [{ label: `学生（ID: ${formState.userId}）`, value: formState.userId.toString() }];
+        studentOptions.value = [{ label: `学生（ID: ${formState.authorId}）`, value: formState.authorId.toString() }];
       }
     }
   } catch (error: any) {
@@ -170,7 +172,7 @@ const handleSubmit = async () => {
     submitting.value = true;
     const payload: SolutionRequest = {
       problemId: formState.problemId,
-      userId: formState.userId,
+      authorId: formState.authorId,
       title: formState.title,
       content: formState.content,
       language: formState.language,

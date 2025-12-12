@@ -15,6 +15,7 @@ export interface Solution {
 export interface SolutionRequest {
   problemId?: string | number;
   userId?: string | number;
+  authorId?: string | number;
   title: string;
   content: string;
   language?: string;

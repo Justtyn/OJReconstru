@@ -342,6 +342,9 @@ const resolveAvatar = (url?: unknown) => {
   return withPrefix(str);
 };
 
+const stripLevelSuffix = (text: string) =>
+  text.replace(/\s*[\(（][^()（）]*?(本科|专科)[^()（）]*?[\)）]\s*$/i, '').trim();
+
 const parseSchools = (rawText: string) => {
   try {
     const parsed = JSON.parse(rawText || '{}');
@@ -353,15 +356,8 @@ const parseSchools = (rawText: string) => {
       .map((item: string) => item.trim())
       .filter(Boolean)
       .map((item: string) => {
-        const match = item.match(/^(.+?)\\((.+)\\)$/);
-        if (match) {
-          return {
-            label: `${match[1]}（${match[2]}）`,
-            value: match[1],
-            keyword: `${match[1]}${match[2]}`.toLowerCase(),
-          };
-        }
-        return { label: item, value: item, keyword: item.toLowerCase() };
+        const base = stripLevelSuffix(item);
+        return { label: base, value: base, keyword: `${base}${item}`.toLowerCase() };
       })
       .filter((item) => {
         if (seen.has(item.value)) return false;

@@ -19,4 +19,7 @@ public class DiscussionRequest {
     private Long problemId;
 
     private Boolean isActive;
+
+    @Schema(description = "管理员代学生发布时指定学生ID，仅创建时使用")
+    private Long authorId;
 }

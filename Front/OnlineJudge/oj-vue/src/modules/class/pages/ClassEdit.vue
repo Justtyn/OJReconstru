@@ -16,6 +16,23 @@
         </a-row>
         <a-row :gutter="16">
           <a-col :xs="24" :md="12">
+            <a-form-item label="创建者（教师）" name="creatorId">
+              <a-select
+                v-model:value="formState.creatorId"
+                show-search
+                allow-clear
+                :filter-option="false"
+                :options="teacherOptions"
+                :loading="teacherLoading"
+                placeholder="检索教师姓名/账号并选择"
+                @search="handleTeacherSearch"
+                @dropdownVisibleChange="handleTeacherDropdown"
+              />
+            </a-form-item>
+          </a-col>
+        </a-row>
+        <a-row :gutter="16">
+          <a-col :xs="24" :md="12">
             <a-form-item label="起止日期">
               <a-range-picker
                 v-model:value="dateRange"
@@ -65,7 +82,8 @@ import dayjs, { type Dayjs } from 'dayjs';
 import PageContainer from '@/components/common/PageContainer.vue';
 import { classesMemberService, classesService } from '@/services/modules/classes';
 import { studentService } from '@/services/modules/student';
-import type { ClassesMember, ClassesMemberRequest, ClassesRequest, Student } from '@/types';
+import { teacherService } from '@/services/modules/teacher';
+import type { ClassesMemberRequest, ClassesRequest, Student, Teacher } from '@/types';
 import { extractErrorMessage } from '@/utils/error';
 
 const router = useRouter();
@@ -82,6 +100,7 @@ const formState = reactive<ClassesRequest>({
   startDate: '',
   endDate: '',
   description: '',
+  creatorId: '',
 });
 
 const dateRange = ref<[string | Dayjs, string | Dayjs] | []>([]);
@@ -89,6 +108,8 @@ const selectedStudentIds = ref<string[]>([]);
 const originalMemberMap = reactive<Record<string, string>>({}); // studentId -> memberId
 const studentOptions = ref<{ label: string; value: string }[]>([]);
 const studentLoading = ref(false);
+const teacherOptions = ref<{ label: string; value: string }[]>([]);
+const teacherLoading = ref(false);
 
 const rules: FormProps['rules'] = {
   name: [{ required: true, message: '请输入班级名称' }],
@@ -105,6 +126,15 @@ const loadDetail = async () => {
     formState.description = data.description ?? '';
     formState.startDate = data.startDate ?? '';
     formState.endDate = data.endDate ?? '';
+    formState.creatorId = data.creatorId ?? '';
+    if (data.creatorId) {
+      mergeTeacherOptions([
+        {
+          label: `${data.creatorName ?? '教师'}（ID: ${data.creatorId}）`,
+          value: data.creatorId,
+        },
+      ]);
+    }
     if (data.startDate || data.endDate) {
       dateRange.value = [data.startDate ? dayjs(data.startDate) : '', data.endDate ? dayjs(data.endDate) : ''] as [
         Dayjs | string,
@@ -128,7 +158,7 @@ const handleSubmit = async () => {
   try {
     await formRef.value?.validate();
     submitting.value = true;
-    const payload: ClassesRequest = { ...formState };
+    const payload: ClassesRequest = { ...formState, creatorId: formState.creatorId || undefined };
     if (isEdit.value) {
       await classesService.update(recordId.value!, payload);
       await syncClassStudents(recordId.value!);
@@ -247,6 +277,41 @@ const syncClassStudents = async (classId: string) => {
   if (toAdd.length || toRemove.length) {
     await loadClassStudents(classId);
   }
+};
+
+const handleTeacherSearch = async (keyword: string) => {
+  teacherLoading.value = true;
+  try {
+    const data = await teacherService.fetchList({ page: 1, size: 50, keyword });
+    const options = data.records.map((t: Teacher) => ({
+      label: `${t.name ?? t.username ?? '教师'}（ID: ${t.id}）`,
+      value: t.id,
+    }));
+    mergeTeacherOptions(options);
+  } catch (error: any) {
+    message.error(extractErrorMessage(error, '检索教师失败'));
+  } finally {
+    teacherLoading.value = false;
+  }
+};
+
+const handleTeacherDropdown = (open: boolean) => {
+  if (open) {
+    handleTeacherSearch('');
+  }
+};
+
+const mergeTeacherOptions = (options: { label: string; value: string }[]) => {
+  const map = new Map<string, { label: string; value: string }>();
+  teacherOptions.value.forEach((o) => map.set(o.value, o));
+  options.forEach((o) => map.set(o.value, o));
+  if (formState.creatorId && !map.has(String(formState.creatorId))) {
+    map.set(String(formState.creatorId), {
+      label: `教师（ID: ${formState.creatorId}）`,
+      value: String(formState.creatorId),
+    });
+  }
+  teacherOptions.value = Array.from(map.values());
 };
 </script>
 

@@ -40,8 +40,17 @@
           <template v-if="column.key === 'difficulty'">
             <a-tag :color="difficultyColor(record.difficulty)">{{ difficultyLabel(record.difficulty) }}</a-tag>
           </template>
+          <template v-else-if="column.key === 'source'">
+            <span>{{ text || '未设置' }}</span>
+          </template>
           <template v-else-if="column.key === 'acCount'">
             {{ record.acCount ?? 0 }} / {{ record.submitCount ?? 0 }}
+          </template>
+          <template v-else-if="column.key === 'caseCount'">
+            <a-space size="small">
+              <a-spin v-if="getCaseCount(record) === undefined" size="small" />
+              <span v-else>{{ getCaseCount(record) ?? 0 }}</span>
+            </a-space>
           </template>
           <template v-else-if="column.key === 'isActive'">
             <a-badge :status="record.isActive ? 'success' : 'error'" :text="record.isActive ? '启用' : '禁用'" />
@@ -69,7 +78,7 @@ import { format } from 'date-fns';
 import { message, Modal } from 'ant-design-vue';
 import type { TableColumnType } from 'ant-design-vue';
 import PageContainer from '@/components/common/PageContainer.vue';
-import { problemService } from '@/services/modules/problem';
+import { problemCaseService, problemService } from '@/services/modules/problem';
 import type { Problem, ProblemDifficulty, ProblemQuery } from '@/types';
 import { extractErrorMessage } from '@/utils/error';
 
@@ -79,11 +88,14 @@ const query = reactive<ProblemQuery>({ page: 1, size: 10, keyword: '', difficult
 const list = ref<Problem[]>([]);
 const total = ref(0);
 const loading = ref(false);
+const caseCountMap = reactive<Record<string, number | undefined>>({});
 
 const columns: TableColumnType<Problem>[] = [
   { title: '名称', dataIndex: 'name', key: 'name' },
   { title: '难度', dataIndex: 'difficulty', key: 'difficulty', width: 100 },
+  { title: '来源', dataIndex: 'source', key: 'source', width: 140 },
   { title: 'AC/提交', dataIndex: 'acCount', key: 'acCount', width: 120 },
+  { title: '用例/样例数', dataIndex: 'caseCount', key: 'caseCount', width: 120 },
   { title: '状态', dataIndex: 'isActive', key: 'isActive', width: 100 },
   { title: '更新时间', dataIndex: 'updatedAt', key: 'updatedAt', width: 180 },
   { title: '操作', key: 'actions', width: 160 },
@@ -112,12 +124,36 @@ const loadData = async () => {
     const data = await problemService.fetchList(params);
     list.value = data.records;
     total.value = data.total;
+    await loadCaseCounts(data.records);
   } catch (error: any) {
     message.error(extractErrorMessage(error, '获取题目列表失败'));
   } finally {
     loading.value = false;
   }
 };
+
+const loadCaseCounts = async (problems: Problem[]) => {
+  Object.keys(caseCountMap).forEach((key) => delete caseCountMap[key]);
+  const pending = problems.filter((p) => p.caseCount === undefined);
+  problems.forEach((p) => {
+    if (p.caseCount !== undefined) {
+      caseCountMap[p.id] = p.caseCount;
+    }
+  });
+  if (!pending.length) return;
+  await Promise.allSettled(
+    pending.map(async (p) => {
+      try {
+        const cases = await problemCaseService.fetchList(p.id, { page: 1, size: 200 });
+        caseCountMap[p.id] = Array.isArray(cases) ? cases.length : 0;
+      } catch {
+        caseCountMap[p.id] = 0;
+      }
+    }),
+  );
+};
+
+const getCaseCount = (record: Problem) => record.caseCount ?? caseCountMap[record.id];
 
 const handleSearch = () => {
   query.page = 1;

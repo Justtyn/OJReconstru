@@ -69,7 +69,14 @@
         <a-row :gutter="16">
           <a-col :xs="24" :md="12">
             <a-form-item label="来源">
-              <a-input v-model:value="formState.source" placeholder="可选：题目来源" />
+              <a-select
+                v-model:value="formState.source"
+                show-search
+                allow-clear
+                placeholder="请选择来源"
+                option-filter-prop="label"
+                :options="sourceOptions"
+              />
             </a-form-item>
           </a-col>
           <a-col :xs="24" :md="12">
@@ -157,6 +164,41 @@ const isEdit = computed(() => Boolean(route.params.id));
 const recordId = computed(() => route.params.id as string | undefined);
 const formRef = ref<FormInstance>();
 const submitting = ref(false);
+const BUILTIN_SOURCES = [
+  'LeetCode',
+  '牛客',
+  'Codeforces',
+  'AtCoder',
+  'CodeChef',
+  'TopCoder',
+  'HackerRank',
+  'HackerEarth',
+  '洛谷',
+  'HDU',
+  'POJ',
+  'ZOJ',
+  'UVa',
+  'Timus',
+  'SPOJ',
+  'Kattis',
+  'CSES',
+  'DMOJ',
+  'UOJ',
+  'HydroOJ',
+  'VJudge',
+  'Project Euler',
+  'Kaggle',
+  '杭州电子科技大学',
+  '清华大学',
+  '北京大学',
+  '浙江大学',
+  '武汉大学',
+  '中山大学',
+  '厦门大学',
+  '电子科技大学',
+  '华中科技大学',
+] as const;
+const sourceOptions = ref(BUILTIN_SOURCES.map((value) => ({ label: value, value })));
 
 const formState = reactive<ProblemUpsertRequest>({
   name: '',
@@ -195,6 +237,7 @@ const loadDetail = async () => {
     formState.hint = data.hint ?? '';
     formState.dailyChallenge = data.dailyChallenge ?? '';
     formState.source = data.source ?? '';
+    ensureSourceOption(formState.source);
     formState.timeLimitMs = data.timeLimitMs ?? 1000;
     formState.memoryLimitKb = data.memoryLimitKb ?? 131072;
     formState.isActive = data.isActive ?? true;
@@ -208,7 +251,7 @@ const handleSubmit = async () => {
   try {
     await formRef.value?.validate();
     submitting.value = true;
-    const payload: ProblemUpsertRequest = { ...formState };
+    const payload: ProblemUpsertRequest = { ...formState, source: formState.source || undefined };
     if (isEdit.value) {
       await problemService.update(recordId.value!, payload);
       message.success('更新成功');
@@ -228,6 +271,13 @@ const handleSubmit = async () => {
 
 const goBack = () => {
   router.back();
+};
+
+const ensureSourceOption = (value?: string | null) => {
+  if (!value) return;
+  if (!sourceOptions.value.find((o) => o.value === value)) {
+    sourceOptions.value = [...sourceOptions.value, { label: value, value }];
+  }
 };
 
 // 用例区

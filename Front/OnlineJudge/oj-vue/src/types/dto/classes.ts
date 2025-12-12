@@ -15,7 +15,7 @@ export interface Classes {
 
 export interface ClassesRequest {
   name: string;
-  creatorId?: number;
+  creatorId?: string | number;
   code?: string;
   startDate?: string;
   endDate?: string;

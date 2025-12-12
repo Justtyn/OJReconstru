@@ -1,7 +1,7 @@
 <template>
   <PageContainer title="公告管理">
     <a-card>
-      <a-form layout="inline" :model="query">
+      <a-form layout="inline" :model="query" class="filter-bar">
         <a-form-item label="关键词">
           <a-input
             v-model:value="query.keyword"
@@ -10,12 +10,12 @@
             @pressEnter="handleSearch"
           />
         </a-form-item>
-        <a-form-item>
-          <a-switch
-            v-model:checked="query.pinnedOnly"
-            checked-children="仅置顶"
-            un-checked-children="全部"
-            @change="handleSearch"
+        <a-form-item label="显示范围">
+          <a-segmented
+            v-model:value="pinnedFilter"
+            :options="pinnedOptions"
+            size="middle"
+            @change="handlePinnedChange"
           />
         </a-form-item>
         <a-form-item>
@@ -52,6 +52,8 @@
           </template>
           <template v-else-if="column.key === 'actions'">
             <a-space>
+              <a-button type="link" size="small" @click="openPreview(record)">预览</a-button>
+              <a-divider type="vertical" />
               <a-button type="link" size="small" @click="edit(record)">编辑</a-button>
               <a-divider type="vertical" />
               <a-button type="link" danger size="small" @click="confirmRemove(record)">删除</a-button>
@@ -60,6 +62,28 @@
         </template>
       </a-table>
     </a-card>
+
+    <a-drawer
+      width="760"
+      :open="previewVisible"
+      title="预览公告"
+      destroy-on-close
+      @close="closePreview"
+    >
+      <a-spin :spinning="previewLoading">
+        <template v-if="previewRecord">
+          <a-space direction="vertical" style="width: 100%">
+            <a-space>
+              <a-tag v-if="previewRecord.isPinned" color="gold">置顶</a-tag>
+              <a-tag v-if="!previewRecord.isActive" color="red">未启用</a-tag>
+              <span>{{ previewRecord.time ? format(new Date(previewRecord.time), 'yyyy-MM-dd HH:mm') : '' }}</span>
+            </a-space>
+            <h3 class="preview-title">{{ previewRecord.title }}</h3>
+            <div class="markdown-body" v-html="renderMarkdown(previewRecord.content || '')"></div>
+          </a-space>
+        </template>
+      </a-spin>
+    </a-drawer>
   </PageContainer>
 </template>
 
@@ -73,6 +97,7 @@ import { adminAnnouncementService } from '@/services/modules/adminAnnouncement';
 import type { AnnouncementVO, AnnouncementQuery } from '@/types';
 import type { TableColumnType } from 'ant-design-vue';
 import { extractErrorMessage } from '@/utils/error';
+import { renderMarkdown } from '@/utils/markdown';
 
 const router = useRouter();
 
@@ -80,6 +105,19 @@ const query = reactive<AnnouncementQuery>({ page: 1, size: 10, keyword: '', pinn
 const list = ref<AnnouncementVO[]>([]);
 const total = ref(0);
 const loading = ref(false);
+const previewVisible = ref(false);
+const previewLoading = ref(false);
+const previewRecord = ref<AnnouncementVO | null>(null);
+const pinnedOptions = [
+  { label: '全部', value: 'all' },
+  { label: '仅置顶', value: 'pinned' },
+];
+const pinnedFilter = computed({
+  get: () => (query.pinnedOnly ? 'pinned' : 'all'),
+  set: (val: string) => {
+    query.pinnedOnly = val === 'pinned';
+  },
+});
 
 const columns: TableColumnType<AnnouncementVO>[] = [
   { title: '标题', dataIndex: 'title', key: 'title' },
@@ -112,6 +150,10 @@ const handleSearch = () => {
   loadData();
 };
 
+const handlePinnedChange = () => {
+  handleSearch();
+};
+
 const resetQuery = () => {
   query.keyword = '';
   query.pinnedOnly = false;
@@ -124,6 +166,23 @@ const goCreate = () => {
 
 const edit = (record: AnnouncementVO) => {
   router.push(`/admin/announcements/${record.id}/edit`);
+};
+
+const openPreview = async (record: AnnouncementVO) => {
+  previewVisible.value = true;
+  previewLoading.value = true;
+  try {
+    previewRecord.value = await adminAnnouncementService.fetchDetail(record.id);
+  } catch (error: any) {
+    message.error(extractErrorMessage(error, '获取公告详情失败'));
+  } finally {
+    previewLoading.value = false;
+  }
+};
+
+const closePreview = () => {
+  previewVisible.value = false;
+  previewRecord.value = null;
 };
 
 const remove = async (record: AnnouncementVO) => {
@@ -164,5 +223,22 @@ loadData();
 <style scoped lang="less">
 .mt-16 {
   margin-top: 16px;
+}
+
+.filter-bar {
+  gap: 8px;
+}
+
+.preview-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.markdown-body {
+  background: var(--card-bg);
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
 }
 </style>

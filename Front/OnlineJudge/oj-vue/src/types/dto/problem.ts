@@ -18,6 +18,7 @@ export interface Problem {
   source?: string | null;
   acCount?: number;
   submitCount?: number;
+  caseCount?: number;
   isActive?: boolean;
   createdAt?: string;
   updatedAt?: string;

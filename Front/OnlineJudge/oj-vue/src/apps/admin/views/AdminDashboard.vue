@@ -1,18 +1,18 @@
 <template>
   <PageContainer title="管理端仪表盘" subtitle="概览关键数据，快速进入常用管理模块">
-    <a-row :gutter="[16, 16]" class="mb-16">
-      <a-col :span="24">
-        <a-alert
-          type="info"
-          show-icon
-          message="欢迎回来"
-          :description="`当前用户：${authStore.user?.username || '-'}（${roleLabel}）`"
-        />
-      </a-col>
-    </a-row>
-
     <a-tabs v-model:activeKey="activeTab" type="card">
       <a-tab-pane key="overview" tab="概览">
+        <a-row :gutter="[16, 16]" class="mb-16">
+          <a-col :span="24">
+            <a-alert
+              type="info"
+              show-icon
+              message="欢迎回来"
+              :description="`当前用户：${authStore.user?.username || '-'}（${roleLabel}）`"
+            />
+          </a-col>
+        </a-row>
+
         <a-row :gutter="[16, 16]" class="mb-16">
           <a-col v-for="card in statCards" :key="card.key" :xs="12" :md="6">
             <a-card :bordered="false" class="stat-card" :loading="statsLoading">
@@ -158,11 +158,11 @@
         <div class="chart-head">
           <div>
             <div class="chart-title">全局概览</div>
-            <div class="chart-subtitle">汇总提交、内容发布与登录波动，按日/周/月/全部粒度聚合</div>
+            <div class="chart-subtitle">汇总提交、内容发布与登录波动，按日粒度聚合</div>
           </div>
           <div class="chart-actions">
             <span>时间粒度：</span>
-            <a-segmented size="small" v-model:value="granularity" :options="granularityOptionList" />
+            <a-tag color="blue">日</a-tag>
           </div>
         </div>
 
@@ -393,13 +393,6 @@ const teacherHomeworks = ref<Homework[]>([]);
 const analyticsLoading = ref(false);
 const timeseriesLoading = ref(false);
 const granularity = ref<AnalyticsGranularity>('day');
-const granularityOptionList = [
-  { label: '日', value: 'day' },
-  { label: '周', value: 'week' },
-  { label: '月', value: 'month' },
-  { label: '年', value: 'year' },
-  { label: '全部', value: 'all' },
-];
 const analyticsSummary = reactive<AnalyticsSummary>({
   submissionTotal: 0,
   submissionAccepted: 0,
@@ -1066,13 +1059,6 @@ const loadAnalyticsTimeseries = async () => {
     timeseriesLoading.value = false;
   }
 };
-
-watch(
-  () => granularity.value,
-  () => {
-    loadAnalyticsTimeseries();
-  },
-);
 
 watch(
   () => activeTab.value,

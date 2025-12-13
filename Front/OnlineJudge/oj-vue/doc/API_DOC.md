@@ -2858,6 +2858,46 @@ GET /api/auth/users/me
 |409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
 |500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
 
+<a id="opIdresendRegisterCode"></a>
+
+## POST 注册重发验证码
+
+POST /api/auth/register/resendCode
+
+已提交注册信息但未验证邮箱时，通过用户名+密码重新发送验证码
+
+> Body 请求参数
+
+```json
+{
+  "username": "string",
+  "password": "string"
+}
+```
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|body|body|[ResendRegisterCodeRequest](#schemaresendregistercoderequest)| 是 |none|
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":{}}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseVoid](#schemaapiresponsevoid)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
 # problem-controller
 
 <a id="opIdlist_4"></a>
@@ -5224,6 +5264,30 @@ GET /api/analytics/discussions/status
 |username|string|true|none||用户名|
 |code|string|true|none||邮箱验证码|
 |newPassword|string|true|none||新密码明文，将被哈希|
+
+<h2 id="tocS_ResendRegisterCodeRequest">ResendRegisterCodeRequest</h2>
+
+<a id="schemaresendregistercoderequest"></a>
+<a id="schema_ResendRegisterCodeRequest"></a>
+<a id="tocSresendregistercoderequest"></a>
+<a id="tocsresendregistercoderequest"></a>
+
+```json
+{
+  "username": "string",
+  "password": "string"
+}
+
+```
+
+注册验证码重发请求
+
+### 属性
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|username|string|true|none||none|
+|password|string|true|none||none|
 
 <h2 id="tocS_ForgotPasswordSendCodeRequest">ForgotPasswordSendCodeRequest</h2>
 

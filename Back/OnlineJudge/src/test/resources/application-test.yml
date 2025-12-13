@@ -44,4 +44,5 @@ jwt:
   whitelist:
     - /api/auth/login
     - /api/auth/register
+    - /api/auth/register/resendCode
     - /api/auth/verifyEmail

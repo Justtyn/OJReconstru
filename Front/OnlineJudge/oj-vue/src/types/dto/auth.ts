@@ -11,6 +11,11 @@ export interface VerifyEmailRequest {
   code: string;
 }
 
+export interface ResendRegisterCodeRequest {
+  username: string;
+  password: string;
+}
+
 export interface ForgotPasswordSendCodeRequest {
   username: string;
 }

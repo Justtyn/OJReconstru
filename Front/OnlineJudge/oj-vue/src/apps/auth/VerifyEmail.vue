@@ -21,13 +21,16 @@
       @keyup.enter="handleSubmit"
     >
       <a-form-item label="用户名" name="username">
-        <a-input v-model:value="formState.username" placeholder="请输入用户名" />
+        <a-input v-model:value="formState.username" placeholder="请输入用户名" disabled readonly />
       </a-form-item>
       <a-form-item label="验证码" name="code">
         <a-input v-model:value="formState.code" placeholder="6 位验证码" maxlength="6" />
       </a-form-item>
       <a-form-item>
         <a-button type="primary" block size="large" :loading="submitting" @click="handleSubmit">验证并登录</a-button>
+      </a-form-item>
+      <a-form-item>
+        <a-button block :loading="resending" @click="handleResend">重新发送验证码</a-button>
       </a-form-item>
     </a-form>
     <div class="auth-card__footer">
@@ -46,6 +49,7 @@ import { useAuthStore } from '@/stores/auth';
 import type { VerifyEmailRequest, UserRole } from '@/types';
 import { resolveDefaultRoute } from '@/utils/navigation';
 import { extractErrorMessage } from '@/utils/error';
+import { authService } from '@/services/modules/auth';
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -53,6 +57,7 @@ const route = useRoute();
 
 const formRef = ref<FormInstance>();
 const submitting = ref(false);
+const resending = ref(false);
 
 const formState = reactive<VerifyEmailRequest>({
   username: (route.query.username as string) || authStore.pendingVerifyUser?.username || '',
@@ -60,6 +65,7 @@ const formState = reactive<VerifyEmailRequest>({
 });
 
 const pendingEmail = computed(() => authStore.pendingVerifyUser?.email);
+const pendingPassword = computed(() => authStore.pendingVerifyUser?.password);
 
 const rules: FormProps['rules'] = {
   username: [{ required: true, message: '请输入用户名' }],
@@ -77,6 +83,29 @@ const handleSubmit = async () => {
     message.error(extractErrorMessage(error, '验证失败'));
   } finally {
     submitting.value = false;
+  }
+};
+
+const handleResend = async () => {
+  if (!formState.username) {
+    message.error('缺少用户名，无法发送验证码');
+    return;
+  }
+  if (!pendingPassword.value) {
+    message.error('缺少密码，无法重发验证码，请返回登录重新尝试');
+    return;
+  }
+  try {
+    resending.value = true;
+    await authService.resendVerifyCode({
+      username: formState.username,
+      password: pendingPassword.value,
+    });
+    message.success('验证码已重新发送，请查收邮箱');
+  } catch (error: any) {
+    message.error(extractErrorMessage(error, '发送验证码失败'));
+  } finally {
+    resending.value = false;
   }
 };
 </script>

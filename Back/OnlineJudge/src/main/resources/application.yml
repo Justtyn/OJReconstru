@@ -61,6 +61,7 @@ jwt:
   whitelist:
     - /api/auth/login
     - /api/auth/register
+    - /api/auth/register/resendCode
     - /api/auth/verifyEmail
     - /api/auth/password/forgot/sendCode
     - /api/auth/password/forgot/verify

@@ -19,6 +19,7 @@ interface AuthState {
   pendingVerifyUser?: {
     username: string;
     email?: string;
+    password?: string;
   } | null;
 }
 
@@ -45,14 +46,14 @@ export const useAuthStore = defineStore('auth', {
       if (data) {
         this.applySession(data);
       } else {
-        this.pendingVerifyUser = { username: payload.username, email: payload.email };
+        this.setPendingVerifyUser({ username: payload.username, email: payload.email, password: payload.password });
       }
       return data;
     },
     async verifyEmail(payload: VerifyEmailRequest) {
       const data = await authService.verifyEmail(payload);
       this.applySession(data);
-      this.pendingVerifyUser = null;
+      this.setPendingVerifyUser(null);
       return data;
     },
     async fetchProfile() {
@@ -102,6 +103,9 @@ export const useAuthStore = defineStore('auth', {
     forceLogout(notice = '登录状态已失效，请重新登录') {
       this.resetSession();
       message.warning(notice);
+    },
+    setPendingVerifyUser(user: AuthState['pendingVerifyUser']) {
+      this.pendingVerifyUser = user;
     },
     applySession(user: AuthUserVO) {
       this.user = user;

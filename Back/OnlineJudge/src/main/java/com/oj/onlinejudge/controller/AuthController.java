@@ -4,6 +4,7 @@ import com.oj.onlinejudge.common.api.ApiResponse;
 import com.oj.onlinejudge.config.JwtProperties;
 import com.oj.onlinejudge.domain.dto.LoginRequest;
 import com.oj.onlinejudge.domain.dto.RegisterRequest;
+import com.oj.onlinejudge.domain.dto.ResendRegisterCodeRequest;
 import com.oj.onlinejudge.domain.dto.VerifyEmailRequest;
 import com.oj.onlinejudge.domain.entity.LoginLog;
 import com.oj.onlinejudge.domain.entity.Student;
@@ -92,15 +93,47 @@ public class AuthController {
             return ApiResponse.success("注册成功", vo);
         }
         // 开启邮箱验证：存储到 Redis 并发送验证码
-        verificationCodeService.savePending(request.getUsername(), request.getEmail(),
-                passwordService.encode(request.getPassword()), request.getName(),
-                generateAlphaNumCode(6), VERIFY_EXPIRE_MINUTES);
-        if (StringUtils.hasText(request.getEmail())) {
-            verificationCodeService.get(request.getUsername()).ifPresent(p ->
-                    mailService.sendVerificationCode(p.email, p.username, p.code, VERIFY_EXPIRE_MINUTES));
-        }
+        saveAndSendRegisterCode(request.getUsername(), request.getEmail(),
+                passwordService.encode(request.getPassword()), request.getName());
         createLoginLog(null, request.getUsername(), "student", httpReq, true, "register_pending");
         return ApiResponse.success("验证码已发送，请查收邮件并在有效期内完成验证", null);
+    }
+
+    @Operation(summary = "注册重发验证码", description = "已提交注册信息但未验证邮箱时，通过用户名+密码重新发送验证码")
+    @PostMapping("/register/resendCode")
+    public ApiResponse<Void> resendRegisterCode(@Valid @RequestBody ResendRegisterCodeRequest req,
+                                                HttpServletRequest httpReq) {
+        if (!requireEmailVerify) {
+            throw ApiException.badRequest("当前未开启邮箱验证，无需发送验证码");
+        }
+        Student existing = studentService.findByUsername(req.getUsername()).orElse(null);
+        if (existing != null) {
+            if (Boolean.TRUE.equals(existing.getIsVerified())) {
+                throw ApiException.badRequest("账号已存在，请直接登录");
+            }
+            if (!passwordService.matches(req.getPassword(), existing.getPassword())) {
+                createLoginLog(existing.getId(), existing.getUsername(), "student", httpReq, false, "register_resend_wrong_password");
+                throw ApiException.badRequest("账号或密码错误");
+            }
+            if (!StringUtils.hasText(existing.getEmail())) {
+                throw ApiException.badRequest("该账号未绑定邮箱，无法发送验证码");
+            }
+            saveAndSendRegisterCode(existing.getUsername(), existing.getEmail(), existing.getPassword(), existing.getName());
+            createLoginLog(existing.getId(), existing.getUsername(), "student", httpReq, true, "register_resend_existing");
+            return ApiResponse.success("验证码已重新发送，请查收邮件并在有效期内完成验证", null);
+        }
+        VerificationCodeService.Pending pending = verificationCodeService.get(req.getUsername())
+                .orElseThrow(() -> ApiException.badRequest("未找到待验证的注册信息，请重新注册"));
+        if (!passwordService.matches(req.getPassword(), pending.passwordHash)) {
+            createLoginLog(null, req.getUsername(), "student", httpReq, false, "register_resend_wrong_password");
+            throw ApiException.badRequest("账号或密码错误");
+        }
+        if (!StringUtils.hasText(pending.email)) {
+            throw ApiException.badRequest("未提供邮箱，无法发送验证码");
+        }
+        saveAndSendRegisterCode(pending.username, pending.email, pending.passwordHash, pending.name);
+        createLoginLog(null, pending.username, "student", httpReq, true, "register_resend");
+        return ApiResponse.success("验证码已重新发送，请查收邮件并在有效期内完成验证", null);
     }
 
     @Operation(summary = "验证邮箱并激活", description = "提交验证码，验证通过后创建账号并返回Token")
@@ -117,15 +150,30 @@ public class AuthController {
             verificationCodeService.increaseAttempts(req.getUsername());
             throw ApiException.badRequest("验证码不正确");
         }
-        // 创建正式用户
-        Student s = new Student();
-        s.setUsername(p.username);
-        s.setPassword(p.passwordHash);
-        s.setEmail(p.email);
-        s.setName(p.name);
-        s.setScore(0);
-        s.setIsVerified(true);
-        studentService.save(s);
+        Student existing = studentService.findByUsername(p.username).orElse(null);
+        Student s;
+        if (existing != null) {
+            if (Boolean.TRUE.equals(existing.getIsVerified())) {
+                verificationCodeService.remove(req.getUsername());
+                throw ApiException.badRequest("账号已激活，请直接登录");
+            }
+            existing.setPassword(p.passwordHash);
+            existing.setEmail(p.email);
+            existing.setName(p.name);
+            existing.setIsVerified(true);
+            studentService.updateById(existing);
+            s = existing;
+        } else {
+            // 创建正式用户
+            s = new Student();
+            s.setUsername(p.username);
+            s.setPassword(p.passwordHash);
+            s.setEmail(p.email);
+            s.setName(p.name);
+            s.setScore(0);
+            s.setIsVerified(true);
+            studentService.save(s);
+        }
         // 清理验证码记录
         verificationCodeService.remove(req.getUsername());
         // 发注册成功邮件
@@ -372,6 +420,18 @@ public class AuthController {
             mailService.sendPasswordChangedNotice(s.getEmail(), s.getUsername(), "student");
         }
         return ApiResponse.success("密码修改成功", null);
+    }
+
+    /**
+     * 保存待验证注册信息并发送验证码。
+     */
+    private String saveAndSendRegisterCode(String username, String email, String passwordHash, String name) {
+        String code = generateAlphaNumCode(6);
+        verificationCodeService.savePending(username, email, passwordHash, name, code, VERIFY_EXPIRE_MINUTES);
+        if (StringUtils.hasText(email)) {
+            mailService.sendVerificationCode(email, username, code, VERIFY_EXPIRE_MINUTES);
+        }
+        return code;
     }
 
     private void createLoginLog(Long userId, String username, String role, HttpServletRequest req,

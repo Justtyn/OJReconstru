@@ -224,7 +224,15 @@ const handleSubmit = async () => {
       (route.query.redirect as string) || resolveDefaultRoute(authStore.role as UserRole);
     router.replace(redirect);
   } catch (error: any) {
-    message.error(extractErrorMessage(error, '登录失败'));
+    const errMsg = extractErrorMessage(error, '登录失败');
+    const isEmailUnverified = errMsg.includes('未验证') || /not\s+verified/i.test(errMsg);
+    if (isEmailUnverified) {
+      authStore.setPendingVerifyUser({ username: formState.username, password: formState.password });
+      message.warning('邮箱未验证，请先完成验证');
+      router.replace({ path: '/verify-email', query: { username: formState.username } });
+      return;
+    }
+    message.error(errMsg);
   } finally {
     submitting.value = false;
   }

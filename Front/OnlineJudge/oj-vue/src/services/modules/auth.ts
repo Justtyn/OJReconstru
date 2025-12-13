@@ -4,6 +4,7 @@ import type {
   LoginRequest,
   RegisterRequest,
   VerifyEmailRequest,
+  ResendRegisterCodeRequest,
   ForgotPasswordSendCodeRequest,
   ForgotPasswordVerifyRequest,
   ChangePasswordRequest,
@@ -12,6 +13,8 @@ import type {
 const login = (payload: LoginRequest) => http.post<AuthUserVO>('/api/auth/login', payload);
 const register = (payload: RegisterRequest) => http.post<AuthUserVO | null>('/api/auth/register', payload);
 const verifyEmail = (payload: VerifyEmailRequest) => http.post<AuthUserVO>('/api/auth/verifyEmail', payload);
+const resendVerifyCode = (payload: ResendRegisterCodeRequest) =>
+  http.post<void>('/api/auth/register/resendCode', payload);
 const fetchProfile = () => http.get<AuthUserVO>('/api/auth/users/me');
 const logout = () => http.post<void>('/api/auth/logout');
 const sendForgotCode = (payload: ForgotPasswordSendCodeRequest) =>
@@ -24,6 +27,7 @@ export const authService = {
   login,
   register,
   verifyEmail,
+  resendVerifyCode,
   fetchProfile,
   logout,
   sendForgotCode,

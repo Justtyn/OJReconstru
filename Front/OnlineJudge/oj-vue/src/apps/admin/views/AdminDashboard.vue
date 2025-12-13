@@ -155,45 +155,74 @@
       </a-tab-pane>
 
       <a-tab-pane key="charts" tab="数据可视化">
-        <a-empty description="暂无概览指标" />
-        <a-row :gutter="[16, 16]" class="mt-16">
-          <a-col :xs="24" :lg="8">
-            <a-card title="提交状态分布" :loading="analyticsLoading" :body-style="{ padding: '14px 16px' }">
-              <div class="stat-list">
-                <div v-for="item in submissionStatusView" :key="item.key" class="chart-item">
-                  <div class="chart-label">
-                    <span class="dot" :style="{ background: item.color }"></span>
-                    <span>{{ item.label }}</span>
-                  </div>
-                  <a-progress :percent="item.percent" :format="() => item.value" size="small" :strokeColor="item.color" />
-                </div>
-              </div>
+        <div class="chart-head">
+          <div>
+            <div class="chart-title">全局概览</div>
+            <div class="chart-subtitle">汇总提交、内容发布与登录波动，按日/周/月/全部粒度聚合</div>
+          </div>
+          <div class="chart-actions">
+            <span>时间粒度：</span>
+            <a-segmented size="small" v-model:value="granularity" :options="granularityOptionList" />
+          </div>
+        </div>
+
+        <a-row :gutter="[16, 16]" class="mb-16">
+          <a-col v-for="card in analyticsCards" :key="card.key" :xs="12" :lg="4">
+            <a-card :bordered="false" class="summary-card" :loading="analyticsLoading">
+              <div class="summary-card__label">{{ card.title }}</div>
+              <div class="summary-card__value">{{ card.value }}</div>
+              <div class="summary-card__desc">{{ card.desc }}</div>
             </a-card>
           </a-col>
-          <a-col :xs="24" :lg="8">
-            <a-card title="题目启用情况" :loading="analyticsLoading" :body-style="{ padding: '14px 16px' }">
-              <div class="stat-list">
-                <div v-for="item in problemStatusView" :key="item.key" class="chart-item">
-                  <div class="chart-label">
-                    <span class="dot" :style="{ background: item.color }"></span>
-                    <span>{{ item.label }}</span>
-                  </div>
-                  <a-progress :percent="item.percent" :format="() => item.value" size="small" :strokeColor="item.color" />
-                </div>
-              </div>
+        </a-row>
+
+        <a-row :gutter="[16, 16]" class="mb-16">
+          <a-col :xs="24" :lg="12">
+            <a-card title="提交与通过趋势" :loading="timeseriesLoading" :body-style="{ padding: '12px 16px 16px' }">
+              <div v-if="hasSubmissionSeries" ref="submissionLineRef" class="echart-box"></div>
+              <a-empty v-else description="暂无时间序列数据" />
             </a-card>
           </a-col>
-          <a-col :xs="24" :lg="8">
-            <a-card title="登录结果" :loading="analyticsLoading" :body-style="{ padding: '14px 16px' }">
-              <div class="stat-list">
-                <div v-for="item in loginStatusView" :key="item.key" class="chart-item">
-                  <div class="chart-label">
-                    <span class="dot" :style="{ background: item.color }"></span>
-                    <span>{{ item.label }}</span>
-                  </div>
-                  <a-progress :percent="item.percent" :format="() => item.value" size="small" :strokeColor="item.color" />
-                </div>
-              </div>
+          <a-col :xs="24" :lg="12">
+            <a-card title="登录成功/失败趋势" :loading="timeseriesLoading" :body-style="{ padding: '12px 16px 16px' }">
+              <div v-if="hasLoginSeries" ref="loginLineRef" class="echart-box"></div>
+              <a-empty v-else description="暂无时间序列数据" />
+            </a-card>
+          </a-col>
+        </a-row>
+
+        <a-row :gutter="[16, 16]" class="mb-16">
+          <a-col :span="24">
+            <a-card title="内容发布趋势（题目/题解/讨论）" :loading="timeseriesLoading" :body-style="{ padding: '12px 16px 16px' }">
+              <div v-if="hasContentSeries" ref="contentLineRef" class="echart-box dense"></div>
+              <a-empty v-else description="暂无时间序列数据" />
+            </a-card>
+          </a-col>
+        </a-row>
+
+        <a-row :gutter="[16, 16]">
+          <a-col :xs="24" :lg="6">
+            <a-card title="提交状态分布" :loading="analyticsLoading" :body-style="{ padding: '12px 16px' }">
+              <div v-if="submissionStatusView.length" ref="submissionPieRef" class="echart-box pie"></div>
+              <a-empty v-else description="暂无数据" />
+            </a-card>
+          </a-col>
+          <a-col :xs="24" :lg="6">
+            <a-card title="题目启用情况" :loading="analyticsLoading" :body-style="{ padding: '12px 16px' }">
+              <div v-if="problemStatusView.length" ref="problemPieRef" class="echart-box pie"></div>
+              <a-empty v-else description="暂无数据" />
+            </a-card>
+          </a-col>
+          <a-col :xs="24" :lg="6">
+            <a-card title="题解启用情况" :loading="analyticsLoading" :body-style="{ padding: '12px 16px' }">
+              <div v-if="solutionStatusView.length" ref="solutionPieRef" class="echart-box pie"></div>
+              <a-empty v-else description="暂无数据" />
+            </a-card>
+          </a-col>
+          <a-col :xs="24" :lg="6">
+            <a-card title="讨论启用情况" :loading="analyticsLoading" :body-style="{ padding: '12px 16px' }">
+              <div v-if="discussionStatusView.length" ref="discussionPieRef" class="echart-box pie"></div>
+              <a-empty v-else description="暂无数据" />
             </a-card>
           </a-col>
         </a-row>
@@ -289,10 +318,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
+import type { Ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { format } from 'date-fns';
 import { message } from 'ant-design-vue';
+import * as echarts from 'echarts';
+import type { ECharts, EChartsOption } from 'echarts';
 import {
   TeamOutlined,
   UserOutlined,
@@ -305,6 +337,7 @@ import {
 } from '@ant-design/icons-vue';
 import PageContainer from '@/components/common/PageContainer.vue';
 import { useAuthStore } from '@/stores/auth';
+import { useSettingsStore } from '@/stores/settings';
 import { studentService } from '@/services/modules/student';
 import { teacherService } from '@/services/modules/teacher';
 import { classesService } from '@/services/modules/classes';
@@ -324,11 +357,14 @@ import type {
   Homework,
   AnalyticsSummary,
   AnalyticsStatusCount,
+  AnalyticsGranularity,
+  AnalyticsTimeseriesPoint,
 } from '@/types';
 import { extractErrorMessage } from '@/utils/error';
 
 const authStore = useAuthStore();
 const router = useRouter();
+const settingsStore = useSettingsStore();
 const isTeacher = computed(() => authStore.role === 'teacher');
 
 const statsLoading = ref(false);
@@ -355,6 +391,15 @@ const problemCache = reactive<Record<string, any>>({});
 const studentCache = reactive<Record<string, any>>({});
 const teacherHomeworks = ref<Homework[]>([]);
 const analyticsLoading = ref(false);
+const timeseriesLoading = ref(false);
+const granularity = ref<AnalyticsGranularity>('day');
+const granularityOptionList = [
+  { label: '日', value: 'day' },
+  { label: '周', value: 'week' },
+  { label: '月', value: 'month' },
+  { label: '年', value: 'year' },
+  { label: '全部', value: 'all' },
+];
 const analyticsSummary = reactive<AnalyticsSummary>({
   submissionTotal: 0,
   submissionAccepted: 0,
@@ -369,56 +414,461 @@ const analyticsSummary = reactive<AnalyticsSummary>({
 });
 const submissionStatus = ref<AnalyticsStatusCount[]>([]);
 const problemStatus = ref<AnalyticsStatusCount[]>([]);
-const loginStatus = ref<AnalyticsStatusCount[]>([]);
+const solutionStatus = ref<AnalyticsStatusCount[]>([]);
+const discussionStatus = ref<AnalyticsStatusCount[]>([]);
+const submissionTimeseries = ref<AnalyticsTimeseriesPoint[]>([]);
+const loginTimeseries = ref<AnalyticsTimeseriesPoint[]>([]);
+const problemTimeseries = ref<AnalyticsTimeseriesPoint[]>([]);
+const solutionTimeseries = ref<AnalyticsTimeseriesPoint[]>([]);
+const discussionTimeseries = ref<AnalyticsTimeseriesPoint[]>([]);
 
 const submissionStatusTotal = computed(() => submissionStatus.value.reduce((sum, i) => sum + (i.total || 0), 0));
 const problemStatusTotal = computed(() => problemStatus.value.reduce((sum, i) => sum + (i.total || 0), 0));
-const loginStatusTotal = computed(() => loginStatus.value.reduce((sum, i) => sum + (i.total || 0), 0));
+const solutionStatusTotal = computed(() => solutionStatus.value.reduce((sum, i) => sum + (i.total || 0), 0));
+const discussionStatusTotal = computed(() => discussionStatus.value.reduce((sum, i) => sum + (i.total || 0), 0));
 
-const summaryCards = computed(() => [
-  // 已按需求精简，暂无概览卡片
+const percentOf = (part: number, total: number) => (total ? Math.round((part / total) * 100) : 0);
+
+const analyticsCards = computed(() => [
+  {
+    key: 'submission',
+    title: '提交总数',
+    value: analyticsSummary.submissionTotal,
+    desc: `通过 ${analyticsSummary.submissionAccepted}`,
+  },
+  {
+    key: 'problem',
+    title: '启用题目',
+    value: analyticsSummary.problemActive,
+    desc: `禁用 ${analyticsSummary.problemInactive}`,
+  },
+  {
+    key: 'solution',
+    title: '启用题解',
+    value: analyticsSummary.solutionActive,
+    desc: `总计 ${analyticsSummary.solutionTotal}`,
+  },
+  {
+    key: 'discussion',
+    title: '启用讨论',
+    value: analyticsSummary.discussionActive,
+    desc: `总计 ${analyticsSummary.discussionTotal}`,
+  },
+  {
+    key: 'login',
+    title: '登录成功',
+    value: analyticsSummary.loginSuccess,
+    desc: `失败 ${analyticsSummary.loginFail}`,
+  },
 ]);
-
-const submissionStatusView = computed(() =>
-  submissionStatus.value.map((item) => ({
-    key: item.statusId,
-    label: statusLabelMap[item.statusId] || item.name || item.statusId,
-    value: item.total,
-    percent: percentOf(item.total, submissionStatusTotal.value),
-    color: statusColorMap[item.statusId] || '#3b82f6',
-  })),
-);
-
-const problemStatusView = computed(() =>
-  problemStatus.value.map((item) => ({
-    key: item.statusId,
-    label: item.name || item.statusId,
-    value: item.total,
-    percent: percentOf(item.total, problemStatusTotal.value),
-    color: item.name === 'active' ? '#22c55e' : '#ef4444',
-  })),
-);
-
-const loginStatusView = computed(() =>
-  loginStatus.value.map((item) => ({
-    key: item.statusId,
-    label: item.name || item.statusId,
-    value: item.total,
-    percent: percentOf(item.total, loginStatusTotal.value),
-    color: item.name === 'success' ? '#22c55e' : '#ef4444',
-  })),
-);
 
 const statusLabelMap: Record<string | number, string> = {
   3: '通过',
+  ACCEPTED: '通过',
+  success: '成功',
   4: '编译错误',
+  COMPILE_ERROR: '编译错误',
   5: '错误',
+  WRONG: '错误',
+  fail: '失败',
 };
 
 const statusColorMap: Record<string | number, string> = {
   3: '#22c55e',
+  ACCEPTED: '#22c55e',
+  success: '#22c55e',
   4: '#f59e0b',
+  COMPILE_ERROR: '#f59e0b',
   5: '#ef4444',
+  WRONG: '#ef4444',
+  fail: '#ef4444',
+};
+
+type StatusViewItem = {
+  key: string | number;
+  label: string;
+  value: number;
+  percent: number;
+  color: string;
+};
+
+const pickCssVar = (name: string, fallback: string) => {
+  if (typeof window === 'undefined') return fallback;
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name);
+  return value?.trim() || fallback;
+};
+
+const withAlpha = (hex: string, alpha: number) => {
+  if (!hex.startsWith('#') || (hex.length !== 7 && hex.length !== 4)) return hex;
+  const fullHex = hex.length === 4 ? `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}` : hex;
+  const r = parseInt(fullHex.slice(1, 3), 16);
+  const g = parseInt(fullHex.slice(3, 5), 16);
+  const b = parseInt(fullHex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+const chartTokens = computed(() => {
+  const theme = settingsStore.effectiveTheme;
+  return {
+    text: pickCssVar('--text-color', theme === 'dark' ? '#e2e8f0' : '#0f172a'),
+    muted: theme === 'dark' ? '#94a3b8' : '#475569',
+    split: pickCssVar('--chart-track', theme === 'dark' ? 'rgba(226, 232, 240, 0.18)' : 'rgba(15, 23, 42, 0.1)'),
+    card: pickCssVar('--card-bg', theme === 'dark' ? '#152238' : '#ffffff'),
+  };
+});
+
+const resolveStatusLabel = (item: AnalyticsStatusCount) =>
+  statusLabelMap[item.code ?? item.statusId] ||
+  statusLabelMap[item.statusId] ||
+  item.name ||
+  item.code ||
+  item.statusId;
+
+const percentFromApi = (item: AnalyticsStatusCount, total: number) =>
+  typeof item.percentage === 'number' ? Math.round(item.percentage * 100) : percentOf(item.total, total);
+
+const statusPalette = (item: AnalyticsStatusCount) =>
+  statusColorMap[item.code ?? item.statusId] || statusColorMap[item.statusId] || '#3b82f6';
+
+const isActiveStatus = (item: AnalyticsStatusCount) => {
+  const flag = String(item.code ?? item.name ?? item.statusId).toLowerCase();
+  return flag === 'active' || flag === '启用' || flag === '1' || flag === 'true' || flag === 'enabled';
+};
+
+const binaryStatusColor = (item: AnalyticsStatusCount) => (isActiveStatus(item) ? '#22c55e' : '#ef4444');
+
+const submissionStatusView = computed<StatusViewItem[]>(() =>
+  submissionStatus.value.map((item) => ({
+    key: item.statusId,
+    label: String(resolveStatusLabel(item)),
+    value: item.total,
+    percent: percentFromApi(item, submissionStatusTotal.value),
+    color: statusPalette(item),
+  })),
+);
+
+const toBinaryStatusView = (list: AnalyticsStatusCount[], total: number): StatusViewItem[] =>
+  list.map((item) => ({
+    key: item.statusId,
+    label: String(item.name || item.code || (isActiveStatus(item) ? '启用' : '禁用')),
+    value: item.total,
+    percent: percentFromApi(item, total),
+    color: binaryStatusColor(item),
+  }));
+
+const problemStatusView = computed<StatusViewItem[]>(() => toBinaryStatusView(problemStatus.value, problemStatusTotal.value));
+const solutionStatusView = computed<StatusViewItem[]>(() => toBinaryStatusView(solutionStatus.value, solutionStatusTotal.value));
+const discussionStatusView = computed<StatusViewItem[]>(() => toBinaryStatusView(discussionStatus.value, discussionStatusTotal.value));
+
+const submissionLineRef = ref<HTMLDivElement | null>(null);
+const loginLineRef = ref<HTMLDivElement | null>(null);
+const contentLineRef = ref<HTMLDivElement | null>(null);
+const submissionPieRef = ref<HTMLDivElement | null>(null);
+const problemPieRef = ref<HTMLDivElement | null>(null);
+const solutionPieRef = ref<HTMLDivElement | null>(null);
+const discussionPieRef = ref<HTMLDivElement | null>(null);
+
+const createChartManager = (refEl: Ref<HTMLDivElement | null>) => {
+  let chart: ECharts | null = null;
+  const resize = () => chart?.resize();
+  const render = (option: EChartsOption) => {
+    if (!refEl.value) return;
+    if (!chart) {
+      chart = echarts.init(refEl.value);
+      window.addEventListener('resize', resize);
+    }
+    chart.setOption(option, true);
+  };
+  const dispose = () => {
+    if (!chart) return;
+    window.removeEventListener('resize', resize);
+    chart.dispose();
+    chart = null;
+  };
+  return { render, dispose, resize };
+};
+
+const submissionLineChart = createChartManager(submissionLineRef);
+const loginLineChart = createChartManager(loginLineRef);
+const contentLineChart = createChartManager(contentLineRef);
+const submissionPieChart = createChartManager(submissionPieRef);
+const problemPieChart = createChartManager(problemPieRef);
+const solutionPieChart = createChartManager(solutionPieRef);
+const discussionPieChart = createChartManager(discussionPieRef);
+
+const hasSubmissionSeries = computed(() => submissionTimeseries.value.length > 0);
+const hasLoginSeries = computed(() => loginTimeseries.value.length > 0);
+const hasContentSeries = computed(
+  () => problemTimeseries.value.length > 0 || solutionTimeseries.value.length > 0 || discussionTimeseries.value.length > 0,
+);
+
+const buildLineOption = (labels: string[], series: Array<{ name: string; color: string; values: number[] }>): EChartsOption => ({
+  backgroundColor: 'transparent',
+  textStyle: { color: chartTokens.value.text },
+  tooltip: { trigger: 'axis', axisPointer: { lineStyle: { color: chartTokens.value.split } } },
+  legend: {
+    data: series.map((item) => item.name),
+    textStyle: { color: chartTokens.value.muted },
+  },
+  grid: { left: 48, right: 16, top: 28, bottom: 40, containLabel: true },
+  xAxis: {
+    type: 'category',
+    data: labels,
+    boundaryGap: false,
+    axisTick: { show: false },
+    axisLine: { lineStyle: { color: chartTokens.value.split } },
+    axisLabel: { color: chartTokens.value.muted },
+  },
+  yAxis: {
+    type: 'value',
+    axisLabel: { color: chartTokens.value.muted },
+    splitLine: { lineStyle: { color: chartTokens.value.split } },
+  },
+  series: series.map((item) => ({
+    name: item.name,
+    type: 'line',
+    smooth: true,
+    showSymbol: false,
+    symbol: 'circle',
+    symbolSize: 8,
+    data: item.values,
+    lineStyle: { width: 2.5, color: item.color },
+    itemStyle: { color: item.color },
+    areaStyle: { color: withAlpha(item.color, 0.12) },
+  })),
+});
+
+const buildPieOption = (items: StatusViewItem[], total: number): EChartsOption => ({
+  backgroundColor: 'transparent',
+  title:
+    total > 0
+      ? {
+          text: String(total),
+          subtext: '总数',
+          left: '22%',
+          top: '52%',
+          textStyle: { color: chartTokens.value.text, fontSize: 22, fontWeight: 700 },
+          subtextStyle: { color: chartTokens.value.muted, fontSize: 12, align: 'center' },
+        }
+      : undefined,
+  tooltip: {
+    trigger: 'item',
+    formatter: (params: any) => `${params.name}<br/>数量：${params.value}<br/>占比：${params.percent}%`,
+  },
+  legend: {
+    orient: 'vertical',
+    right: 0,
+    top: 'center',
+    textStyle: { color: chartTokens.value.muted },
+  },
+  series: [
+    {
+      type: 'pie',
+      radius: ['50%', '70%'],
+      center: ['40%', '52%'],
+      avoidLabelOverlap: false,
+      itemStyle: { borderColor: chartTokens.value.card, borderWidth: 2 },
+      label: {
+        formatter: '{b|{b}}\n{c} ({d}%)',
+        color: chartTokens.value.text,
+        rich: { b: { fontWeight: 600, lineHeight: 18 } },
+      },
+      data: items.map((item) => ({ value: item.value, name: item.label, itemStyle: { color: item.color } })),
+    },
+  ],
+});
+
+const contentLineData = computed(() => {
+  const order: string[] = [];
+  const agg = new Map<string, { problems: number; solutions: number; discussions: number }>();
+  const ensure = (label: string) => {
+    if (!agg.has(label)) {
+      agg.set(label, { problems: 0, solutions: 0, discussions: 0 });
+      order.push(label);
+    }
+  };
+  problemTimeseries.value.forEach((item) => {
+    ensure(item.label);
+    const target = agg.get(item.label);
+    if (target) target.problems = item.total || 0;
+  });
+  solutionTimeseries.value.forEach((item) => {
+    ensure(item.label);
+    const target = agg.get(item.label);
+    if (target) target.solutions = item.total || 0;
+  });
+  discussionTimeseries.value.forEach((item) => {
+    ensure(item.label);
+    const target = agg.get(item.label);
+    if (target) target.discussions = item.total || 0;
+  });
+  return {
+    labels: order,
+    series: [
+      { name: '题目', color: '#6366f1', values: order.map((label) => agg.get(label)?.problems || 0) },
+      { name: '题解', color: '#a855f7', values: order.map((label) => agg.get(label)?.solutions || 0) },
+      { name: '讨论', color: '#f97316', values: order.map((label) => agg.get(label)?.discussions || 0) },
+    ],
+  };
+});
+
+const submissionLineOption = computed(() =>
+  buildLineOption(submissionTimeseries.value.map((item) => item.label), [
+    { name: '总提交', color: '#6366f1', values: submissionTimeseries.value.map((item) => item.total || 0) },
+    { name: '通过', color: '#22c55e', values: submissionTimeseries.value.map((item) => item.success || 0) },
+  ]),
+);
+
+const loginLineOption = computed(() =>
+  buildLineOption(loginTimeseries.value.map((item) => item.label), [
+    { name: '成功', color: '#22c55e', values: loginTimeseries.value.map((item) => item.success || 0) },
+    { name: '失败', color: '#ef4444', values: loginTimeseries.value.map((item) => item.fail || 0) },
+  ]),
+);
+
+const contentLineOption = computed(() => buildLineOption(contentLineData.value.labels, contentLineData.value.series));
+const submissionPieOption = computed(() => buildPieOption(submissionStatusView.value, submissionStatusTotal.value));
+const problemPieOption = computed(() => buildPieOption(problemStatusView.value, problemStatusTotal.value));
+const solutionPieOption = computed(() => buildPieOption(solutionStatusView.value, solutionStatusTotal.value));
+const discussionPieOption = computed(() => buildPieOption(discussionStatusView.value, discussionStatusTotal.value));
+
+const chartWatchers: Array<() => void> = [];
+
+const setupChartWatchers = () => {
+  chartWatchers.push(
+    watch(
+      submissionLineOption,
+      (option) =>
+        nextTick(() => {
+          if (!hasSubmissionSeries.value) {
+            submissionLineChart.dispose();
+            return;
+          }
+          submissionLineChart.render(option);
+        }),
+      { deep: true, immediate: true },
+    ),
+    watch(
+      loginLineOption,
+      (option) =>
+        nextTick(() => {
+          if (!hasLoginSeries.value) {
+            loginLineChart.dispose();
+            return;
+          }
+          loginLineChart.render(option);
+        }),
+      { deep: true, immediate: true },
+    ),
+    watch(
+      contentLineOption,
+      (option) =>
+        nextTick(() => {
+          if (!hasContentSeries.value) {
+            contentLineChart.dispose();
+            return;
+          }
+          contentLineChart.render(option);
+        }),
+      { deep: true, immediate: true },
+    ),
+    watch(
+      submissionPieOption,
+      (option) =>
+        nextTick(() => {
+          if (!submissionStatusView.value.length) {
+            submissionPieChart.dispose();
+            return;
+          }
+          submissionPieChart.render(option);
+        }),
+      { deep: true, immediate: true },
+    ),
+    watch(
+      problemPieOption,
+      (option) =>
+        nextTick(() => {
+          if (!problemStatusView.value.length) {
+            problemPieChart.dispose();
+            return;
+          }
+          problemPieChart.render(option);
+        }),
+      { deep: true, immediate: true },
+    ),
+    watch(
+      solutionPieOption,
+      (option) =>
+        nextTick(() => {
+          if (!solutionStatusView.value.length) {
+            solutionPieChart.dispose();
+            return;
+          }
+          solutionPieChart.render(option);
+        }),
+      { deep: true, immediate: true },
+    ),
+    watch(
+      discussionPieOption,
+      (option) =>
+        nextTick(() => {
+          if (!discussionStatusView.value.length) {
+            discussionPieChart.dispose();
+            return;
+          }
+          discussionPieChart.render(option);
+        }),
+      { deep: true, immediate: true },
+    ),
+  );
+};
+
+const renderChartsIfVisible = () => {
+  if (activeTab.value !== 'charts') return;
+  nextTick(() => {
+    if (hasSubmissionSeries.value && submissionLineRef.value) {
+      submissionLineChart.render(submissionLineOption.value);
+    }
+    if (hasLoginSeries.value && loginLineRef.value) {
+      loginLineChart.render(loginLineOption.value);
+    }
+    if (hasContentSeries.value && contentLineRef.value) {
+      contentLineChart.render(contentLineOption.value);
+    }
+    if (submissionStatusView.value.length && submissionPieRef.value) {
+      submissionPieChart.render(submissionPieOption.value);
+    }
+    if (problemStatusView.value.length && problemPieRef.value) {
+      problemPieChart.render(problemPieOption.value);
+    }
+    if (solutionStatusView.value.length && solutionPieRef.value) {
+      solutionPieChart.render(solutionPieOption.value);
+    }
+    if (discussionStatusView.value.length && discussionPieRef.value) {
+      discussionPieChart.render(discussionPieOption.value);
+    }
+    resizeAllCharts();
+  });
+};
+
+const resizeAllCharts = () => {
+  submissionLineChart.resize();
+  loginLineChart.resize();
+  contentLineChart.resize();
+  submissionPieChart.resize();
+  problemPieChart.resize();
+  solutionPieChart.resize();
+  discussionPieChart.resize();
+};
+
+const disposeAllCharts = () => {
+  submissionLineChart.dispose();
+  loginLineChart.dispose();
+  contentLineChart.dispose();
+  submissionPieChart.dispose();
+  problemPieChart.dispose();
+  solutionPieChart.dispose();
+  discussionPieChart.dispose();
 };
 
 const statCards = computed(() =>
@@ -543,8 +993,6 @@ const loadTeacherHomeworks = async () => {
   }
 };
 
-const percentOf = (part: number, total: number) => (total ? Math.round((part / total) * 100) : 0);
-
 const statusBadge = (code?: string) => {
   if (code === 'ACCEPTED') return 'success';
   if (code === 'WRONG') return 'error';
@@ -572,25 +1020,68 @@ const progressColor = (start?: string, end?: string) => {
 };
 
 
-const loadAnalytics = async () => {
+const loadAnalyticsOverview = async () => {
   analyticsLoading.value = true;
   try {
-    const [summary, subStatus, probStatus, loginStats] = await Promise.all([
+    const [summary, subStatus, probStatus, solStatus, disStatus] = await Promise.all([
       analyticsService.fetchSummary(),
       analyticsService.fetchSubmissionStatus(),
       analyticsService.fetchProblemStatus(),
-      analyticsService.fetchLoginStatus(),
+      analyticsService.fetchSolutionStatus(),
+      analyticsService.fetchDiscussionStatus(),
     ]);
     Object.assign(analyticsSummary, summary);
-    submissionStatus.value = subStatus;
-    problemStatus.value = probStatus;
-    loginStatus.value = loginStats;
+    submissionStatus.value = subStatus || [];
+    problemStatus.value = probStatus || [];
+    solutionStatus.value = solStatus || [];
+    discussionStatus.value = disStatus || [];
+    renderChartsIfVisible();
   } catch (error: any) {
-    message.error(extractErrorMessage(error, '获取可视化数据失败'));
+    message.error(extractErrorMessage(error, '获取可视化分布数据失败'));
   } finally {
     analyticsLoading.value = false;
   }
 };
+
+const loadAnalyticsTimeseries = async () => {
+  timeseriesLoading.value = true;
+  try {
+    const params = { granularity: granularity.value };
+    const [subSeries, loginSeries, probSeries, solSeries, disSeries] = await Promise.all([
+      analyticsService.fetchSubmissionTimeseries(params),
+      analyticsService.fetchLoginTimeseries(params),
+      analyticsService.fetchProblemTimeseries(params),
+      analyticsService.fetchSolutionTimeseries(params),
+      analyticsService.fetchDiscussionTimeseries(params),
+    ]);
+    submissionTimeseries.value = subSeries || [];
+    loginTimeseries.value = loginSeries || [];
+    problemTimeseries.value = probSeries || [];
+    solutionTimeseries.value = solSeries || [];
+    discussionTimeseries.value = disSeries || [];
+    renderChartsIfVisible();
+  } catch (error: any) {
+    message.error(extractErrorMessage(error, '获取时间序列失败'));
+  } finally {
+    timeseriesLoading.value = false;
+  }
+};
+
+watch(
+  () => granularity.value,
+  () => {
+    loadAnalyticsTimeseries();
+  },
+);
+
+watch(
+  () => activeTab.value,
+  (key) => {
+    if (key === 'charts') {
+      renderChartsIfVisible();
+    }
+  },
+);
 
 
 const filteredSubmissions = computed(() => {
@@ -617,10 +1108,12 @@ const submissionSummary = computed(() => {
 const problemAlerts = computed(() => {
   const agg: Record<string, { total: number; accepted: number }> = {};
   filteredSubmissions.value.forEach((s) => {
-    if (!s.problemId) return;
-    if (!agg[s.problemId]) agg[s.problemId] = { total: 0, accepted: 0 };
-    agg[s.problemId].total += 1;
-    if (s.overallStatusCode === 'ACCEPTED') agg[s.problemId].accepted += 1;
+    const pid = s.problemId;
+    if (pid === undefined || pid === null) return;
+    const key = String(pid);
+    if (!agg[key]) agg[key] = { total: 0, accepted: 0 };
+    agg[key].total += 1;
+    if (s.overallStatusCode === 'ACCEPTED') agg[key].accepted += 1;
   });
   return Object.entries(agg)
     .map(([problemId, val]) => {
@@ -691,11 +1184,18 @@ const preloadCaches = (records: Submission[]) => {
 };
 
 onMounted(() => {
+  setupChartWatchers();
   loadStats();
   loadRecent();
   loadContent();
   loadTeacherHomeworks();
-  loadAnalytics();
+  loadAnalyticsOverview();
+  loadAnalyticsTimeseries();
+});
+
+onBeforeUnmount(() => {
+  chartWatchers.forEach((stop) => stop());
+  disposeAllCharts();
 });
 </script>
 
@@ -992,5 +1492,85 @@ onMounted(() => {
 
 .bullet li {
   margin-bottom: 6px;
+}
+
+.chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.chart-title {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--text-color, #0f172a);
+}
+
+.chart-subtitle {
+  color: var(--text-muted, #94a3b8);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.chart-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted, #94a3b8);
+}
+
+.summary-card {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  border-radius: 12px;
+}
+
+:deep(.summary-card .ant-card-body) {
+  padding: 12px 14px;
+}
+
+.summary-card__label {
+  color: var(--text-muted, #94a3b8);
+  font-size: 12px;
+}
+
+.summary-card__value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-color, #0f172a);
+  line-height: 1.1;
+  margin-top: 4px;
+}
+
+.summary-card__desc {
+  color: var(--text-muted, #94a3b8);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.echart-box {
+  width: 100%;
+  height: 300px;
+  border: 1px solid var(--chart-track, rgba(15, 23, 42, 0.08));
+  border-radius: 14px;
+  background: radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.08), transparent 45%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.02), rgba(15, 23, 42, 0.04));
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+}
+
+.echart-box.dense {
+  height: 340px;
+}
+
+.echart-box.pie {
+  height: 260px;
+}
+
+:root[data-theme='dark'] .echart-box {
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
+  background: radial-gradient(circle at 18% 22%, rgba(99, 102, 241, 0.18), transparent 40%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.24), rgba(15, 23, 42, 0.32));
 }
 </style>

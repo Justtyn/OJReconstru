@@ -127,7 +127,10 @@ const loadDetail = async () => {
       if (data.startTime) range.push(dayjs(data.startTime));
       if (data.endTime) range.push(dayjs(data.endTime));
       if (range.length === 2) {
-        dateRange.value = [range[0], range[1]];
+        const [start, end] = range;
+        if (start && end) {
+          dateRange.value = [start, end];
+        }
       }
     }
   } catch (error: any) {

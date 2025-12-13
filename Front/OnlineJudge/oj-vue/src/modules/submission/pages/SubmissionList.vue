@@ -560,7 +560,8 @@ const handleHomeworkChange = (value: string) => {
   loadHomeworkProblems(value);
 };
 
-const languageLabel = (id?: number) => languageOptions.find((l) => l.id === id)?.name || id || '-';
+const languageLabel = (id?: number | string) =>
+  languageOptions.find((l) => l.id === Number(id))?.name || (id ? String(id) : '-');
 
 const studentLabel = (record: Submission) => {
   const id = record.studentId || (record as any).userId;

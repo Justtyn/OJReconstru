@@ -138,7 +138,8 @@ const goBack = () => {
   router.back();
 };
 
-const languageLabel = (id?: number) => languageOptions.find((l) => l.id === id)?.name || id || '-';
+const languageLabel = (id?: number | string) =>
+  languageOptions.find((l) => l.id === Number(id))?.name || (id ? String(id) : '-');
 const statusBadge = (code?: string) => {
   if (code === 'ACCEPTED') return 'success';
   if (code === 'WRONG') return 'error';

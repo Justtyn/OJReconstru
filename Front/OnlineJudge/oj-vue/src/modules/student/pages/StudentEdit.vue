@@ -321,7 +321,8 @@ const handleUploadChange: UploadProps['onChange'] = async ({ file }) => {
     return;
   }
   if (file.status === 'done' && file.response) {
-    const urlSuffix = file.response?.data?.url || file.response?.data || file.response?.url || file.response;
+    const resp: any = file.response;
+    const urlSuffix = resp?.data?.url || resp?.data || resp?.url || resp;
     formState.avatar = urlSuffix;
     avatarPreview.value = resolveAvatar(urlSuffix);
     message.success('上传成功');

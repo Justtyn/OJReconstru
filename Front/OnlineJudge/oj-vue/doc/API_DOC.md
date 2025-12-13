@@ -3021,20 +3021,60 @@ GET /api/analytics/summary
 |409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
 |500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
 
-<a id="opIdsubmissionStatus"></a>
+<a id="opIdsubmissionTimeseries"></a>
 
-## GET 提交状态分布
+## GET 提交数量趋势
 
-GET /api/analytics/submissions/status
+GET /api/analytics/submissions/timeseries
 
-按 overallStatusId 聚合提交数量，供图表展示
+按日/周/月/年或全部聚合提交量和通过量，支持自定义时间范围绘制折线图
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|granularity|query|string| 否 |聚合粒度：day/week/month/year/all，默认 day|
+|startTime|query|string(date-time)| 否 |起始时间，ISO-8601，可选|
+|endTime|query|string(date-time)| 否 |结束时间，ISO-8601，可选|
 
 > 返回示例
 
 > 200 Response
 
 ```
-{"code":0,"message":"string","data":[{"statusId":0,"total":0,"name":"string"}]}
+{"code":0,"message":"string","data":[{"label":"string","total":0,"success":0,"fail":0,"bucketStart":"2019-08-24T14:15:22Z","bucketEnd":"2019-08-24T14:15:22Z"}]}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseListAnalyticsTimeseriesVO](#schemaapiresponselistanalyticstimeseriesvo)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+<a id="opIdsubmissionStatus"></a>
+
+## GET 提交状态分布
+
+GET /api/analytics/submissions/status
+
+按 overallStatusId 聚合提交数量，支持时间区间过滤，供图表展示
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|startTime|query|string(date-time)| 否 |起始时间，ISO-8601，可选|
+|endTime|query|string(date-time)| 否 |结束时间，ISO-8601，可选|
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":[{"statusId":0,"total":0,"name":"string","code":"string","percentage":0.1}]}
 ```
 
 ### 返回结果
@@ -3042,6 +3082,104 @@ GET /api/analytics/submissions/status
 |状态码|状态码含义|说明|数据模型|
 |---|---|---|---|
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseListAnalyticsStatusCountVO](#schemaapiresponselistanalyticsstatuscountvo)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+<a id="opIdsolutionTimeseries"></a>
+
+## GET 题解发布趋势
+
+GET /api/analytics/solutions/timeseries
+
+按日/周/月/年或全部聚合题解数量，支持自定义时间范围
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|granularity|query|string| 否 |聚合粒度：day/week/month/year/all，默认 day|
+|startTime|query|string(date-time)| 否 |起始时间，ISO-8601，可选|
+|endTime|query|string(date-time)| 否 |结束时间，ISO-8601，可选|
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":[{"label":"string","total":0,"success":0,"fail":0,"bucketStart":"2019-08-24T14:15:22Z","bucketEnd":"2019-08-24T14:15:22Z"}]}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseListAnalyticsTimeseriesVO](#schemaapiresponselistanalyticstimeseriesvo)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+<a id="opIdsolutionStatus"></a>
+
+## GET 题解启用状态分布
+
+GET /api/analytics/solutions/status
+
+用于饼图：启用/禁用题解数量，支持时间过滤
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|startTime|query|string(date-time)| 否 |起始时间，ISO-8601，可选|
+|endTime|query|string(date-time)| 否 |结束时间，ISO-8601，可选|
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":[{"statusId":0,"total":0,"name":"string","code":"string","percentage":0.1}]}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseListAnalyticsStatusCountVO](#schemaapiresponselistanalyticsstatuscountvo)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+<a id="opIdproblemTimeseries"></a>
+
+## GET 题目发布趋势
+
+GET /api/analytics/problems/timeseries
+
+按日/周/月/年或全部聚合题目数量，支持自定义时间范围
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|granularity|query|string| 否 |聚合粒度：day/week/month/year/all，默认 day|
+|startTime|query|string(date-time)| 否 |起始时间，ISO-8601，可选|
+|endTime|query|string(date-time)| 否 |结束时间，ISO-8601，可选|
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":[{"label":"string","total":0,"success":0,"fail":0,"bucketStart":"2019-08-24T14:15:22Z","bucketEnd":"2019-08-24T14:15:22Z"}]}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseListAnalyticsTimeseriesVO](#schemaapiresponselistanalyticstimeseriesvo)|
 |400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
 |409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
 |500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
@@ -3052,14 +3190,21 @@ GET /api/analytics/submissions/status
 
 GET /api/analytics/problems/status
 
-统计题目启用/禁用数量
+统计题目启用/禁用数量，用于饼图，可按时间过滤
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|startTime|query|string(date-time)| 否 |起始时间，ISO-8601，可选|
+|endTime|query|string(date-time)| 否 |结束时间，ISO-8601，可选|
 
 > 返回示例
 
 > 200 Response
 
 ```
-{"code":0,"message":"string","data":[{"statusId":0,"total":0,"name":"string"}]}
+{"code":0,"message":"string","data":[{"statusId":0,"total":0,"name":"string","code":"string","percentage":0.1}]}
 ```
 
 ### 返回结果
@@ -3071,20 +3216,125 @@ GET /api/analytics/problems/status
 |409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
 |500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
 
-<a id="opIdloginStatus"></a>
+<a id="opIdloginTimeseries"></a>
 
-## GET 登录结果分布
+## GET 登录趋势
 
-GET /api/analytics/logins/status
+GET /api/analytics/logins/timeseries
 
-统计登录成功/失败次数，供安全审计图表使用
+按日/周/月/年或全部聚合登录成功/失败次数，支持时间窗口过滤
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|granularity|query|string| 否 |聚合粒度：day/week/month/year/all，默认 day|
+|startTime|query|string(date-time)| 否 |起始时间，ISO-8601，可选|
+|endTime|query|string(date-time)| 否 |结束时间，ISO-8601，可选|
 
 > 返回示例
 
 > 200 Response
 
 ```
-{"code":0,"message":"string","data":[{"statusId":0,"total":0,"name":"string"}]}
+{"code":0,"message":"string","data":[{"label":"string","total":0,"success":0,"fail":0,"bucketStart":"2019-08-24T14:15:22Z","bucketEnd":"2019-08-24T14:15:22Z"}]}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseListAnalyticsTimeseriesVO](#schemaapiresponselistanalyticstimeseriesvo)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+<a id="opIdloginStatus"></a>
+
+## GET 登录结果分布
+
+GET /api/analytics/logins/status
+
+统计登录成功/失败次数，供安全审计图表使用，可按时间过滤
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|startTime|query|string(date-time)| 否 |起始时间，ISO-8601，可选|
+|endTime|query|string(date-time)| 否 |结束时间，ISO-8601，可选|
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":[{"statusId":0,"total":0,"name":"string","code":"string","percentage":0.1}]}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseListAnalyticsStatusCountVO](#schemaapiresponselistanalyticsstatuscountvo)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+<a id="opIddiscussionTimeseries"></a>
+
+## GET 讨论发布趋势
+
+GET /api/analytics/discussions/timeseries
+
+按日/周/月/年或全部聚合讨论数量，支持自定义时间范围
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|granularity|query|string| 否 |聚合粒度：day/week/month/year/all，默认 day|
+|startTime|query|string(date-time)| 否 |起始时间，ISO-8601，可选|
+|endTime|query|string(date-time)| 否 |结束时间，ISO-8601，可选|
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":[{"label":"string","total":0,"success":0,"fail":0,"bucketStart":"2019-08-24T14:15:22Z","bucketEnd":"2019-08-24T14:15:22Z"}]}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseListAnalyticsTimeseriesVO](#schemaapiresponselistanalyticstimeseriesvo)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+<a id="opIddiscussionStatus"></a>
+
+## GET 讨论启用状态分布
+
+GET /api/analytics/discussions/status
+
+用于饼图：启用/禁用讨论数量，支持时间过滤
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|startTime|query|string(date-time)| 否 |起始时间，ISO-8601，可选|
+|endTime|query|string(date-time)| 否 |结束时间，ISO-8601，可选|
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":[{"statusId":0,"total":0,"name":"string","code":"string","percentage":0.1}]}
 ```
 
 ### 返回结果
@@ -6697,7 +6947,9 @@ GET /api/analytics/logins/status
 {
   "statusId": 0,
   "total": 0,
-  "name": "string"
+  "name": "string",
+  "code": "string",
+  "percentage": 0.1
 }
 
 ```
@@ -6711,6 +6963,40 @@ GET /api/analytics/logins/status
 |statusId|integer(int32)|false|none||状态ID/枚举|
 |total|integer(int64)|false|none||数量|
 |name|string|false|none||状态名称或别名（可选）|
+|code|string|false|none||状态编码/别名（可选）|
+|percentage|number(double)|false|none||占比（0-1），便于直接绘制饼图|
+
+<h2 id="tocS_AnalyticsTimeseriesVO">AnalyticsTimeseriesVO</h2>
+
+<a id="schemaanalyticstimeseriesvo"></a>
+<a id="schema_AnalyticsTimeseriesVO"></a>
+<a id="tocSanalyticstimeseriesvo"></a>
+<a id="tocsanalyticstimeseriesvo"></a>
+
+```json
+{
+  "label": "string",
+  "total": 0,
+  "success": 0,
+  "fail": 0,
+  "bucketStart": "2019-08-24T14:15:22Z",
+  "bucketEnd": "2019-08-24T14:15:22Z"
+}
+
+```
+
+可视化-时间序列点
+
+### 属性
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|label|string|false|none||时间标签，如 2025-12-12 / 2025-12 / 2025-W51 / all|
+|total|integer(int64)|false|none||总数|
+|success|integer(int64)|false|none||成功/通过数（可选）|
+|fail|integer(int64)|false|none||失败数（可选）|
+|bucketStart|string(date-time)|false|none||桶开始时间|
+|bucketEnd|string(date-time)|false|none||桶结束时间（开区间，null 表示无上限）|
 
 <h2 id="tocS_ApiResponseListAnalyticsStatusCountVO">ApiResponseListAnalyticsStatusCountVO</h2>
 
@@ -6727,7 +7013,9 @@ GET /api/analytics/logins/status
     {
       "statusId": 0,
       "total": 0,
-      "name": "string"
+      "name": "string",
+      "code": "string",
+      "percentage": 0.1
     }
   ]
 }
@@ -6741,4 +7029,37 @@ GET /api/analytics/logins/status
 |code|integer(int32)|false|none||none|
 |message|string|false|none||none|
 |data|[[AnalyticsStatusCountVO](#schemaanalyticsstatuscountvo)]|false|none||[可视化-状态计数]|
+
+<h2 id="tocS_ApiResponseListAnalyticsTimeseriesVO">ApiResponseListAnalyticsTimeseriesVO</h2>
+
+<a id="schemaapiresponselistanalyticstimeseriesvo"></a>
+<a id="schema_ApiResponseListAnalyticsTimeseriesVO"></a>
+<a id="tocSapiresponselistanalyticstimeseriesvo"></a>
+<a id="tocsapiresponselistanalyticstimeseriesvo"></a>
+
+```json
+{
+  "code": 0,
+  "message": "string",
+  "data": [
+    {
+      "label": "string",
+      "total": 0,
+      "success": 0,
+      "fail": 0,
+      "bucketStart": "2019-08-24T14:15:22Z",
+      "bucketEnd": "2019-08-24T14:15:22Z"
+    }
+  ]
+}
+
+```
+
+### 属性
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|code|integer(int32)|false|none||none|
+|message|string|false|none||none|
+|data|[[AnalyticsTimeseriesVO](#schemaanalyticstimeseriesvo)]|false|none||[可视化-时间序列点]|
 

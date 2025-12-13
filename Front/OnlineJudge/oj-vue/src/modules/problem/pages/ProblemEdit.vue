@@ -202,7 +202,9 @@ const BUILTIN_SOURCES = [
   '电子科技大学',
   '华中科技大学',
 ] as const;
-const sourceOptions = ref(BUILTIN_SOURCES.map((value) => ({ label: value, value })));
+const sourceOptions = ref<{ label: string; value: string }[]>(
+  BUILTIN_SOURCES.map((value) => ({ label: String(value), value: String(value) })),
+);
 
 const formState = reactive<ProblemUpsertRequest>({
   name: '',

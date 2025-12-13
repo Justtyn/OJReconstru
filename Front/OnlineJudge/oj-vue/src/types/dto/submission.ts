@@ -48,4 +48,5 @@ export interface SubmissionQuery extends PageQuery {
   homeworkId?: string | number | null;
   studentId?: string | number;
   statusId?: number;
+  languageId?: number;
 }

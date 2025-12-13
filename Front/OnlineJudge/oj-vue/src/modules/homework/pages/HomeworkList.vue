@@ -106,9 +106,10 @@ import { extractErrorMessage } from '@/utils/error';
 const router = useRouter();
 const route = useRoute();
 const classId = computed(() => (route.params.classId as string) || '');
+const classIdNumber = computed(() => (classId.value ? Number(classId.value) : undefined));
 
 const classInfo = ref<Classes>();
-const query = reactive<HomeworkQuery>({ page: 1, size: 10, classId: classId.value, keyword: '' });
+const query = reactive<HomeworkQuery>({ page: 1, size: 10, classId: classIdNumber.value, keyword: '' });
 const list = ref<Homework[]>([]);
 const total = ref(0);
 const loading = ref(false);

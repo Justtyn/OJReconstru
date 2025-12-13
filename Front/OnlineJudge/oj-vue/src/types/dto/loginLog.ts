@@ -22,4 +22,5 @@ export interface LoginLog {
 export interface LoginLogQuery extends PageQuery {
   role?: LoginRole;
   userId?: string;
+  username?: string;
 }

@@ -83,7 +83,7 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
-import type { FormInstance, FormProps, InputRef } from 'ant-design-vue';
+import type { FormInstance, FormProps } from 'ant-design-vue';
 import { message } from 'ant-design-vue';
 import { useRouter, useRoute, RouterLink } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
@@ -97,11 +97,11 @@ const route = useRoute();
 const authStore = useAuthStore();
 const formRef = ref<FormInstance>();
 const submitting = ref(false);
-const usernameInputRef = ref<InputRef>();
-const passwordInputRef = ref<InputRef>();
-const roleSegmentedRef = ref<any>();
-const loginButtonRef = ref<any>();
-const captchaInputRef = ref<InputRef>();
+const usernameInputRef = ref<HTMLInputElement | null>(null);
+const passwordInputRef = ref<HTMLInputElement | null>(null);
+const roleSegmentedRef = ref<any>(null);
+const loginButtonRef = ref<any>(null);
+const captchaInputRef = ref<HTMLInputElement | null>(null);
 
 const roleOptions = [
   { label: '学生', value: 'student' },

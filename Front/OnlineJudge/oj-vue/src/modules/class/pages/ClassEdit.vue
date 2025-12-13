@@ -259,7 +259,7 @@ const syncClassStudents = async (classId: string) => {
     await Promise.all(
       toRemove
         .map((id) => originalMemberMap[id])
-        .filter(Boolean)
+        .filter((memberId): memberId is string => Boolean(memberId))
         .map((memberId) => classesMemberService.remove(memberId)),
     );
   }

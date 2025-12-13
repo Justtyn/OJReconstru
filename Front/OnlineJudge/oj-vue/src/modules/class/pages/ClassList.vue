@@ -82,7 +82,7 @@ import { format } from 'date-fns';
 import { message, Modal } from 'ant-design-vue';
 import PageContainer from '@/components/common/PageContainer.vue';
 import { classesService, classesMemberService } from '@/services/modules/classes';
-import type { Classes, ClassesMember, ClassesQuery, Student, Teacher } from '@/types';
+import type { Classes, ClassesQuery, Student, Teacher } from '@/types';
 import type { TableColumnType } from 'ant-design-vue';
 import { extractErrorMessage } from '@/utils/error';
 import { studentService } from '@/services/modules/student';
@@ -201,7 +201,8 @@ const loadStudents = async (classId: string) => {
           studentCache[m.studentId] = { id: m.studentId, username: m.studentId } as Student;
         }
       }
-      items.push({ ...student, memberId: m.id });
+      const safeStudent = student || ({ id: m.studentId, username: m.studentId } as Student);
+      items.push({ ...safeStudent, memberId: m.id });
     }
     studentListMap[classId].items = items;
   } catch (error: any) {

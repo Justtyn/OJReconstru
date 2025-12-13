@@ -32,6 +32,7 @@ export interface HomeworkQuery extends PageQuery {
 export interface HomeworkProblem {
   id: string;
   homeworkId?: string;
+  problemId?: string | number;
   name?: string;
   difficulty?: string;
   isActive?: boolean;

@@ -5,6 +5,7 @@
       <div class="client-layout__links">
         <RouterLink to="/home">首页</RouterLink>
         <RouterLink to="/announcements">公告</RouterLink>
+        <RouterLink to="/about">关于</RouterLink>
         <span class="disabled-link">题库（开发中）</span>
       </div>
       <div class="client-layout__actions">

@@ -25,6 +25,12 @@ export const clientRoutes: RouteRecordRaw[] = [
         component: () => import('@/apps/client/views/announcements/AnnouncementList.vue'),
         meta: { title: '系统公告', requiresAuth: true },
       },
+      {
+        path: 'about',
+        name: 'ClientAbout',
+        component: () => import('@/apps/client/views/AboutView.vue'),
+        meta: { title: '关于系统', requiresAuth: true },
+      },
     ],
   },
 ];

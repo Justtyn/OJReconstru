@@ -25,6 +25,28 @@ generator: "@tarslib/widdershins v4.0.30"
 
 Base URLs:
 
+# 接口连通性检测（握手）
+
+用于快速判断「前端 ↔ 后端」是否可连接，不校验业务返回，仅关注能否拿到 HTTP 响应（2xx/4xx 均视为握手成功；连接超时/无法解析/拒绝连接视为失败）。
+
+前端请求基地址由 `VITE_API_BASE_URL` 控制（见 `src/services/http.ts`），下面示例用 `BASE` 表示后端地址（如 `http://localhost:8080`）。
+
+## 推荐：公共接口握手（应返回 200）
+
+```bash
+BASE="http://localhost:8080"
+curl -sS -m 5 -o /dev/null -w "HTTP %{http_code}\n" \
+  "$BASE/api/announcements?page=1&size=1"
+```
+
+## 可选：鉴权接口握手（未登录通常返回 401）
+
+```bash
+BASE="http://localhost:8080"
+curl -sS -m 5 -o /dev/null -w "HTTP %{http_code}\n" \
+  "$BASE/api/auth/users/me"
+```
+
 # Authentication
 
 - HTTP Authentication, scheme: bearer
@@ -7126,4 +7148,3 @@ GET /api/analytics/discussions/status
 |code|integer(int32)|false|none||none|
 |message|string|false|none||none|
 |data|[[AnalyticsTimeseriesVO](#schemaanalyticstimeseriesvo)]|false|none||[可视化-时间序列点]|
-

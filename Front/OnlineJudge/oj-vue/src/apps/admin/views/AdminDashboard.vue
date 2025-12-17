@@ -195,8 +195,8 @@
       </a-tab-pane>
 
       <a-tab-pane key="quality" tab="质量与排行">
-        <a-row v-if="!isTeacher" :gutter="[16, 16]" class="mb-16">
-          <a-col :span="24">
+        <a-row :gutter="[16, 16]">
+          <a-col v-if="!isTeacher" :xs="24" :lg="14">
             <a-card title="近期提交" :loading="recentLoading" :body-style="{ padding: '0 16px 16px' }">
               <div class="tab-tools">
                 <span>时间范围：</span>
@@ -231,10 +231,25 @@
               </a-table>
             </a-card>
           </a-col>
+          <a-col :xs="24" :lg="isTeacher ? 24 : 10">
+            <a-card title="提交活跃学生 Top5" :loading="recentLoading">
+              <a-list :data-source="topStudents" :split="false">
+                <template #renderItem="{ item }">
+                  <a-list-item>
+                    <div class="rank-item">
+                      <div class="rank-title">{{ studentLabel(item.studentId) }}</div>
+                      <div class="rank-desc">总提交 {{ item.total }} · AC {{ item.accepted }}</div>
+                      <a-progress :percent="item.passRate" size="small" />
+                    </div>
+                  </a-list-item>
+                </template>
+              </a-list>
+            </a-card>
+          </a-col>
         </a-row>
 
-        <a-row :gutter="[16, 16]">
-          <a-col :xs="24" :lg="14">
+        <a-row :gutter="[16, 16]" class="mt-16">
+          <a-col :span="24">
             <a-card title="高错误率题目（本周期）" :loading="recentLoading" :body-style="{ padding: '0 16px 16px' }">
               <a-table
                 :columns="problemColumns"
@@ -250,21 +265,6 @@
                   </template>
                 </template>
               </a-table>
-            </a-card>
-          </a-col>
-          <a-col :xs="24" :lg="10">
-            <a-card title="提交活跃学生 Top5" :loading="recentLoading">
-                      <a-list :data-source="topStudents" :split="false">
-                        <template #renderItem="{ item }">
-                          <a-list-item>
-                            <div class="rank-item">
-                              <div class="rank-title">{{ studentLabel(item.studentId) }}</div>
-                              <div class="rank-desc">总提交 {{ item.total }} · AC {{ item.accepted }}</div>
-                              <a-progress :percent="item.passRate" size="small" />
-                            </div>
-                          </a-list-item>
-                        </template>
-              </a-list>
             </a-card>
           </a-col>
         </a-row>
@@ -352,15 +352,38 @@
 
       <a-tab-pane key="ops" tab="健康度监控">
         <a-card title="前端简易健康度" :body-style="{ padding: '12px 16px 16px' }">
-          <a-alert type="info" show-icon message="待接入埋点数据" description="埋点接口响应时间与失败率，显示前端简易健康度。" />
+          <div class="health-head">
+            <a-alert type="info" show-icon message="埋点接口响应时间与失败率，显示前端简易健康度。" />
+            <div class="health-actions">
+              <a-tag :color="healthStatusColor">{{ healthStatusText }}</a-tag>
+              <a-button size="small" :loading="healthLoading" @click="runHealthCheck">立即检测</a-button>
+            </div>
+          </div>
+
           <a-row :gutter="[12, 12]" style="margin-top: 12px">
             <a-col :xs="24" :sm="12">
-              <a-statistic title="接口响应时间（P95）" value="-" suffix="ms" />
+              <a-statistic title="接口响应时间（P95）" :value="p95LatencyMs" suffix="ms" />
+              <div class="health-sub">本次平均：{{ lastRunSummary.avgMs }} ms · 失败 {{ lastRunSummary.failed }}/{{ lastRunSummary.total }}</div>
             </a-col>
             <a-col :xs="24" :sm="12">
-              <a-statistic title="接口失败率" value="-" suffix="%" />
+              <a-statistic title="接口健康率（本次）" :value="healthRatePercent" suffix="%" />
+              <div class="health-sub">累计失败率（最近 200 样本）：{{ failureRatePercent }}% · 最近检测：{{ lastCheckedAtLabel }}</div>
             </a-col>
           </a-row>
+
+          <a-divider style="margin: 12px 0" />
+          <a-list :data-source="healthLatestEndpoints" :split="false">
+            <template #renderItem="{ item }">
+              <a-list-item class="health-item">
+                <div class="health-item__name">{{ item.name }}</div>
+                <div class="health-item__desc">{{ item.method }} {{ item.endpoint }}</div>
+                <a-tag :color="item.ok ? 'green' : 'red'">
+                  {{ item.ok ? `HTTP ${item.status ?? '-'}` : item.errorMessage || '失败' }}
+                </a-tag>
+                <div class="health-item__ms">{{ item.elapsedMs }}ms</div>
+              </a-list-item>
+            </template>
+          </a-list>
         </a-card>
       </a-tab-pane>
     </a-tabs>
@@ -398,6 +421,7 @@ import { discussionService } from '@/services/modules/discussion';
 import { submissionService } from '@/services/modules/submission';
 import { fetchPublicAnnouncements } from '@/services/modules/announcement';
 import { analyticsService } from '@/services/modules/analytics';
+import { healthService, type HandshakeResult } from '@/services/modules/health';
 import type {
   Submission,
   SubmissionQuery,
@@ -1083,6 +1107,87 @@ const statusBadge = (code?: string) => {
 
 const go = (path: string) => router.push(path);
 
+const healthLoading = ref(false);
+const healthLatestResults = ref<HandshakeResult[]>([]);
+const healthSamples = ref<HandshakeResult[]>([]);
+let healthTimer: number | undefined;
+
+const lastCheckedAtLabel = computed(() => {
+  if (!healthLatestResults.value.length) return '-';
+  const ts = Math.max(...healthLatestResults.value.map((i) => i.checkedAt || 0));
+  return ts ? format(new Date(ts), 'MM-dd HH:mm:ss') : '-';
+});
+
+const lastRunSummary = computed(() => {
+  const list = healthLatestResults.value;
+  if (!list.length) return { avgMs: 0, failed: 0, total: 0 };
+  const total = list.length;
+  const failed = list.filter((i) => !i.ok).length;
+  const avgMs = Math.round(list.reduce((sum, i) => sum + (i.elapsedMs || 0), 0) / total);
+  return { avgMs, failed, total };
+});
+
+const healthLatestEndpoints = computed(() => healthLatestResults.value);
+
+const okLatencies = computed(() => healthSamples.value.filter((i) => i.ok).map((i) => i.elapsedMs));
+const p95LatencyMs = computed(() => {
+  const list = okLatencies.value.slice().sort((a, b) => a - b);
+  if (!list.length) return 0;
+  const idx = Math.max(0, Math.ceil(list.length * 0.95) - 1);
+  return list[idx];
+});
+
+const failureRatePercent = computed(() => {
+  const total = healthSamples.value.length;
+  if (!total) return 0;
+  const failed = healthSamples.value.filter((i) => !i.ok).length;
+  return Math.round((failed / total) * 100);
+});
+
+const healthRatePercent = computed(() => {
+  const total = healthLatestResults.value.length;
+  if (!total) return 0;
+  const ok = healthLatestResults.value.filter((i) => i.ok).length;
+  return Math.round((ok / total) * 100);
+});
+
+const healthStatusColor = computed(() => {
+  if (!healthLatestResults.value.length) return 'default';
+  return healthLatestResults.value.some((i) => !i.ok) ? 'red' : 'green';
+});
+
+const healthStatusText = computed(() => {
+  if (!healthLatestResults.value.length) return '未检测';
+  return healthLatestResults.value.some((i) => !i.ok) ? '部分失败' : '全部成功';
+});
+
+const runHealthCheck = async () => {
+  if (healthLoading.value) return;
+  healthLoading.value = true;
+  try {
+    const results = await healthService.checkAll();
+    healthLatestResults.value = results;
+    healthSamples.value = [...results, ...healthSamples.value].slice(0, 200);
+  } finally {
+    healthLoading.value = false;
+  }
+};
+
+const startHealthAutoCheck = () => {
+  if (healthTimer) return;
+  runHealthCheck();
+  healthTimer = window.setInterval(() => {
+    if (activeTab.value !== 'ops') return;
+    runHealthCheck();
+  }, 30000);
+};
+
+const stopHealthAutoCheck = () => {
+  if (!healthTimer) return;
+  window.clearInterval(healthTimer);
+  healthTimer = undefined;
+};
+
 const formatTime = (value?: string) => {
   if (!value) return '-';
   const date = new Date(value);
@@ -1189,6 +1294,11 @@ watch(
     if (key === 'quality' && !hasInitializedQualityRange.value) {
       timeRange.value = 'all';
       hasInitializedQualityRange.value = true;
+    }
+    if (key === 'ops') {
+      startHealthAutoCheck();
+    } else {
+      stopHealthAutoCheck();
     }
     if (key === 'charts') {
       renderChartsIfVisible();
@@ -1307,6 +1417,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  stopHealthAutoCheck();
   chartWatchers.forEach((stop) => stop());
   disposeAllCharts();
 });
@@ -1489,6 +1600,56 @@ onBeforeUnmount(() => {
   padding: 8px 0;
   font-size: 12px;
   color: var(--text-muted, #6b7280);
+}
+
+.health-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.health-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.health-sub {
+  margin-top: 6px;
+  color: var(--text-muted, #94a3b8);
+  font-size: 12px;
+}
+
+.health-item {
+  padding: 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.health-item__name {
+  font-weight: 600;
+  color: var(--text-color, #0f172a);
+  min-width: 70px;
+}
+
+.health-item__desc {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-muted, #94a3b8);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.health-item__ms {
+  color: var(--text-muted, #94a3b8);
+  font-size: 12px;
+  min-width: 56px;
+  text-align: right;
 }
 
 .quality-grid {

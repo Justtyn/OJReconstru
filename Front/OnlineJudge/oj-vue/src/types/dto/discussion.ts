@@ -14,17 +14,17 @@ export interface Discussion {
 export interface DiscussionRequest {
   title: string;
   content: string;
-  problemId?: string | number;
-  userId?: string | number;
-  authorId?: string | number;
+  problemId?: string;
+  userId?: string;
+  authorId?: string;
   isActive?: boolean;
 }
 
 export interface DiscussionQuery extends PageQuery {
   keyword?: string;
   title?: string;
-  problemId?: string | number;
-  userId?: string | number;
+  problemId?: string;
+  userId?: string;
   isActive?: boolean;
 }
 
@@ -38,5 +38,5 @@ export interface DiscussionComment {
 
 export interface DiscussionCommentRequest {
   content: string;
-  authorId?: string | number;
+  authorId?: string;
 }

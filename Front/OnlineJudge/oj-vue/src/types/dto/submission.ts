@@ -24,9 +24,9 @@ export interface SubmissionDetail extends Submission {
 }
 
 export interface SubmissionCreateRequest {
-  problemId: string | number;
-  homeworkId?: string | number | null;
-  studentId: string | number;
+  problemId: string;
+  homeworkId?: string | null;
+  studentId: string;
   languageId: number;
   sourceCode: string;
 }
@@ -44,9 +44,9 @@ export interface TestcaseResult {
 }
 
 export interface SubmissionQuery extends PageQuery {
-  problemId?: string | number;
-  homeworkId?: string | number | null;
-  studentId?: string | number;
+  problemId?: string;
+  homeworkId?: string | null;
+  studentId?: string;
   statusId?: number;
   languageId?: number;
 }

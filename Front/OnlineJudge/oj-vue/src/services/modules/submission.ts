@@ -6,7 +6,7 @@ export const submissionService = {
   fetchList(params: SubmissionQuery) {
     return http.get<PageResult<Submission>>('/api/submissions', { params });
   },
-  fetchDetail(id: string | number) {
+  fetchDetail(id: string) {
     return http.get<SubmissionDetail>(`/api/submissions/${id}`);
   },
   create(payload: SubmissionCreateRequest) {

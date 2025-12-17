@@ -6,16 +6,16 @@ export const solutionService = {
   fetchList(params: SolutionQuery) {
     return http.get<PageResult<Solution>>('/api/solutions', { params });
   },
-  fetchDetail(id: string | number) {
+  fetchDetail(id: string) {
     return http.get<Solution>(`/api/solutions/${id}`);
   },
-  create(problemId: string | number, payload: SolutionRequest) {
+  create(problemId: string, payload: SolutionRequest) {
     return http.post<Solution>(`/api/problems/${problemId}/solutions`, payload);
   },
-  update(id: string | number, payload: SolutionRequest) {
+  update(id: string, payload: SolutionRequest) {
     return http.put<Solution>(`/api/solutions/${id}`, payload);
   },
-  remove(id: string | number) {
+  remove(id: string) {
     return http.delete<void>(`/api/solutions/${id}`);
   },
 };

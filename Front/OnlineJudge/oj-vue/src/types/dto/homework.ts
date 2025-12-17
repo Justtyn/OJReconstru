@@ -8,7 +8,7 @@ export interface Homework {
   endTime?: string;
   description?: string;
   isActive?: boolean;
-  problemIds?: number[];
+  problemIds?: string[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -20,11 +20,11 @@ export interface HomeworkRequest {
   endTime?: string;
   description?: string;
   isActive?: boolean;
-  problemIds?: number[];
+  problemIds?: string[];
 }
 
 export interface HomeworkQuery extends PageQuery {
-  classId?: number;
+  classId?: string;
   keyword?: string;
   activeOnly?: boolean;
 }
@@ -32,7 +32,7 @@ export interface HomeworkQuery extends PageQuery {
 export interface HomeworkProblem {
   id: string;
   homeworkId?: string;
-  problemId?: string | number;
+  problemId?: string;
   name?: string;
   difficulty?: string;
   isActive?: boolean;
@@ -44,5 +44,5 @@ export interface HomeworkProblem {
 }
 
 export interface HomeworkProblemBatchRequest {
-  problemIds: Array<string | number>;
+  problemIds: string[];
 }

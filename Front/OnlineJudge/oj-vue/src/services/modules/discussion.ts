@@ -12,25 +12,25 @@ export const discussionService = {
   fetchList(params: DiscussionQuery) {
     return http.get<PageResult<Discussion>>('/api/discussions', { params });
   },
-  fetchDetail(id: string | number) {
+  fetchDetail(id: string) {
     return http.get<Discussion>(`/api/discussions/${id}`);
   },
   create(payload: DiscussionRequest) {
     return http.post<Discussion>('/api/discussions', payload);
   },
-  update(id: string | number, payload: DiscussionRequest) {
+  update(id: string, payload: DiscussionRequest) {
     return http.put<Discussion>(`/api/discussions/${id}`, payload);
   },
-  remove(id: string | number) {
+  remove(id: string) {
     return http.delete<void>(`/api/discussions/${id}`);
   },
-  fetchComments(id: string | number) {
+  fetchComments(id: string) {
     return http.get<DiscussionComment[]>(`/api/discussions/${id}/comments`);
   },
-  createComment(id: string | number, payload: DiscussionCommentRequest) {
+  createComment(id: string, payload: DiscussionCommentRequest) {
     return http.post<DiscussionComment>(`/api/discussions/${id}/comments`, payload);
   },
-  removeComment(commentId: string | number) {
+  removeComment(commentId: string) {
     return http.delete<void>(`/api/discussions/comments/${commentId}`);
   },
 };

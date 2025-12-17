@@ -1,7 +1,7 @@
 export type UserRole = 'student' | 'teacher' | 'admin';
 
 export interface AuthUserVO {
-  id: number;
+  id: string;
   username: string;
   email?: string | null;
   avatar?: string | null;

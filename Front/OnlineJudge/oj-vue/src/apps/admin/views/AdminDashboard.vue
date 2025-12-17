@@ -31,38 +31,15 @@
         <template v-if="!isTeacher">
           <a-row :gutter="[16, 16]">
             <a-col :xs="24" :lg="14">
-              <a-card title="近期提交" :loading="recentLoading" :body-style="{ padding: '0 16px 16px' }">
-                <div class="tab-tools">
-                  <span>时间范围：</span>
-                  <a-radio-group size="small" v-model:value="timeRange">
-                    <a-radio-button value="24h">近24小时</a-radio-button>
-                    <a-radio-button value="7d">近7天</a-radio-button>
-                    <a-radio-button value="all">全部</a-radio-button>
-                  </a-radio-group>
-                </div>
-                <a-table
-                  size="small"
-                  :columns="recentColumns"
-                  :data-source="filteredSubmissions"
-                  :pagination="false"
-                  row-key="id"
-                  :scroll="{ y: 'calc(100% - 40px)' }"
-                >
-                  <template #bodyCell="{ column, record }">
-                    <template v-if="column.key === 'problemId'">
-                      {{ problemLabel(record.problemId) }}
-                    </template>
-                    <template v-else-if="column.key === 'studentId'">
-                      {{ studentLabel(record.studentId) }}
-                    </template>
-                    <template v-else-if="column.key === 'status'">
-                      <a-badge :status="statusBadge(record.overallStatusCode)" :text="record.overallStatusName || record.overallStatusCode" />
-                    </template>
-                    <template v-else-if="column.key === 'time'">
-                      {{ record.createdAt ? format(new Date(record.createdAt), 'MM-dd HH:mm') : '-' }}
-                    </template>
+              <a-card title="快捷入口" :body-style="{ padding: '12px 16px' }">
+                <a-list :data-source="visibleQuickLinks" :split="false">
+                  <template #renderItem="{ item }">
+                    <a-list-item class="quick-link" @click="go(item.path)">
+                      <div class="quick-link__title">{{ item.title }}</div>
+                      <div class="quick-link__desc">{{ item.desc }}</div>
+                    </a-list-item>
                   </template>
-                </a-table>
+                </a-list>
               </a-card>
             </a-col>
             <a-col :xs="24" :lg="10">
@@ -86,17 +63,6 @@
                     <div class="value">{{ submissionSummary.pending }}</div>
                   </div>
                 </div>
-              </a-card>
-
-              <a-card title="快捷入口" class="mt-16" :body-style="{ padding: '12px 16px' }">
-                <a-list :data-source="visibleQuickLinks" :split="false">
-                  <template #renderItem="{ item }">
-                    <a-list-item class="quick-link" @click="go(item.path)">
-                      <div class="quick-link__title">{{ item.title }}</div>
-                      <div class="quick-link__desc">{{ item.desc }}</div>
-                    </a-list-item>
-                  </template>
-                </a-list>
               </a-card>
             </a-col>
           </a-row>
@@ -229,6 +195,44 @@
       </a-tab-pane>
 
       <a-tab-pane key="quality" tab="质量与排行">
+        <a-row v-if="!isTeacher" :gutter="[16, 16]" class="mb-16">
+          <a-col :span="24">
+            <a-card title="近期提交" :loading="recentLoading" :body-style="{ padding: '0 16px 16px' }">
+              <div class="tab-tools">
+                <span>时间范围：</span>
+                <a-radio-group size="small" v-model:value="timeRange">
+                  <a-radio-button value="24h">近24小时</a-radio-button>
+                  <a-radio-button value="7d">近7天</a-radio-button>
+                  <a-radio-button value="all">全部</a-radio-button>
+                </a-radio-group>
+              </div>
+              <a-table
+                size="small"
+                :columns="recentColumns"
+                :data-source="filteredSubmissions"
+                :pagination="false"
+                row-key="id"
+                :scroll="{ y: 'calc(100% - 40px)' }"
+              >
+                <template #bodyCell="{ column, record }">
+                  <template v-if="column.key === 'problemId'">
+                    {{ problemLabel(record.problemId) }}
+                  </template>
+                  <template v-else-if="column.key === 'studentId'">
+                    {{ studentLabel(record.studentId) }}
+                  </template>
+                  <template v-else-if="column.key === 'status'">
+                    <a-badge :status="statusBadge(record.overallStatusCode)" :text="record.overallStatusName || record.overallStatusCode" />
+                  </template>
+                  <template v-else-if="column.key === 'time'">
+                    {{ record.createdAt ? format(new Date(record.createdAt), 'MM-dd HH:mm') : '-' }}
+                  </template>
+                </template>
+              </a-table>
+            </a-card>
+          </a-col>
+        </a-row>
+
         <a-row :gutter="[16, 16]">
           <a-col :xs="24" :lg="14">
             <a-card title="高错误率题目（本周期）" :loading="recentLoading" :body-style="{ padding: '0 16px 16px' }">

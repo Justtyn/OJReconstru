@@ -76,7 +76,7 @@
                 {{ text ? format(new Date(text), 'yyyy-MM-dd HH:mm') : '-' }}
               </template>
               <template v-else-if="column.key === 'actions'">
-                <template v-if="!isTeacher">
+                <template v-if="isAdmin">
                   <a-button danger type="link" size="small" @click="confirmRemoveComment(record.id, comment)">
                     删除评论
                   </a-button>
@@ -103,8 +103,8 @@
               <template v-if="!isTeacher">
                 <a-button type="link" size="small" @click="edit(record)">编辑</a-button>
                 <a-divider type="vertical" />
-                <a-button type="link" size="small" @click="openCommentModal(record.id)">评论</a-button>
-                <a-divider type="vertical" />
+                <a-button v-if="isAdmin" type="link" size="small" @click="openCommentModal(record.id)">评论</a-button>
+                <a-divider v-if="isAdmin" type="vertical" />
                 <a-button danger type="link" size="small" @click="confirmRemove(record)">删除</a-button>
               </template>
               <span v-else class="muted">仅浏览</span>
@@ -167,6 +167,7 @@ import { useAuthStore } from '@/stores/auth';
 const router = useRouter();
 const authStore = useAuthStore();
 const isTeacher = computed(() => authStore.role === 'teacher');
+const isAdmin = computed(() => authStore.role === 'admin');
 
 const query = reactive<DiscussionQuery>({
   page: 1,
@@ -277,7 +278,7 @@ const edit = (record: Discussion) => {
 };
 
 const openCommentModal = (discussionId: string) => {
-  if (isTeacher) return;
+  if (!isAdmin.value) return;
   commentTargetId.value = discussionId;
   commentForm.content = '';
   commentForm.authorId = undefined;
@@ -415,7 +416,7 @@ const paginationConfig = computed(() => ({
 }));
 
 const submitComment = async () => {
-  if (!commentTargetId.value || isTeacher) return;
+  if (!commentTargetId.value || !isAdmin.value) return;
   if (!commentForm.content.trim()) {
     message.warning('请输入评论内容');
     return;

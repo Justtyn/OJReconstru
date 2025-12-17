@@ -2,7 +2,24 @@ package com.oj.onlinejudge.judge;
 
 public interface Judge0Client {
 
-    Judge0Result execute(Judge0Request request);
+    /**
+     * 提交代码到 Judge0。
+     *
+     * <p>在生产环境一般采用 wait=false，仅返回 token 与初始状态；后续需要通过 {@link #get(String)} 拉取最终结果。
+     */
+    Judge0Result submit(Judge0Request request);
+
+    /**
+     * 根据 token 获取 Judge0 执行结果（可能为排队/判题中/最终态）。
+     */
+    Judge0Result get(String token);
+
+    /**
+     * 兼容旧调用：等价于 {@link #submit(Judge0Request)}。
+     */
+    default Judge0Result execute(Judge0Request request) {
+        return submit(request);
+    }
 
     class Judge0Request {
         private final Integer languageId;

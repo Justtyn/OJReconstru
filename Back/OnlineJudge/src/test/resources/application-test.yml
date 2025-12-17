@@ -29,6 +29,8 @@ app:
   auth:
     require-email-verify: false
     verify.store: memory
+  judge:
+    async: false
   logging:
     login:
       async: false

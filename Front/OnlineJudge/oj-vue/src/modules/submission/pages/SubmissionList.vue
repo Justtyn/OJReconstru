@@ -74,7 +74,12 @@
             <a-badge :status="statusBadge(record.overallStatusCode)" :text="record.overallStatusName || record.overallStatusCode" />
           </template>
           <template v-else-if="column.key === 'caseCount'">
-            {{ record.passedCaseCount ?? 0 }} / {{ record.totalCaseCount ?? 0 }}
+            <template v-if="isPendingSubmission(record)">-</template>
+            <template v-else>{{ record.passedCaseCount ?? 0 }} / {{ record.totalCaseCount ?? 0 }}</template>
+          </template>
+          <template v-else-if="column.key === 'score'">
+            <template v-if="isPendingSubmission(record)">-</template>
+            <template v-else>{{ typeof text === 'number' ? text : record.score ?? '-' }}</template>
           </template>
           <template v-else-if="column.key === 'languageId'">
             {{ languageLabel(record.languageId) }}
@@ -221,7 +226,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
+import { computed, onBeforeUnmount, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { format } from 'date-fns';
 import type { TableColumnType } from 'ant-design-vue';
@@ -269,9 +274,16 @@ const query = reactive<SubmissionQuery>({ page: 1, size: 10 });
 const list = ref<Submission[]>([]);
 const total = ref(0);
 const loading = ref(false);
+const polling = ref(false);
 const createVisible = ref(false);
 const createLoading = ref(false);
 const submissionMode = ref<'problem' | 'homework'>('problem');
+
+const POLL_INTERVAL_MS = 2500;
+const POLL_MAX_ATTEMPTS = 80;
+let pollTimer: ReturnType<typeof window.setInterval> | undefined;
+let pollAttempts = 0;
+let loadSeq = 0;
 
 const createForm = reactive<{
   problemId?: string;
@@ -316,17 +328,60 @@ const columns: TableColumnType<Submission>[] = [
   { title: '操作', key: 'actions', width: 120 },
 ];
 
-const loadData = async () => {
-  loading.value = true;
+const isPendingSubmission = (record: Submission) => {
+  if (record.overallStatusId === 1 || record.overallStatusId === 2) return true;
+  const code = (record.overallStatusCode || '').toUpperCase();
+  return code === 'IN_QUEUE' || code === 'PROCESSING';
+};
+
+const stopPolling = () => {
+  if (pollTimer) {
+    window.clearInterval(pollTimer);
+    pollTimer = undefined;
+  }
+  polling.value = false;
+  pollAttempts = 0;
+};
+
+const startPollingIfNeeded = () => {
+  if (polling.value) return;
+  if (!list.value.some(isPendingSubmission)) return;
+  polling.value = true;
+  pollAttempts = 0;
+  pollTimer = window.setInterval(async () => {
+    pollAttempts += 1;
+    const records = await loadData({ silent: true, muteError: true });
+    const current = records.length ? records : list.value;
+    if (!current.some(isPendingSubmission)) {
+      stopPolling();
+      return;
+    }
+    if (pollAttempts >= POLL_MAX_ATTEMPTS) {
+      stopPolling();
+      message.warning('判题耗时较长，已停止自动刷新，请手动刷新');
+    }
+  }, POLL_INTERVAL_MS);
+};
+
+const loadData = async (options?: { silent?: boolean; muteError?: boolean }) => {
+  const silent = options?.silent ?? false;
+  const muteError = options?.muteError ?? false;
+  const seq = (loadSeq += 1);
+  if (!silent) loading.value = true;
   try {
     const data = await submissionService.fetchList(query);
+    if (seq !== loadSeq) return [];
     list.value = data.records;
     total.value = data.total;
     preloadCaches(data.records);
+    return data.records;
   } catch (error: any) {
-    message.error(extractErrorMessage(error, '获取提交记录失败'));
+    if (!muteError && seq === loadSeq) {
+      message.error(extractErrorMessage(error, '获取提交记录失败'));
+    }
+    return [];
   } finally {
-    loading.value = false;
+    if (!silent && seq === loadSeq) loading.value = false;
   }
 };
 
@@ -362,6 +417,7 @@ const preloadCaches = (records: Submission[]) => {
 };
 
 const handleSearch = () => {
+  stopPolling();
   query.page = 1;
   loadData();
 };
@@ -437,7 +493,9 @@ const handleCreate = async () => {
     message.success('提交成功，判题进行中');
     createVisible.value = false;
     resetCreateForm();
-    loadData();
+    query.page = 1;
+    await loadData();
+    startPollingIfNeeded();
   } catch (error: any) {
     message.error(extractErrorMessage(error, '提交失败，请稍后重试'));
   } finally {
@@ -572,9 +630,11 @@ const studentLabel = (record: Submission) => {
 };
 
 const statusBadge = (code?: string) => {
-  if (code === 'ACCEPTED') return 'success';
-  if (code === 'WRONG') return 'error';
-  return 'processing';
+  const normalized = (code || '').toUpperCase();
+  if (!normalized) return 'default';
+  if (normalized === 'ACCEPTED') return 'success';
+  if (normalized === 'IN_QUEUE' || normalized === 'PROCESSING') return 'processing';
+  return 'error';
 };
 
 const paginationConfig = computed(() => ({
@@ -583,6 +643,7 @@ const paginationConfig = computed(() => ({
   total: total.value,
   showTotal: (t: number) => `共 ${t} 条`,
   onChange: (page: number, size?: number) => {
+    stopPolling();
     query.page = page;
     query.size = size ?? query.size;
     loadData();
@@ -591,6 +652,10 @@ const paginationConfig = computed(() => ({
 
 resetCreateForm();
 loadData();
+
+onBeforeUnmount(() => {
+  stopPolling();
+});
 </script>
 
 <style scoped lang="less">

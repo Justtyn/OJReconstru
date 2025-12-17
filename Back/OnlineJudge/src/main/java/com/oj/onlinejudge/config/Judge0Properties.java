@@ -15,6 +15,13 @@ public class Judge0Properties {
      */
     private int timeoutMs = 15000;
 
+    /**
+     * 是否让 Judge0 请求阻塞等待最终结果（wait=true）。
+     *
+     * <p>默认 false：仅返回 token 和初始状态，后续通过轮询查询结果。
+     */
+    private boolean wait = false;
+
     public String getBaseUrl() {
         return baseUrl;
     }
@@ -29,5 +36,13 @@ public class Judge0Properties {
 
     public void setTimeoutMs(int timeoutMs) {
         this.timeoutMs = timeoutMs;
+    }
+
+    public boolean isWait() {
+        return wait;
+    }
+
+    public void setWait(boolean wait) {
+        this.wait = wait;
     }
 }

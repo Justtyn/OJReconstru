@@ -5,6 +5,7 @@
 ## 1. 环境要求
 
 - JDK：Java 8
+- 构建提示：如遇到 Lombok 编译报错（例如 `TypeTag :: UNKNOWN`），请将 Gradle JVM/`JAVA_HOME` 切换到 JDK 17/18 再执行构建。
 - 数据库：MySQL（本项目默认库名 `re-oj`）
 - 缓存：Redis（`application.yml` 默认开启注册/验证码 Redis 存储）
 - 构建工具：使用 Gradle Wrapper（无需本机安装 Gradle）
@@ -75,4 +76,3 @@ OpenAPI JSON：
 - 启动报 Redis 连接失败：确认本机 Redis 已启动；或临时将 `app.auth.verify.store` 调整为 `memory`（仅本地调试用）。
 - Swagger 能打开但接口 401：确认已 Authorize，且粘贴的是 JWT（不要重复带 `Bearer ` 前缀）。
 - 判题相关接口报错：检查 `application.yml` 的 `judge0.base-url` 指向的 Judge0 服务是否可用。
-

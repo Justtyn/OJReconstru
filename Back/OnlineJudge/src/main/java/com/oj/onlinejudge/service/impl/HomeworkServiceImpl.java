@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -91,7 +92,18 @@ public class HomeworkServiceImpl extends ServiceImpl<HomeworkMapper, Homework> i
         if (additions.isEmpty()) {
             return;
         }
-        homeworkProblemService.saveBatch(additions);
+        try {
+            homeworkProblemService.saveBatch(additions);
+        } catch (DuplicateKeyException ex) {
+            // 并发场景下可能发生重复插入，按幂等处理：已存在的记录直接忽略
+            for (HomeworkProblem item : additions) {
+                try {
+                    homeworkProblemService.save(item);
+                } catch (DuplicateKeyException ignore) {
+                    // ignore
+                }
+            }
+        }
     }
 
     @Override

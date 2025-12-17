@@ -1,9 +1,14 @@
-HELP.md
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+
+# macOS
+.DS_Store
+
+# Runtime uploads (avatars, etc.)
+#uploads/
 
 ### STS ###
 .apt_generated

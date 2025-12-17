@@ -77,6 +77,10 @@ app:
     require-email-verify: true
     verify.store: redis
     verify-redis-prefix: "verify:reg:"
+  judge:
+    async: true
+    poll-delay-ms: 1000
+    poll-batch-size: 200
   logging:
     login:
       async: true
@@ -88,3 +92,4 @@ judge0:
 #  base-url: http://139.59.227.54:2358
   base-url: http://localhost:2358
   timeout-ms: 15000
+  wait: false

@@ -25,11 +25,11 @@ public class Judge0HttpClient implements Judge0Client {
     private final Judge0Properties properties;
 
     @Override
-    public Judge0Result execute(Judge0Request request) {
+    public Judge0Result submit(Judge0Request request) {
         URI uri = UriComponentsBuilder.fromHttpUrl(properties.getBaseUrl())
                 .path("/submissions")
                 .queryParam("base64_encoded", false)
-                .queryParam("wait", true)
+                .queryParam("wait", properties.isWait())
                 .build()
                 .toUri();
         HttpHeaders headers = new HttpHeaders();
@@ -41,6 +41,30 @@ public class Judge0HttpClient implements Judge0Client {
         body.put("expected_output", request.getExpectedOutput());
         HttpEntity<Map<String, Object>> httpEntity = new HttpEntity<>(body, headers);
         Judge0SubmissionResponse response = restTemplate.postForObject(uri, httpEntity, Judge0SubmissionResponse.class);
+        if (response == null) {
+            throw new IllegalStateException("Judge0 响应为空");
+        }
+        return new Judge0Result(
+                response.getToken(),
+                response.getStatus() != null ? response.getStatus().getId() : null,
+                response.getStatus() != null ? response.getStatus().getDescription() : null,
+                response.getStdout(),
+                response.getStderr(),
+                response.getCompileOutput(),
+                response.getMessage(),
+                response.getTime(),
+                response.getMemory()
+        );
+    }
+
+    @Override
+    public Judge0Result get(String token) {
+        URI uri = UriComponentsBuilder.fromHttpUrl(properties.getBaseUrl())
+                .path("/submissions/{token}")
+                .queryParam("base64_encoded", false)
+                .buildAndExpand(token)
+                .toUri();
+        Judge0SubmissionResponse response = restTemplate.getForObject(uri, Judge0SubmissionResponse.class);
         if (response == null) {
             throw new IllegalStateException("Judge0 响应为空");
         }

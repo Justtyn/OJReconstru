@@ -274,27 +274,75 @@
         <a-row :gutter="[16, 16]">
           <a-col :xs="24" :lg="8">
             <a-card title="最新公告" :loading="contentLoading">
-              <a-list :data-source="latestAnnouncements" :locale="{ emptyText: '暂无公告' }">
+              <a-list :data-source="latestAnnouncements" :locale="{ emptyText: '暂无公告' }" :split="false">
                 <template #renderItem="{ item }">
-                  <a-list-item>{{ item.title }}</a-list-item>
+                  <a-list-item class="content-item">
+                    <div class="content-main">
+                      <div class="content-title">
+                        <span class="title-text">{{ item.title }}</span>
+                        <a-tag v-if="item.isPinned" color="blue">置顶</a-tag>
+                        <a-tag v-if="item.isActive === false" color="default">已停用</a-tag>
+                      </div>
+                      <div class="content-meta">
+                        <span>发布时间：{{ formatTime(item.time || item.createdAt) }}</span>
+                        <span v-if="item.updatedAt">更新：{{ formatTime(item.updatedAt) }}</span>
+                      </div>
+                      <div v-if="item.content" class="content-preview">
+                        {{ stripToSingleLine(item.content) }}
+                      </div>
+                    </div>
+                  </a-list-item>
                 </template>
               </a-list>
             </a-card>
           </a-col>
           <a-col :xs="24" :lg="8">
             <a-card title="最新讨论" :loading="contentLoading">
-              <a-list :data-source="latestDiscussions" :locale="{ emptyText: '暂无讨论' }">
+              <a-list :data-source="latestDiscussions" :locale="{ emptyText: '暂无讨论' }" :split="false">
                 <template #renderItem="{ item }">
-                  <a-list-item>{{ item.title }}</a-list-item>
+                  <a-list-item class="content-item">
+                    <div class="content-main">
+                      <div class="content-title">
+                        <span class="title-text">{{ item.title }}</span>
+                        <a-tag v-if="item.isActive === false" color="default">已停用</a-tag>
+                      </div>
+                      <div class="content-meta">
+                        <span>题目：{{ problemLabel(item.problemId) }}</span>
+                        <span>作者：{{ studentLabel(item.userId) }}</span>
+                        <span>发布：{{ formatTime(item.createTime) }}</span>
+                        <span v-if="item.updateTime">更新：{{ formatTime(item.updateTime) }}</span>
+                      </div>
+                      <div v-if="item.content" class="content-preview">
+                        {{ stripToSingleLine(item.content) }}
+                      </div>
+                    </div>
+                  </a-list-item>
                 </template>
               </a-list>
             </a-card>
           </a-col>
           <a-col :xs="24" :lg="8">
             <a-card title="最新题解" :loading="contentLoading">
-              <a-list :data-source="latestSolutions" :locale="{ emptyText: '暂无题解' }">
+              <a-list :data-source="latestSolutions" :locale="{ emptyText: '暂无题解' }" :split="false">
                 <template #renderItem="{ item }">
-                  <a-list-item>{{ item.title }}</a-list-item>
+                  <a-list-item class="content-item">
+                    <div class="content-main">
+                      <div class="content-title">
+                        <span class="title-text">{{ item.title }}</span>
+                        <a-tag color="purple">{{ languageLabel(item.language) }}</a-tag>
+                        <a-tag v-if="item.isActive === false" color="default">已停用</a-tag>
+                      </div>
+                      <div class="content-meta">
+                        <span>题目：{{ problemLabel(item.problemId) }}</span>
+                        <span>作者：{{ studentLabel(item.userId) }}</span>
+                        <span>发布：{{ formatTime(item.createTime) }}</span>
+                        <span v-if="item.updatedAt">更新：{{ formatTime(item.updatedAt) }}</span>
+                      </div>
+                      <div v-if="item.content" class="content-preview mono">
+                        {{ previewCode(item.content) }}
+                      </div>
+                    </div>
+                  </a-list-item>
                 </template>
               </a-list>
             </a-card>
@@ -302,19 +350,17 @@
         </a-row>
       </a-tab-pane>
 
-      <a-tab-pane key="ops" tab="运营与个性化">
-        <a-card title="运营提示">
-          <ul class="bullet">
-            <li>可在后端提供按时间范围的提交统计接口，以支持趋势图。</li>
-            <li>建议增加“按班级/教师”过滤参数，前端联动切换统计卡。</li>
-            <li>埋点接口响应时间与失败率，显示前端简易健康度。</li>
-          </ul>
-        </a-card>
-        <a-card title="角色定制" class="mt-16">
-          <ul class="bullet">
-            <li>管理员优先展示全局数据；教师优先展示所授班级作业进度与提交榜。</li>
-            <li>允许自定义快捷入口顺序（本地存储）。</li>
-          </ul>
+      <a-tab-pane key="ops" tab="健康度监控">
+        <a-card title="前端简易健康度" :body-style="{ padding: '12px 16px 16px' }">
+          <a-alert type="info" show-icon message="待接入埋点数据" description="埋点接口响应时间与失败率，显示前端简易健康度。" />
+          <a-row :gutter="[12, 12]" style="margin-top: 12px">
+            <a-col :xs="24" :sm="12">
+              <a-statistic title="接口响应时间（P95）" value="-" suffix="ms" />
+            </a-col>
+            <a-col :xs="24" :sm="12">
+              <a-statistic title="接口失败率" value="-" suffix="%" />
+            </a-col>
+          </a-row>
         </a-card>
       </a-tab-pane>
     </a-tabs>
@@ -391,6 +437,7 @@ const latestDiscussions = ref<Discussion[]>([]);
 const latestSolutions = ref<Solution[]>([]);
 const activeTab = ref('overview');
 const timeRange = ref<'24h' | '7d' | 'all'>('24h');
+const hasInitializedQualityRange = ref(false);
 const problemCache = reactive<Record<string, any>>({});
 const studentCache = reactive<Record<string, any>>({});
 const teacherHomeworks = ref<Homework[]>([]);
@@ -642,20 +689,25 @@ const buildPieOption = (items: StatusViewItem[], total: number): EChartsOption =
       ? {
           text: String(total),
           subtext: '总数',
-          left: '22%',
-          top: '52%',
+          left: '40%',
+          top: '44%',
+          textAlign: 'center',
           textStyle: { color: chartTokens.value.text, fontSize: 22, fontWeight: 700 },
           subtextStyle: { color: chartTokens.value.muted, fontSize: 12, align: 'center' },
         }
       : undefined,
   tooltip: {
     trigger: 'item',
+    confine: true,
     formatter: (params: any) => `${params.name}<br/>数量：${params.value}<br/>占比：${params.percent}%`,
   },
   legend: {
+    type: 'scroll',
     orient: 'vertical',
     right: 0,
     top: 'center',
+    width: 140,
+    formatter: (name: string) => (name.length > 10 ? `${name.slice(0, 10)}…` : name),
     textStyle: { color: chartTokens.value.muted },
   },
   series: [
@@ -663,12 +715,14 @@ const buildPieOption = (items: StatusViewItem[], total: number): EChartsOption =
       type: 'pie',
       radius: ['50%', '70%'],
       center: ['40%', '52%'],
-      avoidLabelOverlap: false,
+      avoidLabelOverlap: true,
       itemStyle: { borderColor: chartTokens.value.card, borderWidth: 2 },
       label: {
-        formatter: '{b|{b}}\n{c} ({d}%)',
-        color: chartTokens.value.text,
-        rich: { b: { fontWeight: 600, lineHeight: 18 } },
+        show: false,
+      },
+      labelLine: { show: false },
+      emphasis: {
+        scale: true,
       },
       data: items.map((item) => ({ value: item.value, name: item.label, itemStyle: { color: item.color } })),
     },
@@ -962,17 +1016,48 @@ const loadRecent = async () => {
   }
 };
 
+const preloadLabelCaches = (problemIds: Array<string | number | undefined | null>, studentIds: Array<string | number | undefined | null>) => {
+  const pIds = Array.from(new Set(problemIds.filter((id): id is string | number => id !== undefined && id !== null && `${id}`.length > 0)));
+  const sIds = Array.from(new Set(studentIds.filter((id): id is string | number => id !== undefined && id !== null && `${id}`.length > 0)));
+
+  pIds.forEach(async (id) => {
+    const key = String(id);
+    if (problemCache[key]) return;
+    try {
+      const detail = await problemService.fetchDetail(key);
+      problemCache[key] = detail;
+    } catch {
+      /* ignore */
+    }
+  });
+
+  sIds.forEach(async (id) => {
+    const key = String(id);
+    if (studentCache[key]) return;
+    try {
+      const detail = await studentService.fetchDetail(key);
+      studentCache[key] = detail;
+    } catch {
+      /* ignore */
+    }
+  });
+};
+
 const loadContent = async () => {
   contentLoading.value = true;
   try {
     const [anns, dis, sols] = await Promise.all([
       fetchPublicAnnouncements({ page: 1, size: 5, isPinned: false }),
       discussionService.fetchList({ page: 1, size: 5 }),
-      solutionService.fetchList({ page: 1, size: 5 }),
+      solutionService.fetchList({ page: 1, size: 3 }),
     ]);
     latestAnnouncements.value = anns.records || [];
     latestDiscussions.value = dis.records || [];
-    latestSolutions.value = sols.records || [];
+    latestSolutions.value = (sols.records || []).slice(0, 3);
+    preloadLabelCaches(
+      [...latestDiscussions.value.map((i) => i.problemId), ...latestSolutions.value.map((i) => i.problemId)],
+      [...latestDiscussions.value.map((i) => i.userId), ...latestSolutions.value.map((i) => i.userId)],
+    );
   } catch (error: any) {
     message.error(extractErrorMessage(error, '获取内容动态失败'));
   } finally {
@@ -997,6 +1082,40 @@ const statusBadge = (code?: string) => {
 };
 
 const go = (path: string) => router.push(path);
+
+const formatTime = (value?: string) => {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+  return format(date, 'MM-dd HH:mm');
+};
+
+const stripToSingleLine = (value?: string) => {
+  if (!value) return '';
+  return value
+    .replace(/```[\s\S]*?```/g, '[代码]')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/[#>*_\-\[\]()]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+const previewCode = (value?: string) => {
+  if (!value) return '';
+  const lines = value.split('\n').slice(0, 6);
+  return lines.join('\n').trim();
+};
+
+const languageLabel = (value?: string) => {
+  if (!value) return '未知语言';
+  const v = value.toLowerCase();
+  if (v === 'python' || v === 'python3') return 'Python';
+  if (v === 'cpp' || v === 'c++') return 'C++';
+  if (v === 'c') return 'C';
+  if (v === 'java') return 'Java';
+  if (v === 'csharp' || v === 'cs' || v === 'c#') return 'C#';
+  return value;
+};
 
 const progressLabel = (start?: string, end?: string) => {
   if (!start && !end) return '未设置';
@@ -1067,6 +1186,10 @@ const loadAnalyticsTimeseries = async () => {
 watch(
   () => activeTab.value,
   (key) => {
+    if (key === 'quality' && !hasInitializedQualityRange.value) {
+      timeRange.value = 'all';
+      hasInitializedQualityRange.value = true;
+    }
     if (key === 'charts') {
       renderChartsIfVisible();
     }
@@ -1407,6 +1530,90 @@ onBeforeUnmount(() => {
 .quick-link__desc {
   color: var(--text-muted, #94a3b8);
   font-size: 12px;
+}
+
+.content-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  margin: 10px 0;
+  border-radius: 12px;
+  border: 1px solid var(--chart-track, rgba(15, 23, 42, 0.08));
+  background: rgba(99, 102, 241, 0.04);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.content-item:hover {
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.content-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.content-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.content-title .title-text {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  color: var(--text-color, #0f172a);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.content-meta {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  color: var(--text-muted, #94a3b8);
+  font-size: 12px;
+}
+
+.content-preview {
+  margin-top: 6px;
+  color: var(--text-muted, #94a3b8);
+  font-size: 12px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.content-preview.mono {
+  display: block;
+  -webkit-line-clamp: unset;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  white-space: pre-wrap;
+  color: var(--text-color, #0f172a);
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid var(--chart-track, rgba(15, 23, 42, 0.08));
+  border-radius: 12px;
+  padding: 8px 10px;
+  max-height: 120px;
+  overflow: hidden;
+}
+
+:root[data-theme='dark'] .content-item {
+  background: rgba(99, 102, 241, 0.12);
+}
+
+:root[data-theme='dark'] .content-item:hover {
+  background: rgba(99, 102, 241, 0.18);
+}
+
+:root[data-theme='dark'] .content-preview.mono {
+  background: rgba(15, 23, 42, 0.38);
 }
 
 .chart-item {

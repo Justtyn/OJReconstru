@@ -49,17 +49,24 @@ const router = useRouter();
 
 const routeSegments = computed(() => route.path.split('/').filter(Boolean));
 const isAdminRoute = computed(() => route.path.startsWith('/admin/'));
+const resolveParentPath = () => {
+  const segments = routeSegments.value;
+  if (segments.length <= 1) return '';
+  for (let i = segments.length - 1; i >= 1; i -= 1) {
+    const candidate = `/${segments.slice(0, i).join('/')}`;
+    const resolved = router.resolve(candidate);
+    const lastMatched = resolved.matched[resolved.matched.length - 1];
+    if (lastMatched && lastMatched.name !== 'NotFound') {
+      return candidate;
+    }
+  }
+  return '';
+};
 
 const shouldShowBack = computed(() => {
   if (typeof props.showBack === 'boolean') return props.showBack;
   if (!isAdminRoute.value) return false;
   return routeSegments.value.length > 2;
-});
-
-const fallbackAdminPath = computed(() => {
-  const seg = routeSegments.value;
-  if (seg.length >= 2 && seg[0] === 'admin') return `/admin/${seg[1]}`;
-  return '/admin/overview';
 });
 
 const handleBack = () => {
@@ -68,8 +75,13 @@ const handleBack = () => {
     router.push(props.backTo);
     return;
   }
-  if (isAdminRoute.value && routeSegments.value.length > 2) {
-    router.push(fallbackAdminPath.value);
+  const parentPath = resolveParentPath();
+  if (parentPath) {
+    if (parentPath === '/admin') {
+      router.push('/admin/overview');
+      return;
+    }
+    router.push(parentPath);
     return;
   }
   router.back();

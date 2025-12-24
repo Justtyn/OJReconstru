@@ -1,5 +1,5 @@
 <template>
-  <PageContainer :title="`提交详情 #${submission?.id || ''}`" :show-back="true" @back="goBack">
+  <PageContainer :title="`提交详情 #${submission?.id || ''}`" :show-back="true">
     <div class="detail-page">
       <a-alert v-if="loadError" type="error" show-icon :message="loadError" />
       <a-row :gutter="[16, 16]">
@@ -195,10 +195,6 @@ const loadDetail = async () => {
   } finally {
     loading.value = false;
   }
-};
-
-const goBack = () => {
-  router.back();
 };
 
 const goProblem = () => {

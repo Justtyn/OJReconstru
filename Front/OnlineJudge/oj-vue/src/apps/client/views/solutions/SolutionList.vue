@@ -4,15 +4,18 @@
       <section class="solution-hero">
         <div class="solution-hero__top">
           <div class="solution-hero__title">题解筛选</div>
-          <div class="solution-hero__stats">
-            <span class="stat-pill">
-              题解数量
-              <span class="stat-pill__value">{{ totalLabel }}</span>
-            </span>
-            <span class="stat-pill">
-              当前页
-              <span class="stat-pill__value">{{ query.page }}</span>
-            </span>
+          <div class="solution-hero__right">
+            <div class="solution-hero__stats">
+              <span class="stat-pill">
+                题解数量
+                <span class="stat-pill__value">{{ totalLabel }}</span>
+              </span>
+              <span class="stat-pill">
+                当前页
+                <span class="stat-pill__value">{{ query.page }}</span>
+              </span>
+            </div>
+            <a-button type="primary" size="small" @click="openCreate">发布题解</a-button>
           </div>
         </div>
         <div class="solution-hero__filters">
@@ -48,18 +51,21 @@
           <a-card v-for="item in list" :key="item.id" class="solution-card" hoverable>
             <div class="solution-card__header">
               <span class="solution-card__title">{{ item.title }}</span>
-              <a-tag v-if="item.language" color="blue">{{ item.language }}</a-tag>
+              <a-space size="small">
+                <a-tag v-if="item.language" color="blue">{{ item.language }}</a-tag>
+                <a-tag v-if="item.isActive === false" color="red">未启用</a-tag>
+              </a-space>
             </div>
             <div class="solution-card__meta">
               <span>题目：{{ problemLabel(item.problemId) }}</span>
-              <span>作者：{{ authorLabel(item.userId) }}</span>
+              <span class="solution-card__author">
+                <a-avatar :size="22" :src="authorAvatar(item.userId)">{{ authorInitial(item.userId) }}</a-avatar>
+                <span>作者：{{ authorLabel(item.userId) }}</span>
+              </span>
               <span>{{ formatTime(item.createTime) }}</span>
             </div>
             <div class="solution-card__excerpt">{{ excerptText(item.content) }}</div>
             <div class="solution-card__footer">
-              <a-space size="small">
-                <a-tag v-if="item.isActive === false" color="red">未启用</a-tag>
-              </a-space>
               <a-button type="link" @click="goDetail(item)">查看详情</a-button>
             </div>
           </a-card>
@@ -78,6 +84,45 @@
         />
       </div>
     </div>
+
+    <a-modal
+      v-model:open="createVisible"
+      title="发布题解"
+      :confirm-loading="createSubmitting"
+      ok-text="发布"
+      cancel-text="取消"
+      @ok="handleCreate"
+      @cancel="handleCreateCancel"
+    >
+      <a-form ref="createFormRef" layout="vertical" :model="createForm" :rules="createRules">
+        <a-form-item label="题目" name="problemId">
+          <a-select
+            v-model:value="createForm.problemId"
+            show-search
+            allow-clear
+            :filter-option="false"
+            :options="problemOptions"
+            :loading="problemLoading"
+            placeholder="搜索并选择题目"
+            @search="searchProblems"
+            @dropdownVisibleChange="handleProblemDropdown"
+          />
+        </a-form-item>
+        <a-form-item label="标题" name="title">
+          <a-input v-model:value="createForm.title" placeholder="请输入题解标题" />
+        </a-form-item>
+        <a-form-item label="语言" name="language">
+          <a-select v-model:value="createForm.language" allow-clear placeholder="选择语言（可选）">
+            <a-select-option v-for="item in languageOptions" :key="item.value" :value="item.value">
+              {{ item.label }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item label="内容" name="content">
+          <a-textarea v-model:value="createForm.content" :rows="6" placeholder="请输入题解内容，支持 Markdown" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </PageContainer>
 </template>
 
@@ -85,16 +130,19 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { format } from 'date-fns';
+import type { FormInstance, FormProps } from 'ant-design-vue';
 import { message } from 'ant-design-vue';
 import PageContainer from '@/components/common/PageContainer.vue';
 import { solutionService } from '@/services/modules/solution';
 import { problemService } from '@/services/modules/problem';
 import { studentService } from '@/services/modules/student';
-import type { Solution, SolutionQuery, Problem, Student } from '@/types';
+import type { Solution, SolutionQuery, SolutionRequest, Problem, Student } from '@/types';
 import { renderMarkdown } from '@/utils/markdown';
 import { extractErrorMessage } from '@/utils/error';
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
+const authStore = useAuthStore();
 const query = reactive<SolutionQuery>({
   page: 1,
   size: 8,
@@ -110,6 +158,35 @@ const problemLoading = ref(false);
 const problemCache = reactive<Record<string, Problem>>({});
 const studentCache = reactive<Record<string, Student>>({});
 let loadSeq = 0;
+const createVisible = ref(false);
+const createSubmitting = ref(false);
+const createFormRef = ref<FormInstance>();
+
+const languageOptions = [
+  { value: 'c', label: 'C' },
+  { value: 'cpp', label: 'C++' },
+  { value: 'java', label: 'Java' },
+  { value: 'python', label: 'Python' },
+  { value: 'python3', label: 'Python 3' },
+  { value: 'go', label: 'Go' },
+  { value: 'javascript', label: 'JavaScript' },
+  { value: 'typescript', label: 'TypeScript' },
+  { value: 'rust', label: 'Rust' },
+  { value: 'kotlin', label: 'Kotlin' },
+];
+
+const createForm = reactive<Pick<SolutionRequest, 'problemId' | 'title' | 'content' | 'language'>>({
+  problemId: undefined,
+  title: '',
+  content: '',
+  language: '',
+});
+
+const createRules: FormProps['rules'] = {
+  problemId: [{ required: true, message: '请选择题目' }],
+  title: [{ required: true, message: '请输入标题' }],
+  content: [{ required: true, message: '请输入内容' }],
+};
 
 const totalLabel = computed(() => (total.value ? total.value.toString() : '-'));
 
@@ -177,6 +254,52 @@ const handlePageChange = (page: number, size?: number) => {
   loadData();
 };
 
+const openCreate = () => {
+  createVisible.value = true;
+};
+
+const resetCreateForm = () => {
+  createForm.problemId = undefined;
+  createForm.title = '';
+  createForm.content = '';
+  createForm.language = '';
+  createFormRef.value?.clearValidate();
+};
+
+const handleCreateCancel = () => {
+  createVisible.value = false;
+  resetCreateForm();
+};
+
+const handleCreate = async () => {
+  if (!authStore.user?.id) {
+    message.error('登录信息缺失，请重新登录');
+    return;
+  }
+  try {
+    await createFormRef.value?.validate();
+    if (!createForm.problemId) return;
+    createSubmitting.value = true;
+    const payload: SolutionRequest = {
+      problemId: createForm.problemId,
+      authorId: authStore.user.id,
+      title: createForm.title,
+      content: createForm.content,
+      language: createForm.language,
+      isActive: true,
+    };
+    await solutionService.create(createForm.problemId, payload);
+    message.success('题解已发布');
+    createVisible.value = false;
+    resetCreateForm();
+    loadData();
+  } catch (error) {
+    message.error(extractErrorMessage(error, '发布题解失败'));
+  } finally {
+    createSubmitting.value = false;
+  }
+};
+
 const goDetail = (item: Solution) => {
   router.push(`/solutions/${item.id}`);
 };
@@ -210,11 +333,22 @@ const authorLabel = (id: string) => {
   if (!student) return id;
   return student.name ? `${student.username}（${student.name}）` : student.username;
 };
+const authorAvatar = (id: string) => studentCache[id]?.avatar || '';
+const authorInitial = (id: string) => {
+  const student = studentCache[id];
+  const label = student?.username || id || 'U';
+  return label.charAt(0).toUpperCase();
+};
+
+const stripCode = (content?: string) => {
+  if (!content) return '';
+  return content.replace(/```[\s\S]*?```/g, '').replace(/`[^`]*`/g, '');
+};
 
 const excerptText = (content?: string) => {
   if (!content) return '暂无内容';
-  const html = renderMarkdown(content);
-  const plain = html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  const html = renderMarkdown(stripCode(content));
+  const plain = html.replace(/<pre[\s\S]*?<\/pre>/g, '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
   if (!plain) return '暂无内容';
   return plain.length > 120 ? `${plain.slice(0, 120)}…` : plain;
 };
@@ -248,6 +382,14 @@ onMounted(() => {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.solution-hero__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .solution-hero__title {
@@ -329,6 +471,12 @@ onMounted(() => {
   margin-bottom: 8px;
 }
 
+.solution-card__author {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .solution-card__excerpt {
   color: var(--text-color);
   opacity: 0.85;
@@ -339,7 +487,7 @@ onMounted(() => {
 .solution-card__footer {
   margin-top: 12px;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
 }
 

@@ -1,5 +1,5 @@
 <template>
-  <PageContainer :title="homework?.title || '作业详情'" :show-back="true" @back="goBack">
+  <PageContainer :title="homework?.title || '作业详情'" :show-back="true">
     <div class="homework-detail">
       <a-alert v-if="loadError" type="error" show-icon :message="loadError" />
       <a-card class="detail-card" :loading="loading">
@@ -73,10 +73,6 @@ const loadDetail = async () => {
   } finally {
     loading.value = false;
   }
-};
-
-const goBack = () => {
-  router.back();
 };
 
 const formatTime = (value?: string) => {

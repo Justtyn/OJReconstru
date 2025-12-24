@@ -1,5 +1,5 @@
 <template>
-  <PageContainer :title="discussion?.title || '讨论详情'" :show-back="true" @back="goBack">
+  <PageContainer :title="discussion?.title || '讨论详情'" :show-back="true">
     <div class="discussion-detail">
       <a-alert v-if="loadError" type="error" show-icon :message="loadError" />
       <a-row :gutter="[16, 16]">
@@ -21,14 +21,40 @@
           <a-card class="detail-card mt-16" title="评论">
             <a-list :data-source="comments" :loading="commentLoading" :locale="{ emptyText: '暂无评论' }">
               <template #renderItem="{ item }">
-                <a-comment :author="commentAuthor(item.userId)" :content="item.content" :datetime="formatTime(item.createTime)" />
+                <a-comment :author="commentAuthor(item.userId)" :content="item.content" :datetime="formatTime(item.createTime)">
+                  <template #avatar>
+                    <a-avatar :size="28" :src="commentAvatar(item.userId)">
+                      {{ commentInitial(item.userId) }}
+                    </a-avatar>
+                  </template>
+                </a-comment>
               </template>
             </a-list>
+            <a-divider />
+            <div class="comment-editor">
+              <a-textarea
+                v-model:value="commentContent"
+                :rows="4"
+                placeholder="发表评论，支持 Markdown"
+                :maxlength="500"
+                show-count
+              />
+              <div class="comment-editor__actions">
+                <a-button
+                  type="primary"
+                  :loading="commentSubmitting"
+                  :disabled="!commentContent.trim()"
+                  @click="handleCommentSubmit"
+                >
+                  发表评论
+                </a-button>
+              </div>
+            </div>
           </a-card>
         </a-col>
         <a-col :xs="24" :lg="8">
           <a-card class="detail-card" title="讨论信息" :loading="loading">
-            <a-descriptions size="small" :column="1" bordered>
+            <a-descriptions size="small" :column="1" bordered class="discussion-info">
               <a-descriptions-item label="题目">{{ problemName }}</a-descriptions-item>
               <a-descriptions-item label="作者">{{ authorName }}</a-descriptions-item>
               <a-descriptions-item label="评论数">{{ comments.length }}</a-descriptions-item>
@@ -61,13 +87,17 @@ import { studentService } from '@/services/modules/student';
 import type { Discussion, DiscussionComment, Problem, Student } from '@/types';
 import { renderMarkdown } from '@/utils/markdown';
 import { extractErrorMessage } from '@/utils/error';
+import { useAuthStore } from '@/stores/auth';
 
 const route = useRoute();
 const router = useRouter();
+const authStore = useAuthStore();
 const discussion = ref<Discussion | null>(null);
 const comments = ref<DiscussionComment[]>([]);
 const loading = ref(false);
 const commentLoading = ref(false);
+const commentSubmitting = ref(false);
+const commentContent = ref('');
 const loadError = ref('');
 const problem = ref<Problem | null>(null);
 const author = ref<Student | null>(null);
@@ -146,9 +176,32 @@ const commentAuthor = (userId: string) => {
   if (!student) return userId;
   return student.name ? `${student.username}（${student.name}）` : student.username;
 };
+const commentAvatar = (userId: string) => studentCache.value[userId]?.avatar || '';
+const commentInitial = (userId: string) => {
+  const student = studentCache.value[userId];
+  const label = student?.username || userId || 'U';
+  return label.charAt(0).toUpperCase();
+};
 
-const goBack = () => {
-  router.back();
+const handleCommentSubmit = async () => {
+  if (!discussionId.value) return;
+  const content = commentContent.value.trim();
+  if (!content) return;
+  if (!authStore.user?.id) {
+    message.error('登录信息缺失，请重新登录');
+    return;
+  }
+  commentSubmitting.value = true;
+  try {
+    await discussionService.createComment(discussionId.value, { content, authorId: authStore.user.id });
+    commentContent.value = '';
+    await loadComments();
+    message.success('评论已发布');
+  } catch (error) {
+    message.error(extractErrorMessage(error, '发表评论失败'));
+  } finally {
+    commentSubmitting.value = false;
+  }
 };
 
 const goProblem = () => {
@@ -202,6 +255,27 @@ onMounted(async () => {
   padding-left: 18px;
   color: var(--text-muted, #94a3b8);
   line-height: 1.8;
+}
+
+.comment-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.comment-editor__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.discussion-info :deep(.ant-descriptions-item-label) {
+  width: 72px;
+  min-width: 72px;
+  padding: 6px 8px;
+}
+
+.discussion-info :deep(.ant-descriptions-item-content) {
+  padding: 6px 10px;
 }
 
 .mt-16 {

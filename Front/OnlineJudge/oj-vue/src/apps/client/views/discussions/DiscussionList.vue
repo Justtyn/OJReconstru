@@ -4,15 +4,18 @@
       <section class="discussion-hero">
         <div class="discussion-hero__top">
           <div class="discussion-hero__title">讨论筛选</div>
-          <div class="discussion-hero__stats">
-            <span class="stat-pill">
-              讨论数量
-              <span class="stat-pill__value">{{ totalLabel }}</span>
-            </span>
-            <span class="stat-pill">
-              当前页
-              <span class="stat-pill__value">{{ query.page }}</span>
-            </span>
+          <div class="discussion-hero__right">
+            <div class="discussion-hero__stats">
+              <span class="stat-pill">
+                讨论数量
+                <span class="stat-pill__value">{{ totalLabel }}</span>
+              </span>
+              <span class="stat-pill">
+                当前页
+                <span class="stat-pill__value">{{ query.page }}</span>
+              </span>
+            </div>
+            <a-button type="primary" size="small" @click="openCreate">发起讨论</a-button>
           </div>
         </div>
         <div class="discussion-hero__filters">
@@ -52,12 +55,14 @@
             </div>
             <div class="discussion-card__meta">
               <span>题目：{{ problemLabel(item.problemId) }}</span>
-              <span>作者：{{ authorLabel(item.userId) }}</span>
+              <span class="discussion-card__author">
+                <a-avatar :size="22" :src="authorAvatar(item.userId)">{{ authorInitial(item.userId) }}</a-avatar>
+                <span>作者：{{ authorLabel(item.userId) }}</span>
+              </span>
               <span>{{ formatTime(item.createTime) }}</span>
             </div>
             <div class="discussion-card__excerpt">{{ excerptText(item.content) }}</div>
             <div class="discussion-card__footer">
-              <span class="discussion-card__hint">进入详情查看讨论内容与评论</span>
               <a-button type="link" @click="goDetail(item)">查看详情</a-button>
             </div>
           </a-card>
@@ -76,6 +81,38 @@
         />
       </div>
     </div>
+
+    <a-modal
+      v-model:open="createVisible"
+      title="发起讨论"
+      :confirm-loading="createSubmitting"
+      ok-text="发布"
+      cancel-text="取消"
+      @ok="handleCreate"
+      @cancel="handleCreateCancel"
+    >
+      <a-form ref="createFormRef" layout="vertical" :model="createForm" :rules="createRules">
+        <a-form-item label="题目" name="problemId">
+          <a-select
+            v-model:value="createForm.problemId"
+            show-search
+            allow-clear
+            :filter-option="false"
+            :options="problemOptions"
+            :loading="problemLoading"
+            placeholder="搜索并选择题目"
+            @search="searchProblems"
+            @dropdownVisibleChange="handleProblemDropdown"
+          />
+        </a-form-item>
+        <a-form-item label="标题" name="title">
+          <a-input v-model:value="createForm.title" placeholder="请输入讨论标题" />
+        </a-form-item>
+        <a-form-item label="内容" name="content">
+          <a-textarea v-model:value="createForm.content" :rows="6" placeholder="请输入讨论内容，支持 Markdown" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </PageContainer>
 </template>
 
@@ -83,16 +120,19 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { format } from 'date-fns';
+import type { FormInstance, FormProps } from 'ant-design-vue';
 import { message } from 'ant-design-vue';
 import PageContainer from '@/components/common/PageContainer.vue';
 import { discussionService } from '@/services/modules/discussion';
 import { problemService } from '@/services/modules/problem';
 import { studentService } from '@/services/modules/student';
-import type { Discussion, DiscussionQuery, Problem, Student } from '@/types';
+import type { Discussion, DiscussionQuery, DiscussionRequest, Problem, Student } from '@/types';
 import { renderMarkdown } from '@/utils/markdown';
 import { extractErrorMessage } from '@/utils/error';
+import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
+const authStore = useAuthStore();
 const query = reactive<DiscussionQuery>({
   page: 1,
   size: 8,
@@ -108,6 +148,21 @@ const problemLoading = ref(false);
 const problemCache = reactive<Record<string, Problem>>({});
 const studentCache = reactive<Record<string, Student>>({});
 let loadSeq = 0;
+const createVisible = ref(false);
+const createSubmitting = ref(false);
+const createFormRef = ref<FormInstance>();
+
+const createForm = reactive<Pick<DiscussionRequest, 'problemId' | 'title' | 'content'>>({
+  problemId: undefined,
+  title: '',
+  content: '',
+});
+
+const createRules: FormProps['rules'] = {
+  problemId: [{ required: true, message: '请选择题目' }],
+  title: [{ required: true, message: '请输入标题' }],
+  content: [{ required: true, message: '请输入内容' }],
+};
 
 const totalLabel = computed(() => (total.value ? total.value.toString() : '-'));
 
@@ -175,6 +230,50 @@ const handlePageChange = (page: number, size?: number) => {
   loadData();
 };
 
+const openCreate = () => {
+  createVisible.value = true;
+};
+
+const resetCreateForm = () => {
+  createForm.problemId = undefined;
+  createForm.title = '';
+  createForm.content = '';
+  createFormRef.value?.clearValidate();
+};
+
+const handleCreateCancel = () => {
+  createVisible.value = false;
+  resetCreateForm();
+};
+
+const handleCreate = async () => {
+  if (!authStore.user?.id) {
+    message.error('登录信息缺失，请重新登录');
+    return;
+  }
+  try {
+    await createFormRef.value?.validate();
+    if (!createForm.problemId) return;
+    createSubmitting.value = true;
+    const payload: DiscussionRequest = {
+      problemId: createForm.problemId,
+      authorId: authStore.user.id,
+      title: createForm.title,
+      content: createForm.content,
+      isActive: true,
+    };
+    await discussionService.create(payload);
+    message.success('讨论已发布');
+    createVisible.value = false;
+    resetCreateForm();
+    loadData();
+  } catch (error) {
+    message.error(extractErrorMessage(error, '发布讨论失败'));
+  } finally {
+    createSubmitting.value = false;
+  }
+};
+
 const goDetail = (item: Discussion) => {
   router.push(`/discussions/${item.id}`);
 };
@@ -207,6 +306,12 @@ const authorLabel = (id: string) => {
   const student = studentCache[id];
   if (!student) return id;
   return student.name ? `${student.username}（${student.name}）` : student.username;
+};
+const authorAvatar = (id: string) => studentCache[id]?.avatar || '';
+const authorInitial = (id: string) => {
+  const student = studentCache[id];
+  const label = student?.username || id || 'U';
+  return label.charAt(0).toUpperCase();
 };
 
 const excerptText = (content?: string) => {
@@ -246,6 +351,14 @@ onMounted(() => {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.discussion-hero__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .discussion-hero__title {
@@ -327,6 +440,12 @@ onMounted(() => {
   margin-bottom: 8px;
 }
 
+.discussion-card__author {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .discussion-card__excerpt {
   color: var(--text-color);
   opacity: 0.85;
@@ -337,13 +456,8 @@ onMounted(() => {
 .discussion-card__footer {
   margin-top: 12px;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
-}
-
-.discussion-card__hint {
-  font-size: 12px;
-  color: var(--text-muted, #94a3b8);
 }
 
 .discussion-pagination {

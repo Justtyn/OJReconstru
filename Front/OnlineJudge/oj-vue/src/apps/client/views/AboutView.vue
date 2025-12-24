@@ -1,24 +1,36 @@
 <template>
-  <PageContainer title="关于系统">
-    <a-row :gutter="[16, 16]">
-      <a-col :xs="24" :lg="16">
-        <a-card class="about-page__card" :bordered="false">
-          <a-typography>
-            <a-typography-title :level="4" style="margin: 0">Re Online Judge（XUJCOJ）</a-typography-title>
-            <a-typography-paragraph class="about-page__intro">
-              面向课程与竞赛的在线评测与学习平台：题库、作业、讨论、公告与数据分析。
-            </a-typography-paragraph>
-          </a-typography>
+  <PageContainer title="关于系统" subtitle="面向课程与竞赛的在线评测与学习平台">
+    <div class="about-page">
+      <section class="about-hero">
+        <div class="about-hero__content">
+          <div class="about-hero__badge">Re Online Judge</div>
+          <div class="about-hero__title">Re Online Judge（XUJCOJ）</div>
+          <p class="about-hero__desc">题库、作业、题解、讨论与排行榜，构建完整的刷题与学习协作闭环。</p>
+          <div class="about-hero__tags">
+            <a-tag v-for="item in heroTags" :key="item" color="geekblue">{{ item }}</a-tag>
+          </div>
+        </div>
+        <div class="about-hero__highlights">
+          <div v-for="item in heroHighlights" :key="item.title" class="about-highlight">
+            <component :is="item.icon" class="about-highlight__icon" />
+            <div class="about-highlight__title">{{ item.title }}</div>
+            <div class="about-highlight__desc">{{ item.description }}</div>
+          </div>
+        </div>
+      </section>
 
-          <a-alert
-            type="info"
-            show-icon
-            message="提示"
-            description="页面内容来自系统内置帮助文档，后续可根据实际功能进度持续完善。"
-            class="about-page__alert"
-          />
+      <a-row :gutter="[16, 16]">
+        <a-col :xs="24" :lg="16">
+          <a-card class="about-page__card" :bordered="false">
+            <a-alert
+              type="info"
+              show-icon
+              message="提示"
+              description="页面内容来自系统内置帮助文档，后续可根据实际功能进度持续完善。"
+              class="about-page__alert"
+            />
 
-          <a-collapse accordion class="about-page__collapse">
+            <a-collapse accordion class="about-page__collapse">
             <a-collapse-panel key="result" header="Q：系统的返回信息都是什么意思？">
               <a-table
                 :columns="resultColumns"
@@ -139,32 +151,43 @@
                 </a-tab-pane>
               </a-tabs>
             </a-collapse-panel>
-          </a-collapse>
-        </a-card>
-      </a-col>
+            </a-collapse>
+          </a-card>
+        </a-col>
 
-      <a-col :xs="24" :lg="8">
-        <a-card class="about-page__card" :bordered="false" title="项目信息">
-          <a-space direction="vertical" style="width: 100%">
-            <a-descriptions :column="1" size="small">
-              <a-descriptions-item label="系统">
-                Re Online Judge
-              </a-descriptions-item>
-              <a-descriptions-item label="适用场景">
-                课程作业 / 训练题库 / 讨论交流
-              </a-descriptions-item>
-              <a-descriptions-item label="说明">
-                评测结果以服务端为准；若出现 Internal Error 请联系管理员。
-              </a-descriptions-item>
-            </a-descriptions>
-            <a-divider style="margin: 8px 0" />
-            <div class="about-page__footer">
-              Copyright © 2024 - 2025 XUJC SWEU24025-焦梓豪
-            </div>
-          </a-space>
-        </a-card>
-      </a-col>
-    </a-row>
+        <a-col :xs="24" :lg="8">
+          <a-card class="about-page__card" :bordered="false" title="项目信息">
+            <a-space direction="vertical" style="width: 100%">
+              <a-descriptions :column="1" size="small">
+                <a-descriptions-item label="系统">
+                  Re Online Judge
+                </a-descriptions-item>
+                <a-descriptions-item label="适用场景">
+                  课程作业 / 训练题库 / 讨论交流
+                </a-descriptions-item>
+                <a-descriptions-item label="说明">
+                  评测结果以服务端为准；若出现 Internal Error 请联系管理员。
+                </a-descriptions-item>
+              </a-descriptions>
+              <a-divider style="margin: 8px 0" />
+              <div class="about-side__section">
+                <div class="about-side__title">核心模块</div>
+                <div class="about-side__tags">
+                  <a-tag color="blue">题库</a-tag>
+                  <a-tag color="cyan">作业</a-tag>
+                  <a-tag color="geekblue">题解</a-tag>
+                  <a-tag color="gold">讨论</a-tag>
+                  <a-tag color="purple">提交记录</a-tag>
+                </div>
+              </div>
+              <div class="about-page__footer">
+                Copyright © 2024 - 2025 XUJC SWEU24025-焦梓豪
+              </div>
+            </a-space>
+          </a-card>
+        </a-col>
+      </a-row>
+    </div>
   </PageContainer>
 </template>
 
@@ -217,6 +240,26 @@ const resultColumns: TableColumnsType<ResultRow> = [
     width: 210,
   },
   { title: '说明', dataIndex: 'description', key: 'description' },
+];
+
+const heroTags = ['题库', '作业', '题解', '讨论', '排行榜', '公告'];
+
+const heroHighlights = [
+  {
+    title: '高效评测',
+    description: '多语言在线评测与实时反馈，帮助你快速定位问题。',
+    icon: TrophyOutlined,
+  },
+  {
+    title: '课程协作',
+    description: '作业管理与班级协作，让学习过程更有节奏。',
+    icon: TeamOutlined,
+  },
+  {
+    title: '社区沉淀',
+    description: '题解分享与讨论交流，构建可持续的学习社区。',
+    icon: BookOutlined,
+  },
 ];
 
 const usageSteps = [
@@ -296,6 +339,88 @@ const resourceCommunity = [
 </script>
 
 <style scoped lang="less">
+.about-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.about-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 20px;
+  padding: 24px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(14, 165, 233, 0.14));
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.1);
+}
+
+.about-hero__content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.about-hero__badge {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted, #64748b);
+}
+
+.about-hero__title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.about-hero__desc {
+  margin: 0;
+  color: var(--text-color);
+  opacity: 0.82;
+  line-height: 1.7;
+}
+
+.about-hero__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.about-hero__highlights {
+  display: grid;
+  gap: 12px;
+}
+
+.about-highlight {
+  border-radius: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: var(--card-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.about-highlight__icon {
+  font-size: 18px;
+  color: #0ea5e9;
+}
+
+.about-highlight__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.about-highlight__desc {
+  font-size: 12px;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.6;
+}
+
 .about-page__card {
   background: var(--card-bg);
   border: 1px solid var(--chart-track);
@@ -348,7 +473,46 @@ const resourceCommunity = [
   line-height: 1.6;
 }
 
+.about-side__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.about-side__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.about-side__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+@media (max-width: 1024px) {
+  .about-hero {
+    grid-template-columns: 1fr;
+  }
+}
+
 :global(:root[data-theme='dark']) .about-page__card {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+}
+
+:global(:root[data-theme='dark']) .about-hero {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 64, 175, 0.35));
+  border-color: rgba(148, 163, 184, 0.2);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.35);
+}
+
+:global(:root[data-theme='dark']) .about-highlight {
+  border-color: rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.7);
+}
+
+:global(:root[data-theme='dark']) .about-highlight__icon {
+  color: #38bdf8;
 }
 </style>

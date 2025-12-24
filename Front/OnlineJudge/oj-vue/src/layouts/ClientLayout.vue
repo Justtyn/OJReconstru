@@ -4,9 +4,14 @@
       <div class="client-layout__brand" @click="goHome">Re Online Judge</div>
       <div class="client-layout__links">
         <RouterLink to="/home">首页</RouterLink>
+        <RouterLink to="/problems">题库</RouterLink>
+        <RouterLink to="/submissions">提交记录</RouterLink>
+        <RouterLink to="/ranking">排行榜</RouterLink>
+        <RouterLink to="/solutions">题解</RouterLink>
+        <RouterLink to="/discussions">讨论</RouterLink>
+        <RouterLink to="/homeworks">作业</RouterLink>
         <RouterLink to="/announcements">公告</RouterLink>
         <RouterLink to="/about">关于</RouterLink>
-        <span class="disabled-link">题库（开发中）</span>
       </div>
       <div class="client-layout__actions">
         <ThemeSwitcher />

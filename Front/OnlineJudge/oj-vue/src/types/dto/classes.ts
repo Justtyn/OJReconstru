@@ -48,3 +48,7 @@ export interface ClassesMemberRequest {
 export interface ClassesMemberQuery extends PageQuery {
   classId?: string;
 }
+
+export interface StudentJoinClassRequest {
+  code: string;
+}

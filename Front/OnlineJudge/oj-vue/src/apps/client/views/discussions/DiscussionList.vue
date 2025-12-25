@@ -51,7 +51,10 @@
           <a-card v-for="item in list" :key="item.id" class="discussion-card" hoverable>
             <div class="discussion-card__header">
               <span class="discussion-card__title">{{ item.title }}</span>
-              <a-tag v-if="item.isActive === false" color="red">未启用</a-tag>
+              <a-space size="small" align="center">
+                <a-tag v-if="item.isActive === false" color="red">未启用</a-tag>
+                <a-button type="link" size="small" @click="goDetail(item)">查看详情</a-button>
+              </a-space>
             </div>
             <div class="discussion-card__meta">
               <span>题目：{{ problemLabel(item.problemId) }}</span>
@@ -62,9 +65,6 @@
               <span>{{ formatTime(item.createTime) }}</span>
             </div>
             <div class="discussion-card__excerpt">{{ excerptText(item.content) }}</div>
-            <div class="discussion-card__footer">
-              <a-button type="link" @click="goDetail(item)">查看详情</a-button>
-            </div>
           </a-card>
         </div>
         <a-empty v-if="!loading && !list.length" description="暂无讨论" class="discussion-empty" />
@@ -453,13 +453,6 @@ onMounted(() => {
   opacity: 0.85;
   line-height: 1.6;
   min-height: 56px;
-}
-
-.discussion-card__footer {
-  margin-top: 12px;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
 }
 
 .discussion-pagination {

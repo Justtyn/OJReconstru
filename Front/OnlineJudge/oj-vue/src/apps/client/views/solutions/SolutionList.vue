@@ -51,9 +51,10 @@
           <a-card v-for="item in list" :key="item.id" class="solution-card" hoverable>
             <div class="solution-card__header">
               <span class="solution-card__title">{{ item.title }}</span>
-              <a-space size="small">
+              <a-space size="small" align="center">
                 <a-tag v-if="item.language" color="blue">{{ item.language }}</a-tag>
                 <a-tag v-if="item.isActive === false" color="red">未启用</a-tag>
+                <a-button type="link" size="small" @click="goDetail(item)">查看详情</a-button>
               </a-space>
             </div>
             <div class="solution-card__meta">
@@ -65,9 +66,6 @@
               <span>{{ formatTime(item.createTime) }}</span>
             </div>
             <div class="solution-card__excerpt">{{ excerptText(item.content) }}</div>
-            <div class="solution-card__footer">
-              <a-button type="link" @click="goDetail(item)">查看详情</a-button>
-            </div>
           </a-card>
         </div>
         <a-empty v-if="!loading && !list.length" description="暂无题解" class="solution-empty" />
@@ -484,13 +482,6 @@ onMounted(() => {
   opacity: 0.85;
   line-height: 1.6;
   min-height: 56px;
-}
-
-.solution-card__footer {
-  margin-top: 12px;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
 }
 
 .solution-pagination {

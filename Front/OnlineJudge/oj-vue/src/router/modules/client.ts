@@ -23,7 +23,7 @@ export const clientRoutes: RouteRecordRaw[] = [
         path: 'profile',
         name: 'ClientProfile',
         component: () => import('@/apps/client/views/ProfilePlaceholder.vue'),
-        meta: { title: '个人中心', requiresAuth: true },
+        meta: { title: '个人中心', requiresAuth: true, roles: ['student'] },
       },
       {
         path: 'students/:id',
@@ -41,7 +41,7 @@ export const clientRoutes: RouteRecordRaw[] = [
         path: 'problems/:id/submit',
         name: 'ClientProblemSubmit',
         component: () => import('@/apps/client/views/problems/ProblemSubmit.vue'),
-        meta: { title: '提交代码', requiresAuth: true },
+        meta: { title: '提交代码', requiresAuth: true, roles: ['student'] },
       },
       {
         path: 'problems/:id',
@@ -53,13 +53,13 @@ export const clientRoutes: RouteRecordRaw[] = [
         path: 'homeworks',
         name: 'ClientHomeworkList',
         component: () => import('@/apps/client/views/homeworks/HomeworkList.vue'),
-        meta: { title: '作业', requiresAuth: true },
+        meta: { title: '作业', requiresAuth: true, roles: ['student'] },
       },
       {
         path: 'homeworks/:id',
         name: 'ClientHomeworkDetail',
         component: () => import('@/apps/client/views/homeworks/HomeworkDetail.vue'),
-        meta: { title: '作业详情', requiresAuth: true },
+        meta: { title: '作业详情', requiresAuth: true, roles: ['student'] },
       },
       {
         path: 'submissions',

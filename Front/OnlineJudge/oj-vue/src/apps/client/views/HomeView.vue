@@ -56,8 +56,8 @@
                   <div class="home-profile__meta">身份：{{ roleLabel }}</div>
                 </div>
               </div>
-              <div class="home-profile__actions">
-                <a-button type="primary" @click="goTo('/profile')">个人中心</a-button>
+          <div class="home-profile__actions">
+                <a-button v-if="isStudent" type="primary" @click="goTo('/profile')">个人中心</a-button>
                 <a-button @click="goTo('/ranking')">查看排行</a-button>
               </div>
             </a-card>
@@ -96,14 +96,21 @@ const roleLabel = computed(() => {
   return '访客';
 });
 
-const quickLinks = [
-  { key: 'problems', title: '题库', desc: '筛选题目并提交', path: '/problems', icon: CodeOutlined },
-  { key: 'submissions', title: '提交记录', desc: '追踪评测状态', path: '/submissions', icon: FileSearchOutlined },
-  { key: 'ranking', title: '排行榜', desc: '查看成绩排名', path: '/ranking', icon: TrophyOutlined },
-  { key: 'solutions', title: '题解', desc: '阅读解题思路', path: '/solutions', icon: BookOutlined },
-  { key: 'discussions', title: '讨论', desc: '交流解题想法', path: '/discussions', icon: MessageOutlined },
-  { key: 'homeworks', title: '作业', desc: '班级作业进度', path: '/homeworks', icon: ScheduleOutlined },
-];
+const isStudent = computed(() => authStore.role === 'student');
+
+const quickLinks = computed(() => {
+  const base = [
+    { key: 'problems', title: '题库', desc: '筛选题目并提交', path: '/problems', icon: CodeOutlined },
+    { key: 'submissions', title: '提交记录', desc: '追踪评测状态', path: '/submissions', icon: FileSearchOutlined },
+    { key: 'ranking', title: '排行榜', desc: '查看成绩排名', path: '/ranking', icon: TrophyOutlined },
+    { key: 'solutions', title: '题解', desc: '阅读解题思路', path: '/solutions', icon: BookOutlined },
+    { key: 'discussions', title: '讨论', desc: '交流解题想法', path: '/discussions', icon: MessageOutlined },
+  ];
+  if (isStudent.value) {
+    base.push({ key: 'homeworks', title: '作业', desc: '班级作业进度', path: '/homeworks', icon: ScheduleOutlined });
+  }
+  return base;
+});
 
 const guideSteps = [
   { title: '选择目标', description: '在题库中挑选题目，关注时间与内存限制。' },

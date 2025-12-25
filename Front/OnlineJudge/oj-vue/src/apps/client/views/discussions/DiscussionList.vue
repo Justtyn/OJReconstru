@@ -15,7 +15,7 @@
                 <span class="stat-pill__value">{{ query.page }}</span>
               </span>
             </div>
-            <a-button type="primary" size="small" @click="openCreate">发起讨论</a-button>
+            <a-button v-if="isStudent" type="primary" size="small" @click="openCreate">发起讨论</a-button>
           </div>
         </div>
         <div class="discussion-hero__filters">
@@ -83,6 +83,7 @@
     </div>
 
     <a-modal
+      v-if="isStudent"
       v-model:open="createVisible"
       title="发起讨论"
       :confirm-loading="createSubmitting"
@@ -165,6 +166,7 @@ const createRules: FormProps['rules'] = {
 };
 
 const totalLabel = computed(() => (total.value ? total.value.toString() : '-'));
+const isStudent = computed(() => authStore.role === 'student');
 
 const loadData = async () => {
   const seq = (loadSeq += 1);

@@ -66,7 +66,7 @@
             </div>
             <a-space direction="vertical" style="width: 100%">
               <a-button block type="primary" @click="goProblem">查看题目</a-button>
-              <a-button block @click="goResubmit">重新提交</a-button>
+              <a-button v-if="isStudent" block @click="goResubmit">重新提交</a-button>
             </a-space>
           </a-card>
           <a-card class="detail-card mt-16" title="提示">
@@ -121,11 +121,13 @@ import PageContainer from '@/components/common/PageContainer.vue';
 import CodeEditor from '@/components/common/CodeEditor.vue';
 import { submissionService } from '@/services/modules/submission';
 import { problemService } from '@/services/modules/problem';
+import { useAuthStore } from '@/stores/auth';
 import type { SubmissionDetail, Problem } from '@/types';
 import { extractErrorMessage } from '@/utils/error';
 
 const route = useRoute();
 const router = useRouter();
+const authStore = useAuthStore();
 const submission = ref<SubmissionDetail>();
 const problemName = ref('-');
 const loading = ref(false);
@@ -178,6 +180,8 @@ const passRateColor = computed(() => {
   if (passRatePercent.value >= 45) return '#f59e0b';
   return '#ef4444';
 });
+
+const isStudent = computed(() => authStore.role === 'student');
 
 const loadDetail = async () => {
   const id = route.params.id as string;

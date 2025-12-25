@@ -100,11 +100,13 @@ import PageContainer from '@/components/common/PageContainer.vue';
 import { useAuthStore } from '@/stores/auth';
 import { submissionService } from '@/services/modules/submission';
 import { problemService } from '@/services/modules/problem';
-import type { Submission, SubmissionQuery, Problem } from '@/types';
+import { studentService } from '@/services/modules/student';
+import type { Submission, SubmissionQuery, Problem, Student } from '@/types';
 import { extractErrorMessage } from '@/utils/error';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const isStudent = computed(() => authStore.role === 'student');
 const query = reactive<SubmissionQuery>({
   page: 1,
   size: 10,
@@ -118,6 +120,7 @@ const loading = ref(false);
 const problemOptions = ref<{ label: string; value: string }[]>([]);
 const problemLoading = ref(false);
 const problemCache = reactive<Record<string, Problem>>({});
+const studentCache = reactive<Record<string, Student>>({});
 const polling = ref(false);
 let loadSeq = 0;
 const POLL_INTERVAL_MS = 2500;
@@ -171,7 +174,7 @@ const pagePassRate = computed(() => {
 const loadData = async (options?: { silent?: boolean; muteError?: boolean }) => {
   const silent = options?.silent ?? false;
   const muteError = options?.muteError ?? false;
-  if (!query.studentId) return;
+  if (isStudent.value && !query.studentId) return;
   const seq = (loadSeq += 1);
   if (!silent) loading.value = true;
   try {
@@ -180,6 +183,7 @@ const loadData = async (options?: { silent?: boolean; muteError?: boolean }) => 
     list.value = data.records || [];
     total.value = data.total || 0;
     preloadProblems(list.value);
+    preloadStudents(list.value);
     startPollingIfNeeded();
   } catch (error) {
     if (!muteError && seq === loadSeq) {
@@ -211,7 +215,7 @@ const startPollingIfNeeded = () => {
   polling.value = true;
   pollAttempts = 0;
   pollTimer = window.setInterval(async () => {
-    if (!query.studentId) {
+    if (isStudent.value && !query.studentId) {
       stopPolling();
       return;
     }
@@ -236,6 +240,21 @@ const preloadProblems = (records: Submission[]) => {
       try {
         const detail = await problemService.fetchDetail(id);
         problemCache[id] = detail;
+      } catch {
+        /* ignore */
+      }
+    }),
+  );
+};
+
+const preloadStudents = (records: Submission[]) => {
+  const ids = Array.from(new Set(records.map((item) => item.studentId).filter((id) => id && !studentCache[id])));
+  if (!ids.length) return;
+  Promise.all(
+    ids.map(async (id) => {
+      try {
+        const detail = await studentService.fetchDetail(id);
+        studentCache[id] = detail;
       } catch {
         /* ignore */
       }
@@ -289,11 +308,14 @@ const languageLabel = (id?: number | string) =>
   languageOptions.find((item) => item.id === Number(id))?.name || (id ? String(id) : '-');
 
 const studentDisplayName = (record: Submission) => {
-  return authStore.user?.username || record.studentUsername || record.studentId || '-';
+  const cached = record.studentId ? studentCache[record.studentId] : undefined;
+  if (cached) return cached.name ? `${cached.username}（${cached.name}）` : cached.username;
+  return record.studentUsername || record.studentName || authStore.user?.username || record.studentId || '-';
 };
 
 const studentAvatar = (record: Submission) => {
-  return authStore.user?.avatar || (record as any).avatar || '';
+  const cached = record.studentId ? studentCache[record.studentId] : undefined;
+  return cached?.avatar || (record as any).avatar || authStore.user?.avatar || '';
 };
 
 const studentInitial = (record: Submission) => {
@@ -336,12 +358,15 @@ const paginationConfig = computed(() => ({
 }));
 
 watch(
-  () => authStore.user?.id,
-  (id) => {
-    if (id) {
+  () => [authStore.user?.id, authStore.role],
+  ([id, role]) => {
+    if (!id) return;
+    if (role !== 'student') {
+      query.studentId = undefined;
+    } else {
       query.studentId = id;
-      loadData();
     }
+    loadData();
   },
   { immediate: true },
 );

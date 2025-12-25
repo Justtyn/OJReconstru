@@ -9,7 +9,7 @@
         <RouterLink to="/ranking">排行榜</RouterLink>
         <RouterLink to="/solutions">题解</RouterLink>
         <RouterLink to="/discussions">讨论</RouterLink>
-        <RouterLink to="/homeworks">作业</RouterLink>
+        <RouterLink v-if="isStudent" to="/homeworks">作业</RouterLink>
         <RouterLink to="/announcements">公告</RouterLink>
         <RouterLink to="/about">关于</RouterLink>
       </div>
@@ -46,6 +46,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useRouter, RouterLink, RouterView } from 'vue-router';
 import { DownOutlined } from '@ant-design/icons-vue';
 import { useAuthStore } from '@/stores/auth';
@@ -53,6 +54,7 @@ import ThemeSwitcher from '@/components/common/ThemeSwitcher.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const isStudent = computed(() => authStore.role === 'student');
 
 const goHome = () => {
   router.push('/home');

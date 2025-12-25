@@ -30,8 +30,8 @@
                 </a-comment>
               </template>
             </a-list>
-            <a-divider />
-            <div class="comment-editor">
+            <a-divider v-if="isStudent" />
+            <div v-if="isStudent" class="comment-editor">
               <a-textarea
                 v-model:value="commentContent"
                 :rows="4"
@@ -109,6 +109,7 @@ const authorName = computed(() => {
   if (author.value) return author.value.name ? `${author.value.username}（${author.value.name}）` : author.value.username;
   return discussion.value?.userId || '-';
 });
+const isStudent = computed(() => authStore.role === 'student');
 
 const loadDetail = async () => {
   if (!discussionId.value) return;

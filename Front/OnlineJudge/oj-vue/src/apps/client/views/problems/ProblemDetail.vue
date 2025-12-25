@@ -17,7 +17,7 @@
       </div>
     </template>
     <template #extra>
-      <a-button type="primary" :disabled="!problem" @click="goSubmit">提交代码</a-button>
+      <a-button v-if="isStudent" type="primary" :disabled="!problem" @click="goSubmit">提交代码</a-button>
     </template>
 
     <div class="problem-detail">
@@ -85,7 +85,7 @@
                 <div class="detail-progress__label">通过率</div>
                 <a-progress :percent="passRatePercent" :stroke-color="passRateColor" />
               </div>
-              <a-button block type="primary" :disabled="!problem" @click="goSubmit">立即提交</a-button>
+              <a-button v-if="isStudent" block type="primary" :disabled="!problem" @click="goSubmit">立即提交</a-button>
             </a-card>
             <a-card class="detail-card detail-card--tips" title="温馨提示">
               <ul class="detail-tips">
@@ -107,17 +107,20 @@ import { useRoute, useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import PageContainer from '@/components/common/PageContainer.vue';
 import { problemService } from '@/services/modules/problem';
+import { useAuthStore } from '@/stores/auth';
 import type { Problem, ProblemDifficulty } from '@/types';
 import { extractErrorMessage } from '@/utils/error';
 
 const route = useRoute();
 const router = useRouter();
+const authStore = useAuthStore();
 const problem = ref<Problem | null>(null);
 const loading = ref(false);
 const loadError = ref('');
 
 const problemId = computed(() => route.params.id as string);
 const homeworkId = computed(() => (route.query.homeworkId as string) || '');
+const isStudent = computed(() => authStore.role === 'student');
 
 const loadProblem = async (id: string) => {
   loading.value = true;

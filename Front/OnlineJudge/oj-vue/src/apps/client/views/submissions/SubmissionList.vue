@@ -56,12 +56,18 @@
           :pagination="paginationConfig"
         >
           <template #bodyCell="{ column, record }">
-            <template v-if="column.key === 'problemId'">
-              {{ problemCache[record.problemId]?.name || record.problemId }}
-            </template>
-            <template v-else-if="column.key === 'languageId'">
-              {{ languageLabel(record.languageId) }}
-            </template>
+          <template v-if="column.key === 'problemId'">
+            {{ problemCache[record.problemId]?.name || record.problemId }}
+          </template>
+          <template v-else-if="column.key === 'student'">
+            <div class="student-cell">
+              <a-avatar :src="studentAvatar(record)" :size="28">{{ studentInitial(record) }}</a-avatar>
+              <span class="student-cell__name">{{ studentDisplayName(record) }}</span>
+            </div>
+          </template>
+          <template v-else-if="column.key === 'languageId'">
+            {{ languageLabel(record.languageId) }}
+          </template>
             <template v-else-if="column.key === 'overallStatusName'">
               <a-badge
                 :status="statusBadge(record.overallStatusCode)"
@@ -85,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import type { TableColumnType } from 'ant-design-vue';
 import { message } from 'ant-design-vue';
@@ -112,7 +118,12 @@ const loading = ref(false);
 const problemOptions = ref<{ label: string; value: string }[]>([]);
 const problemLoading = ref(false);
 const problemCache = reactive<Record<string, Problem>>({});
+const polling = ref(false);
 let loadSeq = 0;
+const POLL_INTERVAL_MS = 2500;
+const POLL_MAX_ATTEMPTS = 80;
+let pollTimer: ReturnType<typeof window.setInterval> | undefined;
+let pollAttempts = 0;
 
 const languageOptions = [
   { id: 11, name: 'Bosque (latest)' },
@@ -140,6 +151,7 @@ const languageOptions = [
 
 const columns: TableColumnType<Submission>[] = [
   { title: '提交ID', dataIndex: 'id', key: 'id', width: 200 },
+  { title: '学生', key: 'student', width: 180 },
   { title: '题目', dataIndex: 'problemId', key: 'problemId', width: 220 },
   { title: '语言', dataIndex: 'languageId', key: 'languageId', width: 180 },
   { title: '状态', dataIndex: 'overallStatusName', key: 'overallStatusName', width: 140 },
@@ -156,23 +168,64 @@ const pagePassRate = computed(() => {
   return `${Math.round((accepted / list.value.length) * 100)}%`;
 });
 
-const loadData = async () => {
+const loadData = async (options?: { silent?: boolean; muteError?: boolean }) => {
+  const silent = options?.silent ?? false;
+  const muteError = options?.muteError ?? false;
   if (!query.studentId) return;
   const seq = (loadSeq += 1);
-  loading.value = true;
+  if (!silent) loading.value = true;
   try {
     const data = await submissionService.fetchList(query);
     if (seq !== loadSeq) return;
     list.value = data.records || [];
     total.value = data.total || 0;
     preloadProblems(list.value);
+    startPollingIfNeeded();
   } catch (error) {
-    if (seq === loadSeq) {
+    if (!muteError && seq === loadSeq) {
       message.error(extractErrorMessage(error, '获取提交记录失败'));
     }
   } finally {
-    if (seq === loadSeq) loading.value = false;
+    if (!silent && seq === loadSeq) loading.value = false;
   }
+};
+
+const isPendingSubmission = (record: Submission) => {
+  if (record.overallStatusId === 1 || record.overallStatusId === 2) return true;
+  const code = (record.overallStatusCode || '').toUpperCase();
+  return code === 'IN_QUEUE' || code === 'PROCESSING';
+};
+
+const stopPolling = () => {
+  if (pollTimer) {
+    window.clearInterval(pollTimer);
+    pollTimer = undefined;
+  }
+  polling.value = false;
+  pollAttempts = 0;
+};
+
+const startPollingIfNeeded = () => {
+  if (polling.value) return;
+  if (!list.value.some(isPendingSubmission)) return;
+  polling.value = true;
+  pollAttempts = 0;
+  pollTimer = window.setInterval(async () => {
+    if (!query.studentId) {
+      stopPolling();
+      return;
+    }
+    pollAttempts += 1;
+    await loadData({ silent: true, muteError: true });
+    if (!list.value.some(isPendingSubmission)) {
+      stopPolling();
+      return;
+    }
+    if (pollAttempts >= POLL_MAX_ATTEMPTS) {
+      stopPolling();
+      message.warning('判题耗时较长，已停止自动刷新，请手动刷新');
+    }
+  }, POLL_INTERVAL_MS);
 };
 
 const preloadProblems = (records: Submission[]) => {
@@ -207,6 +260,7 @@ const handleProblemDropdown = (open: boolean) => {
 };
 
 const handleSearch = () => {
+  stopPolling();
   query.page = 1;
   loadData();
 };
@@ -233,6 +287,20 @@ const ensureProfile = async () => {
 
 const languageLabel = (id?: number | string) =>
   languageOptions.find((item) => item.id === Number(id))?.name || (id ? String(id) : '-');
+
+const studentDisplayName = (record: Submission) => {
+  return authStore.user?.username || record.studentUsername || record.studentId || '-';
+};
+
+const studentAvatar = (record: Submission) => {
+  return authStore.user?.avatar || (record as any).avatar || '';
+};
+
+const studentInitial = (record: Submission) => {
+  const name = studentDisplayName(record);
+  if (!name || name === '-') return 'S';
+  return name.slice(0, 1).toUpperCase();
+};
 
 const statusBadge = (code?: string) => {
   const normalized = (code || '').toUpperCase();
@@ -262,6 +330,7 @@ const paginationConfig = computed(() => ({
   onChange: (page: number, size?: number) => {
     query.page = page;
     query.size = size ?? query.size;
+    stopPolling();
     loadData();
   },
 }));
@@ -279,6 +348,10 @@ watch(
 
 onMounted(() => {
   ensureProfile();
+});
+
+onBeforeUnmount(() => {
+  stopPolling();
 });
 </script>
 
@@ -352,6 +425,17 @@ onMounted(() => {
   border-radius: 16px;
   border: 1px solid rgba(15, 23, 42, 0.08);
   box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+}
+
+.student-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.student-cell__name {
+  font-weight: 600;
+  color: var(--text-color);
 }
 
 @media (max-width: 768px) {

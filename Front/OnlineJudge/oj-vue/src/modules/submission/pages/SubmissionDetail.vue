@@ -43,8 +43,11 @@
         :pagination="false"
         size="small"
       >
-        <template #bodyCell="{ column, record, text }">
-          <template v-if="column.key === 'statusDescription'">
+        <template #bodyCell="{ column, record, text, index }">
+          <template v-if="column.key === 'caseIndex'">
+            {{ index + 1 }}
+          </template>
+          <template v-else-if="column.key === 'statusDescription'">
             <a-badge :status="statusBadgeFromId(record.statusId)" :text="record.statusDescription || record.statusId" />
           </template>
           <template v-else-if="column.key === 'stdout' || column.key === 'stderr' || column.key === 'message' || column.key === 'compileOutput'">
@@ -106,7 +109,7 @@ const languageOptions = [
 ];
 
 const caseColumns = [
-  { title: '用例ID', dataIndex: 'testcaseId', key: 'testcaseId', width: 200 },
+  { title: '用例序号', key: 'caseIndex', width: 100 },
   { title: '状态', dataIndex: 'statusDescription', key: 'statusDescription', width: 120 },
   { title: 'stdout', dataIndex: 'stdout', key: 'stdout' },
   { title: 'stderr', dataIndex: 'stderr', key: 'stderr' },

@@ -164,8 +164,7 @@ const handleSubmit = async () => {
       sourceCode: formState.sourceCode,
     });
     message.success('提交成功，系统正在判题');
-    const query = homeworkId.value ? { homeworkId: homeworkId.value } : undefined;
-    router.push({ path: `/problems/${problem.value.id}`, query });
+    router.push('/submissions');
   } catch (error) {
     message.error(extractErrorMessage(error, '提交失败，请稍后重试'));
   } finally {

@@ -68,7 +68,13 @@
             {{ problemCache[record.problemId]?.name || record.problemId }}
           </template>
           <template v-else-if="column.key === 'studentId'">
-            {{ studentLabel(record) }}
+            <div class="student-cell">
+              <a-avatar :src="studentAvatar(record)" :size="32">{{ studentInitial(record) }}</a-avatar>
+              <div class="student-cell__info">
+                <div class="student-cell__name">{{ studentName(record) }}</div>
+                <div v-if="studentMeta(record)" class="student-cell__meta">{{ studentMeta(record) }}</div>
+              </div>
+            </div>
           </template>
           <template v-else-if="column.key === 'overallStatusName'">
             <a-badge :status="statusBadge(record.overallStatusCode)" :text="record.overallStatusName || record.overallStatusCode" />
@@ -319,7 +325,7 @@ const homeworkProblemLoading = ref(false);
 const columns: TableColumnType<Submission>[] = [
   { title: '提交ID', dataIndex: 'id', key: 'id', width: 200 },
   { title: '题目', dataIndex: 'problemId', key: 'problemId', width: 220 },
-  { title: '学生', dataIndex: 'studentId', key: 'studentId', width: 200 },
+  { title: '学生', dataIndex: 'studentId', key: 'studentId', width: 240 },
   { title: '语言', dataIndex: 'languageId', key: 'languageId', width: 160 },
   { title: '状态', dataIndex: 'overallStatusName', key: 'overallStatusName', width: 140 },
   { title: '通过/总数', dataIndex: 'caseCount', key: 'caseCount', width: 120 },
@@ -625,8 +631,36 @@ const studentLabel = (record: Submission) => {
   const id = record.studentId || (record as any).userId;
   if (!id) return '-';
   const cached = studentCache[id];
-  if (cached) return cached.name ? `${cached.username}（${cached.name}）` : cached.username;
+  if (cached?.username) return cached.username;
   return record.studentUsername || (record as any).username || id;
+};
+
+const studentName = (record: Submission) => {
+  const label = studentLabel(record);
+  return label || '-';
+};
+
+const studentMeta = (record: Submission) => {
+  const id = record.studentId || (record as any).userId;
+  if (!id) return '';
+  const cached = studentCache[id];
+  const meta = cached?.name || record.studentName || (record as any).name || '';
+  if (!meta) return '';
+  const label = studentLabel(record);
+  return meta === label ? '' : meta;
+};
+
+const studentAvatar = (record: Submission) => {
+  const id = record.studentId || (record as any).userId;
+  if (!id) return '';
+  const cached = studentCache[id];
+  return cached?.avatar || (record as any).avatar || '';
+};
+
+const studentInitial = (record: Submission) => {
+  const label = studentLabel(record);
+  if (!label || label === '-') return 'S';
+  return label.slice(0, 1).toUpperCase();
 };
 
 const statusBadge = (code?: string) => {
@@ -667,5 +701,29 @@ onBeforeUnmount(() => {
   display: flex;
   justify-content: flex-end;
   margin-top: 16px;
+}
+
+.student-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.student-cell__info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.student-cell__name {
+  font-weight: 600;
+  color: var(--text-color);
+  line-height: 1.2;
+}
+
+.student-cell__meta {
+  font-size: 12px;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.2;
 }
 </style>

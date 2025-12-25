@@ -38,32 +38,6 @@
             />
           </a-card>
 
-          <a-card class="detail-card mt-16" title="测试点结果" v-if="submission?.testcaseResults?.length">
-            <a-table
-              row-key="testcaseId"
-              :columns="caseColumns"
-              :data-source="submission.testcaseResults"
-              :pagination="false"
-              size="small"
-            >
-              <template #bodyCell="{ column, record, text }">
-                <template v-if="column.key === 'statusDescription'">
-                  <a-badge :status="statusBadgeFromId(record.statusId)" :text="record.statusDescription || record.statusId" />
-                </template>
-                <template v-else-if="column.key === 'stdout' || column.key === 'stderr' || column.key === 'message' || column.key === 'compileOutput'">
-                  <a-typography-paragraph style="margin: 0" :ellipsis="{ rows: 2, expandable: true }">
-                    <pre class="code-block inline-code"><code>{{ text || '-' }}</code></pre>
-                  </a-typography-paragraph>
-                </template>
-                <template v-else-if="column.key === 'timeUsed'">
-                  {{ record.timeUsed ?? '-' }}
-                </template>
-                <template v-else-if="column.key === 'memoryUsed'">
-                  {{ record.memoryUsed ?? '-' }}
-                </template>
-              </template>
-            </a-table>
-          </a-card>
         </a-col>
 
         <a-col :xs="24" :lg="8">
@@ -90,7 +64,10 @@
                 <div class="summary-item__label">得分</div>
               </div>
             </div>
-            <a-button block type="primary" @click="goProblem">查看题目</a-button>
+            <a-space direction="vertical" style="width: 100%">
+              <a-button block type="primary" @click="goProblem">查看题目</a-button>
+              <a-button block @click="goResubmit">重新提交</a-button>
+            </a-space>
           </a-card>
           <a-card class="detail-card mt-16" title="提示">
             <ul class="summary-tips">
@@ -101,6 +78,36 @@
           </a-card>
         </a-col>
       </a-row>
+
+      <a-card class="detail-card" title="测试点结果" v-if="submission?.testcaseResults?.length">
+        <a-table
+          row-key="testcaseId"
+          :columns="caseColumns"
+          :data-source="submission.testcaseResults"
+          :pagination="false"
+          size="small"
+        >
+          <template #bodyCell="{ column, record, text, index }">
+            <template v-if="column.key === 'caseIndex'">
+              {{ index + 1 }}
+            </template>
+            <template v-else-if="column.key === 'statusDescription'">
+              <a-badge :status="statusBadgeFromId(record.statusId)" :text="record.statusDescription || record.statusId" />
+            </template>
+            <template v-else-if="column.key === 'stdout' || column.key === 'stderr' || column.key === 'message' || column.key === 'compileOutput'">
+              <a-typography-paragraph style="margin: 0" :ellipsis="{ rows: 2, expandable: true }">
+                <pre class="code-block inline-code"><code>{{ text || '-' }}</code></pre>
+              </a-typography-paragraph>
+            </template>
+            <template v-else-if="column.key === 'timeUsed'">
+              {{ record.timeUsed ?? '-' }}
+            </template>
+            <template v-else-if="column.key === 'memoryUsed'">
+              {{ record.memoryUsed ?? '-' }}
+            </template>
+          </template>
+        </a-table>
+      </a-card>
     </div>
   </PageContainer>
 </template>
@@ -149,7 +156,7 @@ const languageOptions = [
 ];
 
 const caseColumns = [
-  { title: '用例ID', dataIndex: 'testcaseId', key: 'testcaseId', width: 200 },
+  { title: '用例序号', key: 'caseIndex', width: 100 },
   { title: '状态', dataIndex: 'statusDescription', key: 'statusDescription', width: 120 },
   { title: 'stdout', dataIndex: 'stdout', key: 'stdout' },
   { title: 'stderr', dataIndex: 'stderr', key: 'stderr' },
@@ -200,6 +207,12 @@ const loadDetail = async () => {
 const goProblem = () => {
   if (!submission.value?.problemId) return;
   router.push(`/problems/${submission.value.problemId}`);
+};
+
+const goResubmit = () => {
+  if (!submission.value?.problemId) return;
+  const query = submission.value.homeworkId ? { homeworkId: submission.value.homeworkId } : undefined;
+  router.push({ path: `/problems/${submission.value.problemId}/submit`, query });
 };
 
 const languageLabel = (id?: number | string) =>

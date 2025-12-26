@@ -215,14 +215,14 @@ onMounted(() => {
 }
 
 .ranking-hero {
-  padding: 14px 18px;
+  padding: 20px 24px;
   border-radius: 18px;
   background: linear-gradient(135deg, rgba(34, 197, 94, 0.16), rgba(16, 185, 129, 0.14));
   border: 1px solid rgba(15, 23, 42, 0.08);
   box-shadow: 0 14px 32px rgba(15, 23, 42, 0.1);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
 }
 
 .ranking-hero__top {

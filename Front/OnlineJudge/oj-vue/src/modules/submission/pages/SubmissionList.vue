@@ -101,6 +101,9 @@
               <a-button type="link" size="small" @click="viewDetail(record)">详情</a-button>
             </a-space>
           </template>
+          <template v-else>
+            {{ text ?? '-' }}
+          </template>
         </template>
       </a-table>
     </a-card>
@@ -326,7 +329,6 @@ const homeworkProblemOptions = ref<{ label: string; value: string }[]>([]);
 const homeworkProblemLoading = ref(false);
 
 const columns: TableColumnType<Submission>[] = [
-  { title: '提交ID', dataIndex: 'id', key: 'id', width: 200 },
   { title: '题目', dataIndex: 'problemId', key: 'problemId', width: 220 },
   { title: '学生', dataIndex: 'studentId', key: 'studentId', width: 240 },
   { title: '语言', dataIndex: 'languageId', key: 'languageId', width: 160 },
@@ -630,28 +632,16 @@ const handleHomeworkChange = (value: string) => {
 const languageLabel = (id?: number | string) =>
   languageOptions.find((l) => l.id === Number(id))?.name || (id ? String(id) : '-');
 
-const studentLabel = (record: Submission) => {
+const studentName = (record: Submission) => {
   const id = record.studentId || (record as any).userId;
   if (!id) return '-';
   const cached = studentCache[id];
-  if (cached?.username) return cached.username;
-  return record.studentUsername || (record as any).username || id;
+  return cached?.name || record.studentName || (record as any).name || '-';
 };
 
-const studentName = (record: Submission) => {
-  const label = studentLabel(record);
-  return label || '-';
-};
+const studentLabel = (record: Submission) => studentName(record);
 
-const studentMeta = (record: Submission) => {
-  const id = record.studentId || (record as any).userId;
-  if (!id) return '';
-  const cached = studentCache[id];
-  const meta = cached?.name || record.studentName || (record as any).name || '';
-  if (!meta) return '';
-  const label = studentLabel(record);
-  return meta === label ? '' : meta;
-};
+const studentMeta = () => '';
 
 const studentAvatar = (record: Submission) => {
   const id = record.studentId || (record as any).userId;

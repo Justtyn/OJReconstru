@@ -189,7 +189,7 @@ onMounted(() => {
 .profile-hero {
   position: relative;
   padding: 28px 28px;
-  min-height: 210px;
+  min-height: 240px;
   border-radius: 18px;
   overflow: hidden;
   background-color: var(--card-bg);

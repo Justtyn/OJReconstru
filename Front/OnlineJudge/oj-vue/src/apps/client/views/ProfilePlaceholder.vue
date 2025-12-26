@@ -219,19 +219,44 @@
           </a-col>
           <a-col :span="12">
             <a-form-item label="邮箱" name="email">
-              <a-input v-model:value="profileForm.email" placeholder="请输入邮箱" />
+              <a-input v-model:value="profileForm.email" disabled />
             </a-form-item>
           </a-col>
         </a-row>
         <a-row :gutter="12">
           <a-col :span="12">
             <a-form-item label="学校名称" name="school">
-              <a-input v-model:value="profileForm.school" placeholder="请输入学校名称" />
+              <a-select
+                v-model:value="profileForm.school"
+                show-search
+                allow-clear
+                :options="schoolOptions"
+                :loading="schoolLoading"
+                placeholder="搜索或选择学校"
+                :filter-option="false"
+                @search="handleSchoolSearch"
+                @dropdownVisibleChange="handleSchoolDropdown"
+              />
             </a-form-item>
           </a-col>
           <a-col :span="12">
-            <a-form-item label="头像链接" name="avatar">
-              <a-input v-model:value="profileForm.avatar" placeholder="粘贴头像图片 URL" />
+            <a-form-item label="头像" name="avatar">
+              <a-upload
+                :action="`${avatarPrefix}/api/files/avatar`"
+                name="file"
+                accept="image/*"
+                :show-upload-list="false"
+                :before-upload="beforeUpload"
+                :headers="uploadHeaders"
+                @change="handleUploadChange"
+              >
+                <div class="avatar-upload">
+                  <a-avatar :src="avatarPreview" shape="square" :size="72" style="border-radius: 10px">
+                    <template #icon>+</template>
+                  </a-avatar>
+                  <div class="avatar-upload__text">点击上传</div>
+                </div>
+              </a-upload>
             </a-form-item>
           </a-col>
         </a-row>
@@ -266,8 +291,8 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
-import { message } from 'ant-design-vue';
-import type { FormInstance, FormProps } from 'ant-design-vue';
+import { message, Upload } from 'ant-design-vue';
+import type { FormInstance, FormProps, UploadProps } from 'ant-design-vue';
 import { format } from 'date-fns';
 import { UserOutlined } from '@ant-design/icons-vue';
 import PageContainer from '@/components/common/PageContainer.vue';
@@ -329,6 +354,17 @@ const passwordRules: FormProps['rules'] = {
   ],
 };
 
+const avatarPrefix = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
+const MAX_AVATAR_SIZE = 1024 * 1024;
+const avatarPreview = ref('');
+const uploadHeaders = computed(() => {
+  const raw = authStore.token || '';
+  const token = raw.replace(/^Bearer\s+/i, '');
+  return {
+    Authorization: token ? `Bearer ${token}` : '',
+  };
+});
+
 const backgroundPrefix = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
 const resolveBackground = (value?: string | null) => {
   if (!value) return '';
@@ -347,6 +383,26 @@ const backgroundOptions = computed(() =>
     };
   })
 );
+const backgroundCache = new Map<string, HTMLImageElement>();
+const backgroundPrefetched = ref(false);
+const cacheBackground = (url: string) => {
+  if (backgroundCache.has(url)) return;
+  const img = new Image();
+  img.src = url;
+  backgroundCache.set(url, img);
+};
+const prefetchBackgrounds = () => {
+  if (backgroundPrefetched.value) return;
+  backgroundPrefetched.value = true;
+  const task = () => {
+    backgroundOptions.value.forEach((item) => cacheBackground(item.url));
+  };
+  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+    (window as Window & { requestIdleCallback?: (cb: () => void) => void }).requestIdleCallback?.(task);
+  } else {
+    setTimeout(task, 0);
+  }
+};
 
 const avatarUrl = computed(() => studentDetail.value?.avatar || authStore.user?.avatar || '');
 const backgroundUrl = computed(() => resolveBackground(studentDetail.value?.background));
@@ -414,6 +470,136 @@ const heroStyle = computed(() => {
   } as Record<string, string>;
 });
 
+const resolveAvatar = (value?: string | null) => {
+  if (!value) return `${avatarPrefix}/files/avatars/DefaultAvatar.jpg`;
+  if (value.startsWith('http')) return value;
+  if (value.startsWith('/')) return `${avatarPrefix}${value}`;
+  return `${avatarPrefix}/${value}`;
+};
+
+const beforeUpload: UploadProps['beforeUpload'] = async (file) => {
+  const isImage = file.type.startsWith('image/');
+  if (!isImage) {
+    message.error('请上传图片文件');
+    return Upload.LIST_IGNORE;
+  }
+  if (file.size > MAX_AVATAR_SIZE) {
+    message.error('头像大小不能超过 1MB');
+    return Upload.LIST_IGNORE;
+  }
+  const isSquare = await checkSquare(file);
+  if (!isSquare) {
+    message.error('请上传正方形图片');
+    return Upload.LIST_IGNORE;
+  }
+  return true;
+};
+
+const checkSquare = (file: File): Promise<boolean> =>
+  new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => resolve(img.width === img.height);
+      img.onerror = () => resolve(false);
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+
+const handleUploadChange: UploadProps['onChange'] = ({ file }) => {
+  if (file.status === 'uploading') return;
+  if (file.status === 'done' && file.response) {
+    const resp: any = file.response;
+    const urlSuffix = resp?.data?.url || resp?.data || resp?.url || resp;
+    profileForm.avatar = urlSuffix || '';
+    avatarPreview.value = resolveAvatar(profileForm.avatar);
+    message.success('上传成功');
+  } else if (file.status === 'error') {
+    message.error('上传失败');
+  }
+};
+
+const allSchools = ref<{ label: string; value: string; keyword: string }[]>([]);
+const schoolOptions = ref<{ label: string; value: string }[]>([]);
+const schoolLoading = ref(false);
+const schoolsLoaded = ref(false);
+
+const stripLevelSuffix = (text: string) =>
+  text.replace(/\s*[\(（][^()（）]*?(本科|专科)[^()（）]*?[\)）]\s*$/i, '').trim();
+
+const parseSchools = (rawText: string) => {
+  try {
+    const parsed = JSON.parse(rawText || '{}');
+    const rawList: string =
+      typeof parsed.schools === 'string' ? parsed.schools : Array.isArray(parsed.schools) ? parsed.schools.join(',') : '';
+    const seen = new Set<string>();
+    return rawList
+      .split(',')
+      .map((item: string) => item.trim())
+      .filter(Boolean)
+      .map((item: string) => {
+        const base = stripLevelSuffix(item);
+        return { label: base, value: base, keyword: `${base}${item}`.toLowerCase() };
+      })
+      .filter((item) => {
+        if (seen.has(item.value)) return false;
+        seen.add(item.value);
+        return true;
+      });
+  } catch (error) {
+    console.error('parse schools error', error);
+    return [];
+  }
+};
+
+const loadSchools = async () => {
+  if (schoolsLoaded.value) return;
+  schoolLoading.value = true;
+  try {
+    const response = await fetch(`${import.meta.env.BASE_URL}schools.json.txt`);
+    const text = await response.text();
+    allSchools.value = parseSchools(text);
+    schoolOptions.value = filterSchools('');
+    ensureSchoolOption(profileForm.school);
+    schoolsLoaded.value = true;
+  } catch (error) {
+    message.error('加载学校列表失败');
+  } finally {
+    schoolLoading.value = false;
+  }
+};
+
+const filterSchools = (keyword: string) => {
+  const lower = keyword.trim().toLowerCase();
+  const filtered = lower
+    ? allSchools.value.filter((item) => item.keyword.includes(lower) || item.label.toLowerCase().includes(lower))
+    : allSchools.value;
+  return filtered.slice(0, 80).map(({ label, value }) => ({ label, value }));
+};
+
+const handleSchoolSearch = (value: string) => {
+  schoolOptions.value = filterSchools(value);
+};
+
+const handleSchoolDropdown = (open: boolean) => {
+  if (open && !schoolsLoaded.value) {
+    loadSchools();
+  }
+};
+
+const ensureSchoolOption = (value?: string) => {
+  if (!value) return;
+  if (!allSchools.value.length) {
+    allSchools.value = [{ label: value, value, keyword: value.toLowerCase() }];
+  } else if (!allSchools.value.some((item) => item.value === value)) {
+    allSchools.value.unshift({ label: value, value, keyword: value.toLowerCase() });
+  }
+  if (!schoolOptions.value.some((item) => item.value === value)) {
+    schoolOptions.value = [{ label: value, value }, ...schoolOptions.value].slice(0, 80);
+  }
+};
+
 const backgroundSubmitting = ref(false);
 const pendingBackgroundId = ref<number | null>(null);
 const isBackgroundActive = (url: string) => backgroundUrl.value === url;
@@ -424,6 +610,7 @@ const applyBackground = async (item: { id: number; url: string }) => {
     message.warning('个人信息尚未加载完成');
     return;
   }
+  cacheBackground(item.url);
   if (isBackgroundActive(item.url)) {
     message.info('当前已使用该背景');
     return;
@@ -504,6 +691,9 @@ const openEditProfile = async () => {
   profileForm.school = studentDetail.value.school ?? '';
   profileForm.avatar = studentDetail.value.avatar ?? '';
   profileForm.bio = studentDetail.value.bio ?? '';
+  avatarPreview.value = resolveAvatar(profileForm.avatar);
+  ensureSchoolOption(profileForm.school);
+  loadSchools();
   editProfileVisible.value = true;
   await nextTick();
   profileFormRef.value?.clearValidate();
@@ -523,9 +713,9 @@ const handleProfileSubmit = async () => {
       username: profileForm.username.trim(),
       name: profileForm.name.trim(),
       sex: profileForm.sex,
-      email: profileForm.email.trim(),
+      email: detail?.email ?? profileForm.email.trim(),
       school: profileForm.school.trim(),
-      avatar: profileForm.avatar.trim(),
+      avatar: resolveAvatar(profileForm.avatar.trim()),
       bio: profileForm.bio.trim(),
       birth: detail?.birth ?? undefined,
       phone: detail?.phone ?? undefined,
@@ -581,6 +771,15 @@ watch(
   },
   { immediate: true }
 );
+
+watch(
+  () => activeTab.value,
+  (tab) => {
+    if (tab === 'background') {
+      prefetchBackgrounds();
+    }
+  }
+);
 </script>
 
 <style scoped lang="less">
@@ -593,7 +792,7 @@ watch(
 .profile-hero {
   position: relative;
   padding: 32px 32px;
-  min-height: 220px;
+  min-height: 250px;
   border-radius: 18px;
   overflow: hidden;
   background-color: var(--card-bg);
@@ -836,7 +1035,7 @@ watch(
 .background-card__thumb {
   position: relative;
   display: block;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 3 / 2;
   background-color: rgba(15, 23, 42, 0.04);
   overflow: hidden;
 }
@@ -852,6 +1051,18 @@ watch(
 .profile-muted {
   color: var(--text-muted, #94a3b8);
   margin-bottom: 12px;
+}
+
+.avatar-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.avatar-upload__text {
+  font-size: 12px;
+  color: var(--text-muted, #94a3b8);
 }
 
 @media (max-width: 960px) {

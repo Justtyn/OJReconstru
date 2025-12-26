@@ -14,6 +14,7 @@ import com.oj.onlinejudge.domain.vo.SubmissionDetailVO;
 import com.oj.onlinejudge.domain.vo.SubmissionTestcaseResultVO;
 import com.oj.onlinejudge.exception.ApiException;
 import com.oj.onlinejudge.security.AuthenticatedUser;
+import com.oj.onlinejudge.config.Judge0Properties;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +38,7 @@ public class SubmissionApplicationService {
     private final JudgeStatusService judgeStatusService;
     private final StudentService studentService;
     private final SubmissionJudgeOrchestrator submissionJudgeOrchestrator;
+    private final Judge0Properties judge0Properties;
 
     @Transactional(rollbackFor = Exception.class)
     public SubmissionDetailVO submit(SubmissionCreateRequest request, AuthenticatedUser current) {
@@ -203,6 +205,11 @@ public class SubmissionApplicationService {
         if (student != null) {
             student.setSubmit(safeCount(student.getSubmit()) + 1);
             student.setAc(safeCount(student.getAc()));
+            if (submission.getLanguageId() != null) {
+                String languageName = judge0Properties.getLanguages()
+                        .getOrDefault(submission.getLanguageId(), String.valueOf(submission.getLanguageId()));
+                student.setLastLanguage(languageName);
+            }
             studentService.updateById(student);
         }
     }

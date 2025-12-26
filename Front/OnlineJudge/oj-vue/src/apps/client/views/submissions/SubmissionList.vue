@@ -55,7 +55,7 @@
           :data-source="list"
           :pagination="paginationConfig"
         >
-          <template #bodyCell="{ column, record }">
+          <template #bodyCell="{ column, record, text }">
           <template v-if="column.key === 'problemId'">
             <div class="problem-cell">
               <span>{{ problemCache[record.problemId]?.name || record.problemId }}</span>
@@ -85,6 +85,9 @@
             </template>
             <template v-else-if="column.key === 'actions'">
               <a-button type="link" size="small" @click="viewDetail(record)">详情</a-button>
+            </template>
+            <template v-else>
+              {{ text ?? '-' }}
             </template>
           </template>
         </a-table>
@@ -156,7 +159,6 @@ const languageOptions = [
 ];
 
 const columns: TableColumnType<Submission>[] = [
-  { title: '提交ID', dataIndex: 'id', key: 'id', width: 200 },
   { title: '学生', key: 'student', width: 180 },
   { title: '题目', dataIndex: 'problemId', key: 'problemId', width: 260 },
   { title: '语言', dataIndex: 'languageId', key: 'languageId', width: 180 },
@@ -312,8 +314,7 @@ const languageLabel = (id?: number | string) =>
 
 const studentDisplayName = (record: Submission) => {
   const cached = record.studentId ? studentCache[record.studentId] : undefined;
-  if (cached) return cached.name ? `${cached.username}（${cached.name}）` : cached.username;
-  return record.studentUsername || record.studentName || authStore.user?.username || record.studentId || '-';
+  return cached?.name || record.studentName || (record as any).name || '-';
 };
 
 const studentAvatar = (record: Submission) => {

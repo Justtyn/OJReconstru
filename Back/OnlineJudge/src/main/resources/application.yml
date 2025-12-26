@@ -95,3 +95,25 @@ judge0:
   base-url: http://10.126.126.1:2358
   timeout-ms: 15000
   wait: false
+  languages:
+    11: Bosque (latest)
+    3: C3 (latest)
+    1: C (Clang 10.0.1)
+    2: C++ (Clang 10.0.1)
+    13: C (Clang 9.0.1)
+    14: C++ (Clang 9.0.1)
+    22: C# (Mono 6.12.0.122)
+    21: C# (.NET Core SDK 3.1.406)
+    15: C++ Test (Clang 10.0.1, Google Test 1.8.1)
+    12: C++ Test (GCC 8.4.0, Google Test 1.8.1)
+    23: C# Test (.NET Core SDK 3.1.406, NUnit 3.12.0)
+    24: F# (.NET Core SDK 3.1.406)
+    4: Java (OpenJDK 14.0.1)
+    5: Java Test (OpenJDK 14.0.1, JUnit Platform Console Standalone 1.6.2)
+    6: MPI (OpenRTE 3.1.3) with C (GCC 8.4.0)
+    7: MPI (OpenRTE 3.1.3) with C++ (GCC 8.4.0)
+    8: MPI (OpenRTE 3.1.3) with Python (3.7.7)
+    89: Multi-file program
+    9: Nim (stable)
+    10: Python for ML (3.7.7)
+    20: Visual Basic.Net (vbnc 0.0.0.5943)

@@ -22,14 +22,6 @@
       <a-row :gutter="[16, 16]">
         <a-col :xs="24" :lg="16">
           <a-card class="about-page__card" :bordered="false">
-            <a-alert
-              type="info"
-              show-icon
-              message="提示"
-              description="页面内容来自系统内置帮助文档，后续可根据实际功能进度持续完善。"
-              class="about-page__alert"
-            />
-
             <a-collapse accordion class="about-page__collapse">
             <a-collapse-panel key="result" header="Q：系统的返回信息都是什么意思？">
               <a-table
@@ -390,8 +382,10 @@ const resourceCommunity = [
 }
 
 .about-hero__highlights {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 12px;
+  justify-content: flex-end;
 }
 
 .about-highlight {
@@ -402,6 +396,7 @@ const resourceCommunity = [
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 0 0 180px;
 }
 
 .about-highlight__icon {
@@ -432,11 +427,6 @@ const resourceCommunity = [
   color: var(--text-color);
   opacity: 0.82;
   margin: 8px 0 0;
-}
-
-.about-page__alert {
-  margin: 16px 0;
-  border-radius: 12px;
 }
 
 .about-page__collapse :deep(.ant-collapse-item) {

@@ -224,6 +224,9 @@ onMounted(() => {
   background: linear-gradient(135deg, rgba(14, 165, 233, 0.14), rgba(59, 130, 246, 0.16));
   border: 1px solid rgba(15, 23, 42, 0.08);
   box-shadow: 0 14px 32px rgba(15, 23, 42, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .problem-hero__top {
@@ -277,11 +280,11 @@ onMounted(() => {
 }
 
 .filter-input {
-  width: 220px;
+  width: 200px;
 }
 
 .filter-select {
-  width: 140px;
+  width: 200px;
 }
 
 .problem-card {

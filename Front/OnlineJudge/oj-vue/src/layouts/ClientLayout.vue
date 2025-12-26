@@ -15,7 +15,7 @@
       </div>
       <div class="client-layout__actions">
         <ThemeSwitcher />
-        <span class="client-layout__role">{{ authStore.role || '访客' }}</span>
+        <span class="client-layout__role" :class="roleClass">{{ roleLabel }}</span>
         <a-dropdown>
           <a class="ant-dropdown-link" @click.prevent>
             {{ authStore.user?.username || '用户' }} <DownOutlined />
@@ -40,7 +40,9 @@
       </div>
     </a-layout-header>
     <a-layout-content class="client-layout__content">
-      <RouterView />
+      <div class="client-layout__main">
+        <RouterView />
+      </div>
     </a-layout-content>
   </a-layout>
 </template>
@@ -55,6 +57,18 @@ import ThemeSwitcher from '@/components/common/ThemeSwitcher.vue';
 const router = useRouter();
 const authStore = useAuthStore();
 const isStudent = computed(() => authStore.role === 'student');
+const roleLabel = computed(() => {
+  if (authStore.role === 'student') return '学生';
+  if (authStore.role === 'teacher') return '教师';
+  if (authStore.role === 'admin') return '管理员';
+  return '访客';
+});
+const roleClass = computed(() => ({
+  'client-layout__role--student': authStore.role === 'student',
+  'client-layout__role--teacher': authStore.role === 'teacher',
+  'client-layout__role--admin': authStore.role === 'admin',
+  'client-layout__role--guest': !authStore.role,
+}));
 
 const goHome = () => {
   router.push('/home');
@@ -114,9 +128,63 @@ const handleLogout = async () => {
   padding-right: 12px;
 }
 
+.client-layout__role {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  border: 1px solid transparent;
+}
+
+.client-layout__role--student {
+  background: rgba(34, 197, 94, 0.16);
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #166534;
+}
+
+.client-layout__role--teacher {
+  background: rgba(14, 165, 233, 0.16);
+  border-color: rgba(14, 165, 233, 0.45);
+  color: #0f172a;
+}
+
+.client-layout__role--admin {
+  background: rgba(249, 115, 22, 0.16);
+  border-color: rgba(249, 115, 22, 0.45);
+  color: #9a3412;
+}
+
+.client-layout__role--guest {
+  background: rgba(148, 163, 184, 0.2);
+  border-color: rgba(148, 163, 184, 0.4);
+  color: var(--text-color);
+}
+
 .client-layout__content {
   padding: 24px 48px;
   background: var(--body-bg);
   min-height: calc(100vh - 64px);
+}
+
+.client-layout__main {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+:global(:root[data-theme='dark']) .client-layout__role--student {
+  color: #bbf7d0;
+}
+
+:global(:root[data-theme='dark']) .client-layout__role--teacher {
+  color: #e0f2fe;
+}
+
+:global(:root[data-theme='dark']) .client-layout__role--admin {
+  color: #fed7aa;
 }
 </style>

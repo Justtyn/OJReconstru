@@ -1,8 +1,7 @@
 <template>
   <PageContainer title="个人中心" subtitle="查看并管理你的账号信息与个性设置">
     <div class="profile-page">
-      <section class="profile-hero" :style="heroStyle">
-        <div class="profile-hero__overlay"></div>
+      <section class="profile-hero" :style="heroStyle" :class="{ 'profile-hero--has-bg': !!backgroundUrl }">
         <div class="profile-hero__content">
           <div class="profile-hero__main">
             <div class="profile-hero__avatar">
@@ -141,18 +140,28 @@
         </a-tab-pane>
 
         <a-tab-pane key="background" tab="背景">
-          <a-card class="profile-card" title="背景图预留">
+          <a-card class="profile-card" title="背景图">
             <div class="profile-background__hint">
-              这里预留 10 张背景图，后续可替换为真实照片。
+              已提供 12 张背景图，点击即可设置个人主页背景。
             </div>
             <div class="profile-background">
-              <div v-for="item in backgroundSlots" :key="item.id" class="background-card">
+              <div
+                v-for="item in backgroundOptions"
+                :key="item.id"
+                class="background-card"
+                :class="{
+                  'background-card--active': isBackgroundActive(item.url),
+                  'background-card--loading': backgroundSubmitting && pendingBackgroundId === item.id,
+                }"
+                role="button"
+                :aria-label="item.label"
+                tabindex="0"
+                @click="applyBackground(item)"
+                @keydown.enter="applyBackground(item)"
+                @keydown.space.prevent="applyBackground(item)"
+              >
                 <div class="background-card__thumb">
-                  <span>{{ item.label }}</span>
-                </div>
-                <div class="background-card__footer">
-                  <span>预留位</span>
-                  <a-button size="small" disabled>待替换</a-button>
+                  <img :src="item.url" :alt="item.label" loading="lazy" decoding="async" />
                 </div>
               </div>
             </div>
@@ -320,15 +329,27 @@ const passwordRules: FormProps['rules'] = {
   ],
 };
 
-const backgroundSlots = computed(() =>
-  Array.from({ length: 10 }, (_, index) => ({
-    id: index + 1,
-    label: `背景 ${String(index + 1).padStart(2, '0')}`,
-  }))
+const backgroundPrefix = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
+const resolveBackground = (value?: string | null) => {
+  if (!value) return '';
+  if (/^https?:\/\//.test(value)) return value;
+  if (value.startsWith('/')) return `${backgroundPrefix}${value}`;
+  if (value.includes('/')) return `${backgroundPrefix}/${value}`;
+  return `${backgroundPrefix}/files/avatars/background/${value}`;
+};
+const backgroundOptions = computed(() =>
+  Array.from({ length: 12 }, (_, index) => {
+    const order = String(index + 1).padStart(2, '0');
+    return {
+      id: index + 1,
+      label: `背景 ${order}`,
+      url: `${backgroundPrefix}/files/avatars/background/BackImg${order}.jpg`,
+    };
+  })
 );
 
 const avatarUrl = computed(() => studentDetail.value?.avatar || authStore.user?.avatar || '');
-const backgroundUrl = computed(() => studentDetail.value?.background || '');
+const backgroundUrl = computed(() => resolveBackground(studentDetail.value?.background));
 const displayName = computed(
   () => studentDetail.value?.name || studentDetail.value?.username || authStore.user?.username || '-'
 );
@@ -392,6 +413,53 @@ const heroStyle = computed(() => {
     backgroundPosition: 'center',
   } as Record<string, string>;
 });
+
+const backgroundSubmitting = ref(false);
+const pendingBackgroundId = ref<number | null>(null);
+const isBackgroundActive = (url: string) => backgroundUrl.value === url;
+
+const applyBackground = async (item: { id: number; url: string }) => {
+  if (backgroundSubmitting.value) return;
+  if (!studentDetail.value) {
+    message.warning('个人信息尚未加载完成');
+    return;
+  }
+  if (isBackgroundActive(item.url)) {
+    message.info('当前已使用该背景');
+    return;
+  }
+  const username = studentDetail.value.username || authStore.user?.username;
+  if (!authStore.user?.id || !username) {
+    message.error('未获取到账号信息');
+    return;
+  }
+  backgroundSubmitting.value = true;
+  pendingBackgroundId.value = item.id;
+  try {
+    const detail = studentDetail.value;
+    const payload: StudentUpsertRequest = {
+      username,
+      name: detail.name ?? undefined,
+      sex: detail.sex ?? undefined,
+      email: detail.email ?? undefined,
+      school: detail.school ?? undefined,
+      avatar: detail.avatar ?? undefined,
+      bio: detail.bio ?? undefined,
+      birth: detail.birth ?? undefined,
+      phone: detail.phone ?? undefined,
+      background: item.url,
+      score: detail.score ?? undefined,
+    };
+    const updated = await studentService.update(authStore.user.id, payload);
+    studentDetail.value = updated;
+    message.success('背景已更新');
+  } catch (error) {
+    message.error(extractErrorMessage(error, '更新背景失败'));
+  } finally {
+    backgroundSubmitting.value = false;
+    pendingBackgroundId.value = null;
+  }
+};
 
 const formatTime = (value?: string | null) => {
   if (!value) return '-';
@@ -524,20 +592,14 @@ watch(
 
 .profile-hero {
   position: relative;
-  padding: 24px 28px;
+  padding: 32px 32px;
+  min-height: 220px;
   border-radius: 18px;
   overflow: hidden;
   background-color: var(--card-bg);
   background-image: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(14, 165, 233, 0.2));
   border: 1px solid rgba(15, 23, 42, 0.08);
   box-shadow: 0 14px 30px rgba(15, 23, 42, 0.1);
-}
-
-.profile-hero__overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.12), rgba(15, 23, 42, 0.45));
-  pointer-events: none;
 }
 
 .profile-hero__content {
@@ -644,6 +706,36 @@ watch(
   color: var(--text-muted, #94a3b8);
 }
 
+.profile-hero--has-bg .profile-hero__name,
+.profile-hero--has-bg .profile-hero__meta,
+.profile-hero--has-bg .profile-hero__hint,
+.profile-hero--has-bg .profile-stat__label,
+.profile-hero--has-bg .profile-stat__desc {
+  color: rgba(248, 250, 252, 0.88);
+  text-shadow: 0 2px 8px rgba(15, 23, 42, 0.45);
+}
+
+.profile-hero--has-bg .profile-hero__text {
+  background: rgba(15, 23, 42, 0.32);
+  padding: 8px 12px;
+  border-radius: 12px;
+}
+
+.profile-hero--has-bg .profile-stat {
+  background: rgba(15, 23, 42, 0.48);
+  border-color: rgba(226, 232, 240, 0.28);
+}
+
+.profile-hero--has-bg .profile-stat__main {
+  color: #f8fafc;
+}
+
+.profile-hero--has-bg .profile-stat__pill {
+  border-color: rgba(226, 232, 240, 0.45);
+  background: rgba(15, 23, 42, 0.35);
+  color: #f8fafc;
+}
+
 .profile-tabs :deep(.ant-tabs-nav) {
   margin-bottom: 12px;
 }
@@ -711,8 +803,8 @@ watch(
 
 .profile-background {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
 }
 
 .background-card {
@@ -722,24 +814,39 @@ watch(
   border: 1px solid rgba(15, 23, 42, 0.08);
   display: flex;
   flex-direction: column;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.background-card--active {
+  border-color: rgba(59, 130, 246, 0.7);
+  box-shadow: 0 14px 28px rgba(59, 130, 246, 0.2);
+}
+
+.background-card--loading {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.background-card:focus-visible {
+  outline: 2px solid rgba(59, 130, 246, 0.6);
+  outline-offset: 2px;
 }
 
 .background-card__thumb {
-  height: 110px;
-  display: grid;
-  place-items: center;
-  background-image: linear-gradient(135deg, rgba(14, 165, 233, 0.18), rgba(59, 130, 246, 0.18));
-  color: var(--text-color);
-  font-weight: 600;
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 9;
+  background-color: rgba(15, 23, 42, 0.04);
+  overflow: hidden;
 }
 
-.background-card__footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  font-size: 12px;
-  color: var(--text-muted, #94a3b8);
+.background-card__thumb img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center;
 }
 
 .profile-muted {
@@ -757,10 +864,6 @@ watch(
   background-image: linear-gradient(135deg, rgba(30, 41, 59, 0.92), rgba(15, 23, 42, 0.95));
   border-color: rgba(148, 163, 184, 0.2);
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.36);
-}
-
-:global(:root[data-theme='dark']) .profile-hero__overlay {
-  background: linear-gradient(135deg, rgba(2, 6, 23, 0.25), rgba(2, 6, 23, 0.6));
 }
 
 :global(:root[data-theme='dark']) .profile-stat {
@@ -797,6 +900,11 @@ watch(
 }
 
 :global(:root[data-theme='dark']) .background-card__thumb {
-  background-image: linear-gradient(135deg, rgba(30, 64, 175, 0.35), rgba(14, 116, 144, 0.35));
+  background-color: rgba(2, 6, 23, 0.35);
+}
+
+:global(:root[data-theme='dark']) .background-card--active {
+  border-color: rgba(56, 189, 248, 0.6);
+  box-shadow: 0 16px 30px rgba(8, 145, 178, 0.35);
 }
 </style>

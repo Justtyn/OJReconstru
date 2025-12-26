@@ -57,7 +57,10 @@
         >
           <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'problemId'">
-            {{ problemCache[record.problemId]?.name || record.problemId }}
+            <div class="problem-cell">
+              <span>{{ problemCache[record.problemId]?.name || record.problemId }}</span>
+              <span v-if="record.homeworkId" class="homework-pill">作业提交</span>
+            </div>
           </template>
           <template v-else-if="column.key === 'student'">
             <div class="student-cell">
@@ -155,7 +158,7 @@ const languageOptions = [
 const columns: TableColumnType<Submission>[] = [
   { title: '提交ID', dataIndex: 'id', key: 'id', width: 200 },
   { title: '学生', key: 'student', width: 180 },
-  { title: '题目', dataIndex: 'problemId', key: 'problemId', width: 220 },
+  { title: '题目', dataIndex: 'problemId', key: 'problemId', width: 260 },
   { title: '语言', dataIndex: 'languageId', key: 'languageId', width: 180 },
   { title: '状态', dataIndex: 'overallStatusName', key: 'overallStatusName', width: 140 },
   { title: '通过/总数', dataIndex: 'caseCount', key: 'caseCount', width: 120 },
@@ -463,6 +466,23 @@ onBeforeUnmount(() => {
   color: var(--text-color);
 }
 
+.problem-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.homework-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(14, 165, 233, 0.35);
+  background: rgba(14, 165, 233, 0.14);
+  color: #0f172a;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
 @media (max-width: 768px) {
   .submission-hero__filters {
     flex-direction: column;
@@ -485,5 +505,11 @@ onBeforeUnmount(() => {
 
 :global(:root[data-theme='dark']) .stat-pill__value {
   color: #38bdf8;
+}
+
+:global(:root[data-theme='dark']) .homework-pill {
+  border-color: rgba(56, 189, 248, 0.5);
+  background: rgba(56, 189, 248, 0.16);
+  color: #e2e8f0;
 }
 </style>

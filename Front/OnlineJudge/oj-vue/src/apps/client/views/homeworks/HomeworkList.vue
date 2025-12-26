@@ -10,6 +10,7 @@
         </div>
         <div class="homework-hero__meta">
           <span>班级ID：{{ currentClass.id }}</span>
+          <span>教师：{{ currentClass.creatorName || currentClass.creatorId || '-' }}</span>
           <span>开课：{{ currentClass.startDate || '-' }}</span>
           <span>结课：{{ currentClass.endDate || '-' }}</span>
         </div>
@@ -30,11 +31,7 @@
       <section class="homework-hero" v-else>
         <div class="homework-hero__intro">
           <div class="homework-hero__title">加入班级</div>
-          <div class="homework-hero__desc">通过邀请码加入班级后即可查看对应作业。</div>
-        </div>
-        <div class="homework-join">
-          <a-input v-model:value="joinCode" size="small" placeholder="输入班级邀请码" class="join-input" />
-          <a-button type="primary" size="small" :loading="joining" @click="handleJoin">加入班级</a-button>
+          <div class="homework-hero__desc">选择班级后点击加入，输入邀请码验证通过即可进入。</div>
         </div>
         <div class="homework-hero__filters">
           <a-input
@@ -85,11 +82,12 @@
             <div class="class-card__title">{{ item.name }}</div>
             <div class="class-card__meta">
               <span>班级ID：{{ item.id }}</span>
-              <span>创建人：{{ item.creatorName || item.creatorId || '-' }}</span>
+              <span>教师：{{ item.creatorName || item.creatorId || '-' }}</span>
             </div>
             <div class="class-card__desc">{{ item.description || '暂无班级简介' }}</div>
             <div class="class-card__footer">
               <span>起止：{{ item.startDate || '-' }} / {{ item.endDate || '-' }}</span>
+              <a-button type="primary" size="small" :disabled="joining" @click="openJoinModal(item)">加入班级</a-button>
             </div>
           </a-card>
           <a-empty v-if="!loading && !classList.length" description="暂无班级" class="homework-empty" />
@@ -106,6 +104,20 @@
         </div>
       </a-spin>
     </div>
+
+    <a-modal
+      v-model:open="joinModalVisible"
+      title="加入班级"
+      :confirm-loading="joining"
+      destroy-on-close
+      @ok="handleJoin"
+      @cancel="closeJoinModal"
+    >
+      <div class="join-modal">
+        <div class="join-modal__title">{{ selectedClass?.name || '请选择班级' }}</div>
+        <a-input v-model:value="joinCode" placeholder="输入班级邀请码" />
+      </div>
+    </a-modal>
   </PageContainer>
 </template>
 
@@ -132,6 +144,8 @@ const loading = ref(false);
 const joining = ref(false);
 const loadError = ref('');
 const joinCode = ref('');
+const joinModalVisible = ref(false);
+const selectedClass = ref<Classes | null>(null);
 
 const classQuery = reactive<ClassesQuery>({
   page: 1,
@@ -202,8 +216,16 @@ const preloadHomeworkCounts = (records: Homework[]) => {
 };
 
 const handleJoin = async () => {
+  if (!selectedClass.value) {
+    message.error('请选择要加入的班级');
+    return;
+  }
   if (!joinCode.value.trim()) {
     message.error('请输入班级邀请码');
+    return;
+  }
+  if (selectedClass.value.code && joinCode.value.trim() !== selectedClass.value.code) {
+    message.error('邀请码不正确');
     return;
   }
   joining.value = true;
@@ -213,12 +235,26 @@ const handleJoin = async () => {
     currentClass.value = data;
     homeworkQuery.classId = data.id;
     joinCode.value = '';
+    joinModalVisible.value = false;
+    selectedClass.value = null;
     await loadHomeworks();
   } catch (error) {
     message.error(extractErrorMessage(error, '加入班级失败'));
   } finally {
     joining.value = false;
   }
+};
+
+const openJoinModal = (item: Classes) => {
+  selectedClass.value = item;
+  joinCode.value = '';
+  joinModalVisible.value = true;
+};
+
+const closeJoinModal = () => {
+  joinModalVisible.value = false;
+  selectedClass.value = null;
+  joinCode.value = '';
 };
 
 const handleClassSearch = () => {
@@ -339,13 +375,6 @@ onMounted(async () => {
   align-items: center;
 }
 
-.homework-join {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
 .homework-list,
 .class-list {
   display: flex;
@@ -355,10 +384,6 @@ onMounted(async () => {
 
 .filter-input {
   width: 220px;
-}
-
-.join-input {
-  width: 200px;
 }
 
 .homework-card,
@@ -422,13 +447,23 @@ onMounted(async () => {
   padding: 12px 0 4px;
 }
 
+.join-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.join-modal__title {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
 .homework-empty {
   margin-top: 24px;
 }
 
 @media (max-width: 768px) {
-  .homework-hero__filters,
-  .homework-join {
+  .homework-hero__filters {
     flex-direction: column;
     align-items: stretch;
   }

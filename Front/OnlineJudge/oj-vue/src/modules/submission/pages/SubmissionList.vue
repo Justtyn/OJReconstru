@@ -65,7 +65,10 @@
       >
         <template #bodyCell="{ column, record, text }">
           <template v-if="column.key === 'problemId'">
-            {{ problemCache[record.problemId]?.name || record.problemId }}
+            <div class="problem-cell">
+              <span>{{ problemCache[record.problemId]?.name || record.problemId }}</span>
+              <span v-if="record.homeworkId" class="homework-pill">作业提交</span>
+            </div>
           </template>
           <template v-else-if="column.key === 'studentId'">
             <div class="student-cell">
@@ -725,5 +728,28 @@ onBeforeUnmount(() => {
   font-size: 12px;
   color: var(--text-muted, #94a3b8);
   line-height: 1.2;
+}
+
+.problem-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.homework-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(14, 165, 233, 0.35);
+  background: rgba(14, 165, 233, 0.14);
+  color: #0f172a;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+:global(:root[data-theme='dark']) .homework-pill {
+  border-color: rgba(56, 189, 248, 0.5);
+  background: rgba(56, 189, 248, 0.16);
+  color: #e2e8f0;
 }
 </style>

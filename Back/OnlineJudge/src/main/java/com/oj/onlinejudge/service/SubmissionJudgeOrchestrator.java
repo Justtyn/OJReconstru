@@ -350,8 +350,12 @@ public class SubmissionJudgeOrchestrator {
                     .eq(HomeworkProblem::getProblemId, submission.getProblemId())
                     .one();
             if (hp != null) {
-                hp.setAcCount(safeCount(hp.getAcCount()) + 1);
-                homeworkProblemService.updateById(hp);
+                int acCount = safeCount(hp.getAcCount()) + 1;
+                homeworkProblemService.lambdaUpdate()
+                        .eq(HomeworkProblem::getHomeworkId, submission.getHomeworkId())
+                        .eq(HomeworkProblem::getProblemId, submission.getProblemId())
+                        .set(HomeworkProblem::getAcCount, acCount)
+                        .update();
             }
         }
         Student student = studentService.getById(submission.getStudentId());

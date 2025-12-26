@@ -191,9 +191,12 @@ public class SubmissionApplicationService {
                     .eq(HomeworkProblem::getProblemId, submission.getProblemId())
                     .one();
             if (hp != null) {
-                hp.setSubmitCount(safeCount(hp.getSubmitCount()) + 1);
-                hp.setAcCount(safeCount(hp.getAcCount()));
-                homeworkProblemService.updateById(hp);
+                int submitCount = safeCount(hp.getSubmitCount()) + 1;
+                homeworkProblemService.lambdaUpdate()
+                        .eq(HomeworkProblem::getHomeworkId, submission.getHomeworkId())
+                        .eq(HomeworkProblem::getProblemId, submission.getProblemId())
+                        .set(HomeworkProblem::getSubmitCount, submitCount)
+                        .update();
             }
         }
         Student student = studentService.getById(submission.getStudentId());

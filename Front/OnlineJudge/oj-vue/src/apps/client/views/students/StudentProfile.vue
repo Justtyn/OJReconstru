@@ -1,7 +1,7 @@
 <template>
   <PageContainer title="学生主页">
     <div class="student-profile">
-      <section class="profile-hero">
+      <section class="profile-hero" :style="heroStyle" :class="{ 'profile-hero--has-bg': !!backgroundUrl }">
         <div class="profile-hero__content">
           <div class="profile-hero__main">
             <a-avatar :size="88" :src="detail?.avatar">
@@ -99,6 +99,23 @@ const emailLabel = computed(() => detail.value?.email || '-');
 const schoolLabel = computed(() => detail.value?.school || '-');
 const bioLabel = computed(() => detail.value?.bio || '暂无个人简介');
 const lastLanguageLabel = computed(() => detail.value?.lastLanguage || '-');
+const backgroundPrefix = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
+const resolveBackground = (value?: string | null) => {
+  if (!value) return '';
+  if (/^https?:\/\//.test(value)) return value;
+  if (value.startsWith('/')) return `${backgroundPrefix}${value}`;
+  if (value.includes('/')) return `${backgroundPrefix}/${value}`;
+  return `${backgroundPrefix}/files/avatars/background/${value}`;
+};
+const backgroundUrl = computed(() => resolveBackground(detail.value?.background));
+const heroStyle = computed(() => {
+  if (!backgroundUrl.value) return {};
+  return {
+    backgroundImage: `url(${backgroundUrl.value})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+  } as Record<string, string>;
+});
 
 const sexLabel = computed(() => {
   const sex = detail.value?.sex;
@@ -170,14 +187,20 @@ onMounted(() => {
 }
 
 .profile-hero {
-  padding: 20px 24px;
+  position: relative;
+  padding: 28px 28px;
+  min-height: 210px;
   border-radius: 18px;
+  overflow: hidden;
+  background-color: var(--card-bg);
   background: linear-gradient(135deg, rgba(56, 189, 248, 0.16), rgba(14, 116, 144, 0.16));
   border: 1px solid rgba(15, 23, 42, 0.08);
   box-shadow: 0 14px 32px rgba(15, 23, 42, 0.1);
 }
 
 .profile-hero__content {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: minmax(240px, 1.4fr) minmax(220px, 1fr);
   gap: 20px;
@@ -268,6 +291,36 @@ onMounted(() => {
   font-size: 12px;
   margin-top: 4px;
   color: var(--text-muted, #94a3b8);
+}
+
+.profile-hero--has-bg .profile-hero__name,
+.profile-hero--has-bg .profile-hero__meta,
+.profile-hero--has-bg .profile-hero__hint,
+.profile-hero--has-bg .profile-stat__label,
+.profile-hero--has-bg .profile-stat__desc {
+  color: rgba(248, 250, 252, 0.88);
+  text-shadow: 0 2px 8px rgba(15, 23, 42, 0.45);
+}
+
+.profile-hero--has-bg .profile-hero__text {
+  background: rgba(15, 23, 42, 0.32);
+  padding: 8px 12px;
+  border-radius: 12px;
+}
+
+.profile-hero--has-bg .profile-stat {
+  background: rgba(15, 23, 42, 0.48);
+  border-color: rgba(226, 232, 240, 0.28);
+}
+
+.profile-hero--has-bg .profile-stat__main {
+  color: #f8fafc;
+}
+
+.profile-hero--has-bg .profile-stat__pill {
+  border-color: rgba(226, 232, 240, 0.45);
+  background: rgba(15, 23, 42, 0.35);
+  color: #f8fafc;
 }
 
 .profile-card {

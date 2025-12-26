@@ -59,6 +59,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DuplicateKeyException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ApiResponse<Void> handleDuplicateKey(DuplicateKeyException ex) {
+        log.warn("Duplicate key exception: {}", ex.getMessage(), ex);
         return ApiResponse.failure(HttpStatus.CONFLICT.value(), "数据已存在或违反唯一约束");
     }
 

@@ -40,8 +40,20 @@
       </div>
     </a-layout-header>
     <a-layout-content class="client-layout__content">
+      <div class="client-layout__bg" aria-hidden="true"></div>
       <div class="client-layout__main">
-        <RouterView />
+        <RouterView v-slot="{ Component, route }">
+          <Transition name="client-fade" mode="out-in">
+            <Suspense>
+              <component :is="Component" :key="route.fullPath" />
+              <template #fallback>
+                <div class="client-layout__loading">
+                  <a-spin size="large" />
+                </div>
+              </template>
+            </Suspense>
+          </Transition>
+        </RouterView>
       </div>
     </a-layout-content>
   </a-layout>
@@ -168,12 +180,84 @@ const handleLogout = async () => {
   padding: 24px 48px;
   background: var(--body-bg);
   min-height: calc(100vh - 64px);
+  position: relative;
+  overflow: hidden;
+}
+
+.client-layout__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.45;
+  overflow: hidden;
+}
+
+.client-layout__bg::before,
+.client-layout__bg::after {
+  content: '';
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.22), rgba(59, 130, 246, 0));
+  filter: blur(2px);
+  animation: client-float 18s ease-in-out infinite;
+}
+
+.client-layout__bg::before {
+  top: -120px;
+  right: -140px;
+}
+
+.client-layout__bg::after {
+  bottom: -140px;
+  left: -120px;
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.18), rgba(34, 197, 94, 0));
+  animation: client-float 22s ease-in-out infinite reverse;
 }
 
 .client-layout__main {
   width: 100%;
   max-width: 1440px;
   margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.client-layout__loading {
+  min-height: 240px;
+  display: grid;
+  place-items: center;
+}
+
+.client-fade-enter-active,
+.client-fade-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.client-fade-enter-from,
+.client-fade-leave-to {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+@keyframes client-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(12px, -18px, 0) scale(1.04);
+  }
+}
+
+:global(:root[data-theme='dark']) .client-layout__bg::before {
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.18), rgba(56, 189, 248, 0));
+}
+
+:global(:root[data-theme='dark']) .client-layout__bg::after {
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0));
 }
 
 :global(:root[data-theme='dark']) .client-layout__role--student {

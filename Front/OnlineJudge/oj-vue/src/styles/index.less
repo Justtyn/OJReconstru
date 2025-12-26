@@ -35,6 +35,7 @@ body {
   background-color: var(--body-bg);
   color: var(--text-color);
   transition: background-color 0.3s, color 0.3s;
+  overflow-x: hidden;
 }
 
 .admin-layout__content,
@@ -95,4 +96,149 @@ a {
   width: 100%;
   max-width: 360px;
   margin: 0 auto;
+}
+
+.client-layout .markdown-body,
+.admin-layout .markdown-body {
+  color: var(--text-color);
+  line-height: 1.8;
+  font-size: 14px;
+  word-break: break-word;
+}
+
+.client-layout .markdown-body h1,
+.client-layout .markdown-body h2,
+.client-layout .markdown-body h3,
+.client-layout .markdown-body h4,
+.admin-layout .markdown-body h1,
+.admin-layout .markdown-body h2,
+.admin-layout .markdown-body h3,
+.admin-layout .markdown-body h4 {
+  margin: 16px 0 10px;
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+.client-layout .markdown-body h1,
+.admin-layout .markdown-body h1 {
+  font-size: 20px;
+}
+
+.client-layout .markdown-body h2,
+.admin-layout .markdown-body h2 {
+  font-size: 18px;
+}
+
+.client-layout .markdown-body h3,
+.admin-layout .markdown-body h3 {
+  font-size: 16px;
+}
+
+.client-layout .markdown-body p,
+.admin-layout .markdown-body p {
+  margin: 0 0 10px;
+}
+
+.client-layout .markdown-body ul,
+.client-layout .markdown-body ol,
+.admin-layout .markdown-body ul,
+.admin-layout .markdown-body ol {
+  padding-left: 18px;
+  margin: 0 0 10px;
+}
+
+.client-layout .markdown-body blockquote,
+.admin-layout .markdown-body blockquote {
+  margin: 10px 0;
+  padding: 8px 12px;
+  border-left: 3px solid rgba(14, 165, 233, 0.5);
+  background: rgba(14, 165, 233, 0.08);
+  color: var(--text-color);
+}
+
+.client-layout .markdown-body pre,
+.client-layout .markdown-body code,
+.admin-layout .markdown-body pre,
+.admin-layout .markdown-body code {
+  font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+.client-layout .markdown-body pre,
+.admin-layout .markdown-body pre {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  overflow: auto;
+}
+
+.client-layout .markdown-body pre code,
+.admin-layout .markdown-body pre code {
+  background: transparent;
+  padding: 0;
+  color: var(--text-color);
+  font-size: 12.5px;
+}
+
+.client-layout .markdown-body :not(pre) > code,
+.admin-layout .markdown-body :not(pre) > code {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  font-size: 12.5px;
+}
+
+.client-layout .markdown-body table,
+.admin-layout .markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 13px;
+}
+
+.client-layout .markdown-body th,
+.client-layout .markdown-body td,
+.admin-layout .markdown-body th,
+.admin-layout .markdown-body td {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  padding: 6px 10px;
+}
+
+.client-layout .markdown-body hr,
+.admin-layout .markdown-body hr {
+  border: none;
+  border-top: 1px solid rgba(15, 23, 42, 0.12);
+  margin: 12px 0;
+}
+
+.client-layout .markdown-body a,
+.admin-layout .markdown-body a {
+  color: #2563eb;
+}
+
+:root[data-theme='dark'] .client-layout .markdown-body blockquote,
+:root[data-theme='dark'] .admin-layout .markdown-body blockquote {
+  border-left-color: rgba(56, 189, 248, 0.6);
+  background: rgba(56, 189, 248, 0.12);
+}
+
+:root[data-theme='dark'] .client-layout .markdown-body pre,
+:root[data-theme='dark'] .admin-layout .markdown-body pre {
+  background: rgba(15, 23, 42, 0.65);
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+:root[data-theme='dark'] .client-layout .markdown-body :not(pre) > code,
+:root[data-theme='dark'] .admin-layout .markdown-body :not(pre) > code {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+:root[data-theme='dark'] .client-layout .markdown-body th,
+:root[data-theme='dark'] .client-layout .markdown-body td,
+:root[data-theme='dark'] .admin-layout .markdown-body th,
+:root[data-theme='dark'] .admin-layout .markdown-body td {
+  border-color: rgba(148, 163, 184, 0.2);
 }

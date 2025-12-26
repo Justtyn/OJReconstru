@@ -23,7 +23,21 @@
         </a-space>
       </a-layout-header>
       <a-layout-content class="admin-layout__content">
-        <RouterView />
+        <div class="admin-layout__bg" aria-hidden="true"></div>
+        <div class="admin-layout__view">
+          <RouterView v-slot="{ Component, route }">
+            <Transition name="admin-fade" mode="out-in">
+              <Suspense>
+                <component :is="Component" :key="route.fullPath" />
+                <template #fallback>
+                  <div class="admin-layout__loading">
+                    <a-spin size="large" />
+                  </div>
+                </template>
+              </Suspense>
+            </Transition>
+          </RouterView>
+        </div>
       </a-layout-content>
     </a-layout>
   </a-layout>
@@ -213,6 +227,80 @@ const backToClient = () => {
   padding: 24px;
   background: var(--body-bg);
   overflow: auto;
+  position: relative;
+}
+
+.admin-layout__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  overflow: hidden;
+}
+
+.admin-layout__bg::before,
+.admin-layout__bg::after {
+  content: '';
+  position: absolute;
+  width: 360px;
+  height: 360px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.16), rgba(99, 102, 241, 0));
+  animation: admin-float 20s ease-in-out infinite;
+}
+
+.admin-layout__bg::before {
+  top: -120px;
+  right: -120px;
+}
+
+.admin-layout__bg::after {
+  bottom: -120px;
+  left: -120px;
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.16), rgba(14, 165, 233, 0));
+  animation: admin-float 24s ease-in-out infinite reverse;
+}
+
+.admin-layout__view {
+  position: relative;
+  z-index: 1;
+  min-height: 100%;
+}
+
+.admin-layout__loading {
+  min-height: 240px;
+  display: grid;
+  place-items: center;
+}
+
+.admin-fade-enter-active,
+.admin-fade-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.admin-fade-enter-from,
+.admin-fade-leave-to {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+@keyframes admin-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(10px, -14px, 0) scale(1.04);
+  }
+}
+
+:global(:root[data-theme='dark']) .admin-layout__bg::before {
+  background: radial-gradient(circle, rgba(129, 140, 248, 0.14), rgba(129, 140, 248, 0));
+}
+
+:global(:root[data-theme='dark']) .admin-layout__bg::after {
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.12), rgba(56, 189, 248, 0));
 }
 
 .role-badge {

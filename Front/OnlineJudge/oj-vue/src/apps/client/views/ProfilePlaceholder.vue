@@ -64,7 +64,7 @@
       <a-tabs v-model:activeKey="activeTab" type="card" class="profile-tabs">
         <a-tab-pane key="info" tab="信息">
           <a-row :gutter="[16, 16]">
-            <a-col :xs="24" :lg="16">
+            <a-col :xs="24" :lg="14">
               <a-card class="profile-card" title="个人信息" :loading="loading">
                 <template v-if="!loading && studentDetail">
                   <a-descriptions :column="{ xs: 1, sm: 1, md: 2 }" size="small" bordered>
@@ -85,7 +85,7 @@
                 </template>
               </a-card>
             </a-col>
-            <a-col :xs="24" :lg="8">
+            <a-col :xs="24" :lg="10">
               <a-card class="profile-card" title="学习概览" :loading="loading">
                 <template v-if="!loading && studentDetail">
                   <div class="profile-progress">

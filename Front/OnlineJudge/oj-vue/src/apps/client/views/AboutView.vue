@@ -20,7 +20,7 @@
       </section>
 
       <a-row :gutter="[16, 16]">
-        <a-col :xs="24" :lg="16">
+        <a-col :xs="24" :lg="15">
           <a-card class="about-page__card" :bordered="false">
             <a-collapse accordion class="about-page__collapse">
             <a-collapse-panel key="result" header="Q：系统的返回信息都是什么意思？">
@@ -147,7 +147,7 @@
           </a-card>
         </a-col>
 
-        <a-col :xs="24" :lg="8">
+        <a-col :xs="24" :lg="9">
           <a-card class="about-page__card" :bordered="false" title="项目信息">
             <a-space direction="vertical" style="width: 100%">
               <a-descriptions :column="1" size="small">

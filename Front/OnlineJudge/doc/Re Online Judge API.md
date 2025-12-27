@@ -146,6 +146,7 @@ GET /api/teachers
 |---|---|---|---|---|
 |page|query|integer(int64)| 否 |页码|
 |size|query|integer(int64)| 否 |每页条数|
+|keyword|query|string| 否 |用户名/姓名/邮箱关键字|
 
 > 返回示例
 
@@ -330,6 +331,7 @@ GET /api/students
 |名称|位置|类型|必选|说明|
 |---|---|---|---|---|
 |size|query|integer(int64)| 否 |每页条数|
+|keyword|query|string| 否 |用户名/姓名/邮箱关键字|
 |username|query|string| 否 |按用户名模糊搜索|
 |email|query|string| 否 |按邮箱模糊搜索|
 |page|query|integer(int64)| 否 |页码|
@@ -448,7 +450,8 @@ PUT /api/solutions/{id}
   "title": "string",
   "content": "string",
   "language": "string",
-  "isActive": true
+  "isActive": true,
+  "authorId": 0
 }
 ```
 
@@ -520,6 +523,8 @@ GET /api/problems/{problemId}/solutions
 |problemId|path|integer(int64)| 是 |none|
 |page|query|integer(int64)| 否 |none|
 |size|query|integer(int64)| 否 |none|
+|title|query|string| 否 |标题模糊查询|
+|isActive|query|boolean| 否 |按启用状态过滤（管理员/教师可用）|
 
 > 返回示例
 
@@ -544,7 +549,7 @@ GET /api/problems/{problemId}/solutions
 
 POST /api/problems/{problemId}/solutions
 
-仅学生可发布，路径参数指定题目ID
+学生或管理员可发布，管理员需指定 authorId 为学生ID，路径参数指定题目ID；发布成功为作者积分+3
 
 > Body 请求参数
 
@@ -554,7 +559,8 @@ POST /api/problems/{problemId}/solutions
   "title": "string",
   "content": "string",
   "language": "string",
-  "isActive": true
+  "isActive": true,
+  "authorId": 0
 }
 ```
 
@@ -598,7 +604,9 @@ GET /api/solutions
 |size|query|integer(int64)| 否 |none|
 |problemId|query|integer(int64)| 否 |题目ID过滤|
 |authorId|query|integer(int64)| 否 |作者学生ID过滤|
+|title|query|string| 否 |标题模糊查询|
 |includeInactive|query|boolean| 否 |是否包含未启用题解，仅管理员可用|
+|isActive|query|boolean| 否 |按启用状态过滤（管理员/教师可用）|
 
 > 返回示例
 
@@ -731,6 +739,8 @@ DELETE /api/login-logs/{id}
 
 GET /api/login-logs
 
+支持按角色、用户ID、用户名模糊查询，按登录时间倒序返回
+
 ### 请求参数
 
 |名称|位置|类型|必选|说明|
@@ -739,6 +749,7 @@ GET /api/login-logs
 |size|query|integer(int64)| 否 |每页条数|
 |role|query|string| 否 |角色过滤|
 |userId|query|integer(int64)| 否 |用户ID过滤|
+|username|query|string| 否 |用户名模糊查询|
 
 > 返回示例
 
@@ -923,6 +934,7 @@ GET /api/homeworks
 |page|query|integer(int64)| 否 |none|
 |size|query|integer(int64)| 否 |none|
 |classId|query|integer(int64)| 否 |按班级过滤|
+|keyword|query|string| 否 |标题/描述关键字|
 |activeOnly|query|boolean| 否 |是否仅返回启用作业|
 
 > 返回示例
@@ -1130,7 +1142,8 @@ PUT /api/discussions/{id}
   "title": "string",
   "content": "string",
   "problemId": 0,
-  "isActive": true
+  "isActive": true,
+  "authorId": 0
 }
 ```
 
@@ -1193,6 +1206,8 @@ DELETE /api/discussions/{id}
 
 GET /api/discussions
 
+支持按题目、作者、标题、内容、启用状态筛选，管理员可查看未启用讨论
+
 ### 请求参数
 
 |名称|位置|类型|必选|说明|
@@ -1201,6 +1216,9 @@ GET /api/discussions
 |size|query|integer(int64)| 否 |none|
 |problemId|query|integer(int64)| 否 |关联题目过滤|
 |userId|query|integer(int64)| 否 |作者过滤|
+|title|query|string| 否 |标题模糊查询|
+|content|query|string| 否 |内容模糊查询|
+|isActive|query|boolean| 否 |按启用状态过滤（管理员/教师可用）|
 |includeInactive|query|boolean| 否 |管理员专用：是否包含未启用讨论|
 
 > 返回示例
@@ -1222,9 +1240,11 @@ GET /api/discussions
 
 <a id="opIdcreate_6"></a>
 
-## POST 讨论-创建（学生）
+## POST 讨论-创建（学生/管理员）
 
 POST /api/discussions
+
+管理员发布需指定 authorId 为学生ID；发布成功为作者积分+3
 
 > Body 请求参数
 
@@ -1233,7 +1253,8 @@ POST /api/discussions
   "title": "string",
   "content": "string",
   "problemId": 0,
-  "isActive": true
+  "isActive": true,
+  "authorId": 0
 }
 ```
 
@@ -1291,15 +1312,18 @@ GET /api/discussions/{id}/comments
 
 <a id="opIdcreateComment"></a>
 
-## POST 讨论评论-创建（学生）
+## POST 讨论评论-创建（学生/管理员）
 
 POST /api/discussions/{id}/comments
+
+管理员评论需指定 authorId 为学生ID
 
 > Body 请求参数
 
 ```json
 {
-  "content": "string"
+  "content": "string",
+  "authorId": 0
 }
 ```
 
@@ -1471,6 +1495,7 @@ GET /api/classes
 |---|---|---|---|---|
 |page|query|integer(int64)| 否 |页码|
 |size|query|integer(int64)| 否 |每页条数|
+|keyword|query|string| 否 |名称/描述/邀请码关键字|
 
 > 返回示例
 
@@ -1824,6 +1849,7 @@ GET /api/admins
 |---|---|---|---|---|
 |page|query|integer(int64)| 否 |页码，从1开始|
 |size|query|integer(int64)| 否 |每页条数|
+|keyword|query|string| 否 |用户名/姓名/邮箱关键字|
 
 > 返回示例
 
@@ -1965,6 +1991,35 @@ DELETE /api/admin/problems/{id}
 |状态码|状态码含义|说明|数据模型|
 |---|---|---|---|
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseVoid](#schemaapiresponsevoid)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+<a id="opIdgetTestcase"></a>
+
+## GET 题库-测试用例详情
+
+GET /api/admin/problem-testcases/{testcaseId}
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|testcaseId|path|integer(int64)| 是 |测试用例ID|
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":{"id":0,"problemId":0,"inputData":"string","outputData":"string"}}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseProblemTestcase](#schemaapiresponseproblemtestcase)|
 |400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
 |409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
 |500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
@@ -2292,7 +2347,7 @@ GET /api/submissions
 > 200 Response
 
 ```
-{"code":0,"message":"string","data":{"records":[{"id":0,"problemId":0,"homeworkId":0,"languageId":0,"overallStatusId":0,"overallStatusCode":"string","overallStatusName":"string","passedCaseCount":0,"totalCaseCount":0,"score":0,"createdAt":"2019-08-24T14:15:22Z","updatedAt":"2019-08-24T14:15:22Z"}],"total":0,"size":0,"current":0,"orders":[{"column":"string","asc":true}],"optimizeCountSql":true,"searchCount":true,"maxLimit":0,"countId":"string","pages":0}}
+{"code":0,"message":"string","data":{"records":[{"id":0,"studentId":0,"problemId":0,"homeworkId":0,"languageId":0,"overallStatusId":0,"overallStatusCode":"string","overallStatusName":"string","passedCaseCount":0,"totalCaseCount":0,"score":0,"createdAt":"2019-08-24T14:15:22Z","updatedAt":"2019-08-24T14:15:22Z"}],"total":0,"size":0,"current":0,"orders":[{"column":"string","asc":true}],"optimizeCountSql":true,"searchCount":true,"maxLimit":0,"countId":"string","pages":0}}
 ```
 
 ### 返回结果
@@ -2310,12 +2365,15 @@ GET /api/submissions
 
 POST /api/submissions
 
+判题通过（ACCEPTED）后为该学生积分+5，其他状态不加分
+
 > Body 请求参数
 
 ```json
 {
   "problemId": 0,
   "homeworkId": 0,
+  "studentId": 0,
   "languageId": 0,
   "sourceCode": "string"
 }
@@ -2332,7 +2390,7 @@ POST /api/submissions
 > 200 Response
 
 ```
-{"code":0,"message":"string","data":{"id":0,"problemId":0,"homeworkId":0,"languageId":0,"overallStatusId":0,"overallStatusCode":"string","overallStatusName":"string","passedCaseCount":0,"totalCaseCount":0,"score":0,"createdAt":"2019-08-24T14:15:22Z","updatedAt":"2019-08-24T14:15:22Z","sourceCode":"string","testcaseResults":[{"testcaseId":0,"statusId":0,"statusDescription":"string","stdout":"string","stderr":"string","compileOutput":"string","message":"string","timeUsed":0,"memoryUsed":0}]}}
+{"code":0,"message":"string","data":{"id":0,"studentId":0,"problemId":0,"homeworkId":0,"languageId":0,"overallStatusId":0,"overallStatusCode":"string","overallStatusName":"string","passedCaseCount":0,"totalCaseCount":0,"score":0,"createdAt":"2019-08-24T14:15:22Z","updatedAt":"2019-08-24T14:15:22Z","sourceCode":"string","testcaseResults":[{"testcaseId":0,"statusId":0,"statusDescription":"string","stdout":"string","stderr":"string","compileOutput":"string","message":"string","timeUsed":0,"memoryUsed":0}]}}
 ```
 
 ### 返回结果
@@ -2361,7 +2419,7 @@ GET /api/submissions/{id}
 > 200 Response
 
 ```
-{"code":0,"message":"string","data":{"id":0,"problemId":0,"homeworkId":0,"languageId":0,"overallStatusId":0,"overallStatusCode":"string","overallStatusName":"string","passedCaseCount":0,"totalCaseCount":0,"score":0,"createdAt":"2019-08-24T14:15:22Z","updatedAt":"2019-08-24T14:15:22Z","sourceCode":"string","testcaseResults":[{"testcaseId":0,"statusId":0,"statusDescription":"string","stdout":"string","stderr":"string","compileOutput":"string","message":"string","timeUsed":0,"memoryUsed":0}]}}
+{"code":0,"message":"string","data":{"id":0,"studentId":0,"problemId":0,"homeworkId":0,"languageId":0,"overallStatusId":0,"overallStatusCode":"string","overallStatusName":"string","passedCaseCount":0,"totalCaseCount":0,"score":0,"createdAt":"2019-08-24T14:15:22Z","updatedAt":"2019-08-24T14:15:22Z","sourceCode":"string","testcaseResults":[{"testcaseId":0,"statusId":0,"statusDescription":"string","stdout":"string","stderr":"string","compileOutput":"string","message":"string","timeUsed":0,"memoryUsed":0}]}}
 ```
 
 ### 返回结果
@@ -2589,6 +2647,46 @@ POST /api/auth/register
 |409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
 |500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
 
+<a id="opIdresendRegisterCode"></a>
+
+## POST 注册重发验证码
+
+POST /api/auth/register/resendCode
+
+已提交注册信息但未验证邮箱时，通过用户名+密码重新发送验证码
+
+> Body 请求参数
+
+```json
+{
+  "username": "string",
+  "password": "string"
+}
+```
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|body|body|[ResendRegisterCodeRequest](#schemaresendregistercoderequest)| 是 |none|
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":{}}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseVoid](#schemaapiresponsevoid)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
 <a id="opIdforgotPasswordVerify"></a>
 
 ## POST 找回密码-验证并重置(学生)
@@ -2808,7 +2906,7 @@ GET /api/auth/users/me
 
 GET /api/problems
 
-支持按名称关键字、难度、挑战标签筛选，只返回启用题目
+支持按名称关键字、难度、挑战标签筛选，教师/管理员自动可见全部题目
 
 ### 请求参数
 
@@ -2820,6 +2918,7 @@ GET /api/problems
 |difficulty|query|string| 否 |难度过滤：easy/medium/hard|
 |dailyChallenge|query|string| 否 |日常挑战标识|
 |activeOnly|query|boolean| 否 |是否仅返回启用题目|
+|isActive|query|boolean| 否 |按启用状态过滤，管理员/教师可用|
 
 > 返回示例
 
@@ -2887,6 +2986,7 @@ GET /api/announcements
 |size|query|integer(int64)| 否 |none|
 |pinnedOnly|query|boolean| 否 |是否只看置顶|
 |keyword|query|string| 否 |标题关键字|
+|includeInactive|query|boolean| 否 |是否包含未启用公告，管理员默认包含|
 
 > 返回示例
 
@@ -2930,6 +3030,358 @@ GET /api/announcements/{id}
 |状态码|状态码含义|说明|数据模型|
 |---|---|---|---|
 |200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseAnnouncement](#schemaapiresponseannouncement)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+# 可视化数据
+
+<a id="opIdsummary"></a>
+
+## GET 全局概览
+
+GET /api/analytics/summary
+
+返回提交、题目、题解、讨论、登录等核心计数
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":{"submissionTotal":0,"submissionAccepted":0,"problemActive":0,"problemInactive":0,"solutionTotal":0,"solutionActive":0,"discussionTotal":0,"discussionActive":0,"loginSuccess":0,"loginFail":0}}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseAnalyticsSummaryVO](#schemaapiresponseanalyticssummaryvo)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+<a id="opIdsubmissionTimeseries"></a>
+
+## GET 提交数量趋势
+
+GET /api/analytics/submissions/timeseries
+
+按日/周/月/年或全部聚合提交量和通过量，支持自定义时间范围绘制折线图
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|granularity|query|string| 否 |聚合粒度：day/week/month/year/all，默认 day|
+|startTime|query|string(date-time)| 否 |起始时间，ISO-8601，可选|
+|endTime|query|string(date-time)| 否 |结束时间，ISO-8601，可选|
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":[{"label":"string","total":0,"success":0,"fail":0,"bucketStart":"2019-08-24T14:15:22Z","bucketEnd":"2019-08-24T14:15:22Z"}]}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseListAnalyticsTimeseriesVO](#schemaapiresponselistanalyticstimeseriesvo)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+<a id="opIdsubmissionStatus"></a>
+
+## GET 提交状态分布
+
+GET /api/analytics/submissions/status
+
+按 overallStatusId 聚合提交数量，支持时间区间过滤，供图表展示
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|startTime|query|string(date-time)| 否 |起始时间，ISO-8601，可选|
+|endTime|query|string(date-time)| 否 |结束时间，ISO-8601，可选|
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":[{"statusId":0,"total":0,"name":"string","code":"string","percentage":0.1}]}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseListAnalyticsStatusCountVO](#schemaapiresponselistanalyticsstatuscountvo)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+<a id="opIdsolutionTimeseries"></a>
+
+## GET 题解发布趋势
+
+GET /api/analytics/solutions/timeseries
+
+按日/周/月/年或全部聚合题解数量，支持自定义时间范围
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|granularity|query|string| 否 |聚合粒度：day/week/month/year/all，默认 day|
+|startTime|query|string(date-time)| 否 |起始时间，ISO-8601，可选|
+|endTime|query|string(date-time)| 否 |结束时间，ISO-8601，可选|
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":[{"label":"string","total":0,"success":0,"fail":0,"bucketStart":"2019-08-24T14:15:22Z","bucketEnd":"2019-08-24T14:15:22Z"}]}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseListAnalyticsTimeseriesVO](#schemaapiresponselistanalyticstimeseriesvo)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+<a id="opIdsolutionStatus"></a>
+
+## GET 题解启用状态分布
+
+GET /api/analytics/solutions/status
+
+用于饼图：启用/禁用题解数量，支持时间过滤
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|startTime|query|string(date-time)| 否 |起始时间，ISO-8601，可选|
+|endTime|query|string(date-time)| 否 |结束时间，ISO-8601，可选|
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":[{"statusId":0,"total":0,"name":"string","code":"string","percentage":0.1}]}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseListAnalyticsStatusCountVO](#schemaapiresponselistanalyticsstatuscountvo)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+<a id="opIdproblemTimeseries"></a>
+
+## GET 题目发布趋势
+
+GET /api/analytics/problems/timeseries
+
+按日/周/月/年或全部聚合题目数量，支持自定义时间范围
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|granularity|query|string| 否 |聚合粒度：day/week/month/year/all，默认 day|
+|startTime|query|string(date-time)| 否 |起始时间，ISO-8601，可选|
+|endTime|query|string(date-time)| 否 |结束时间，ISO-8601，可选|
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":[{"label":"string","total":0,"success":0,"fail":0,"bucketStart":"2019-08-24T14:15:22Z","bucketEnd":"2019-08-24T14:15:22Z"}]}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseListAnalyticsTimeseriesVO](#schemaapiresponselistanalyticstimeseriesvo)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+<a id="opIdproblemStatus"></a>
+
+## GET 题目启用状态分布
+
+GET /api/analytics/problems/status
+
+统计题目启用/禁用数量，用于饼图，可按时间过滤
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|startTime|query|string(date-time)| 否 |起始时间，ISO-8601，可选|
+|endTime|query|string(date-time)| 否 |结束时间，ISO-8601，可选|
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":[{"statusId":0,"total":0,"name":"string","code":"string","percentage":0.1}]}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseListAnalyticsStatusCountVO](#schemaapiresponselistanalyticsstatuscountvo)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+<a id="opIdloginTimeseries"></a>
+
+## GET 登录趋势
+
+GET /api/analytics/logins/timeseries
+
+按日/周/月/年或全部聚合登录成功/失败次数，支持时间窗口过滤
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|granularity|query|string| 否 |聚合粒度：day/week/month/year/all，默认 day|
+|startTime|query|string(date-time)| 否 |起始时间，ISO-8601，可选|
+|endTime|query|string(date-time)| 否 |结束时间，ISO-8601，可选|
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":[{"label":"string","total":0,"success":0,"fail":0,"bucketStart":"2019-08-24T14:15:22Z","bucketEnd":"2019-08-24T14:15:22Z"}]}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseListAnalyticsTimeseriesVO](#schemaapiresponselistanalyticstimeseriesvo)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+<a id="opIdloginStatus"></a>
+
+## GET 登录结果分布
+
+GET /api/analytics/logins/status
+
+统计登录成功/失败次数，供安全审计图表使用，可按时间过滤
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|startTime|query|string(date-time)| 否 |起始时间，ISO-8601，可选|
+|endTime|query|string(date-time)| 否 |结束时间，ISO-8601，可选|
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":[{"statusId":0,"total":0,"name":"string","code":"string","percentage":0.1}]}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseListAnalyticsStatusCountVO](#schemaapiresponselistanalyticsstatuscountvo)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+<a id="opIddiscussionTimeseries"></a>
+
+## GET 讨论发布趋势
+
+GET /api/analytics/discussions/timeseries
+
+按日/周/月/年或全部聚合讨论数量，支持自定义时间范围
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|granularity|query|string| 否 |聚合粒度：day/week/month/year/all，默认 day|
+|startTime|query|string(date-time)| 否 |起始时间，ISO-8601，可选|
+|endTime|query|string(date-time)| 否 |结束时间，ISO-8601，可选|
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":[{"label":"string","total":0,"success":0,"fail":0,"bucketStart":"2019-08-24T14:15:22Z","bucketEnd":"2019-08-24T14:15:22Z"}]}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseListAnalyticsTimeseriesVO](#schemaapiresponselistanalyticstimeseriesvo)|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
+|409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
+|500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
+
+<a id="opIddiscussionStatus"></a>
+
+## GET 讨论启用状态分布
+
+GET /api/analytics/discussions/status
+
+用于饼图：启用/禁用讨论数量，支持时间过滤
+
+### 请求参数
+
+|名称|位置|类型|必选|说明|
+|---|---|---|---|---|
+|startTime|query|string(date-time)| 否 |起始时间，ISO-8601，可选|
+|endTime|query|string(date-time)| 否 |结束时间，ISO-8601，可选|
+
+> 返回示例
+
+> 200 Response
+
+```
+{"code":0,"message":"string","data":[{"statusId":0,"total":0,"name":"string","code":"string","percentage":0.1}]}
+```
+
+### 返回结果
+
+|状态码|状态码含义|说明|数据模型|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[ApiResponseListAnalyticsStatusCountVO](#schemaapiresponselistanalyticsstatuscountvo)|
 |400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|Bad Request|[ApiResponseVoid](#schemaapiresponsevoid)|
 |409|[Conflict](https://tools.ietf.org/html/rfc7231#section-6.5.8)|Conflict|[ApiResponseVoid](#schemaapiresponsevoid)|
 |500|[Internal Server Error](https://tools.ietf.org/html/rfc7231#section-6.6.1)|Internal Server Error|[ApiResponseVoid](#schemaapiresponsevoid)|
@@ -3251,7 +3703,8 @@ GET /api/announcements/{id}
   "title": "string",
   "content": "string",
   "language": "string",
-  "isActive": true
+  "isActive": true,
+  "authorId": 0
 }
 
 ```
@@ -3267,6 +3720,7 @@ GET /api/announcements/{id}
 |content|string|true|none||none|
 |language|string|false|none||语言|
 |isActive|boolean|false|none||是否启用|
+|authorId|integer(int64)|false|none||管理员代学生发布时指定学生ID，仅创建时使用|
 
 <h2 id="tocS_ApiResponseSolution">ApiResponseSolution</h2>
 
@@ -3589,7 +4043,8 @@ GET /api/announcements/{id}
   "title": "string",
   "content": "string",
   "problemId": 0,
-  "isActive": true
+  "isActive": true,
+  "authorId": 0
 }
 
 ```
@@ -3604,6 +4059,7 @@ GET /api/announcements/{id}
 |content|string|true|none||none|
 |problemId|integer(int64)|false|none||none|
 |isActive|boolean|false|none||none|
+|authorId|integer(int64)|false|none||管理员代学生发布时指定学生ID，仅创建时使用|
 
 <h2 id="tocS_ApiResponseDiscussion">ApiResponseDiscussion</h2>
 
@@ -4329,6 +4785,7 @@ GET /api/announcements/{id}
 {
   "problemId": 0,
   "homeworkId": 0,
+  "studentId": 0,
   "languageId": 0,
   "sourceCode": "string"
 }
@@ -4343,6 +4800,7 @@ GET /api/announcements/{id}
 |---|---|---|---|---|---|
 |problemId|integer(int64)|true|none||none|
 |homeworkId|integer(int64)|false|none||none|
+|studentId|integer(int64)|false|none||（仅管理员）代提交的学生ID|
 |languageId|integer(int32)|true|none||none|
 |sourceCode|string|true|none||none|
 
@@ -4359,6 +4817,7 @@ GET /api/announcements/{id}
   "message": "string",
   "data": {
     "id": 0,
+    "studentId": 0,
     "problemId": 0,
     "homeworkId": 0,
     "languageId": 0,
@@ -4407,6 +4866,7 @@ GET /api/announcements/{id}
 ```json
 {
   "id": 0,
+  "studentId": 0,
   "problemId": 0,
   "homeworkId": 0,
   "languageId": 0,
@@ -4443,6 +4903,7 @@ GET /api/announcements/{id}
 |名称|类型|必选|约束|中文名|说明|
 |---|---|---|---|---|---|
 |id|integer(int64)|false|none||none|
+|studentId|integer(int64)|false|none||none|
 |problemId|integer(int64)|false|none||none|
 |homeworkId|integer(int64)|false|none||none|
 |languageId|integer(int32)|false|none||none|
@@ -4578,7 +5039,8 @@ GET /api/announcements/{id}
 
 ```json
 {
-  "content": "string"
+  "content": "string",
+  "authorId": 0
 }
 
 ```
@@ -4590,6 +5052,7 @@ GET /api/announcements/{id}
 |名称|类型|必选|约束|中文名|说明|
 |---|---|---|---|---|---|
 |content|string|true|none||none|
+|authorId|integer(int64)|false|none||管理员代学生评论时指定学生ID|
 
 <h2 id="tocS_ApiResponseDiscussionComment">ApiResponseDiscussionComment</h2>
 
@@ -4801,6 +5264,30 @@ GET /api/announcements/{id}
 |username|string|true|none||用户名|
 |code|string|true|none||邮箱验证码|
 |newPassword|string|true|none||新密码明文，将被哈希|
+
+<h2 id="tocS_ResendRegisterCodeRequest">ResendRegisterCodeRequest</h2>
+
+<a id="schemaresendregistercoderequest"></a>
+<a id="schema_ResendRegisterCodeRequest"></a>
+<a id="tocSresendregistercoderequest"></a>
+<a id="tocsresendregistercoderequest"></a>
+
+```json
+{
+  "username": "string",
+  "password": "string"
+}
+
+```
+
+注册验证码重发请求
+
+### 属性
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|username|string|true|none||none|
+|password|string|true|none||none|
 
 <h2 id="tocS_ForgotPasswordSendCodeRequest">ForgotPasswordSendCodeRequest</h2>
 
@@ -5025,6 +5512,7 @@ GET /api/announcements/{id}
     "records": [
       {
         "id": 0,
+        "studentId": 0,
         "problemId": 0,
         "homeworkId": 0,
         "languageId": 0,
@@ -5078,6 +5566,7 @@ GET /api/announcements/{id}
   "records": [
     {
       "id": 0,
+      "studentId": 0,
       "problemId": 0,
       "homeworkId": 0,
       "languageId": 0,
@@ -5136,6 +5625,7 @@ GET /api/announcements/{id}
 ```json
 {
   "id": 0,
+  "studentId": 0,
   "problemId": 0,
   "homeworkId": 0,
   "languageId": 0,
@@ -5158,6 +5648,7 @@ GET /api/announcements/{id}
 |名称|类型|必选|约束|中文名|说明|
 |---|---|---|---|---|---|
 |id|integer(int64)|false|none||none|
+|studentId|integer(int64)|false|none||none|
 |problemId|integer(int64)|false|none||none|
 |homeworkId|integer(int64)|false|none||none|
 |languageId|integer(int32)|false|none||none|
@@ -6342,6 +6833,46 @@ GET /api/announcements/{id}
 |message|string|false|none||none|
 |data|[PageAdmin](#schemapageadmin)|false|none||none|
 
+<h2 id="tocS_AnalyticsSummaryVO">AnalyticsSummaryVO</h2>
+
+<a id="schemaanalyticssummaryvo"></a>
+<a id="schema_AnalyticsSummaryVO"></a>
+<a id="tocSanalyticssummaryvo"></a>
+<a id="tocsanalyticssummaryvo"></a>
+
+```json
+{
+  "submissionTotal": 0,
+  "submissionAccepted": 0,
+  "problemActive": 0,
+  "problemInactive": 0,
+  "solutionTotal": 0,
+  "solutionActive": 0,
+  "discussionTotal": 0,
+  "discussionActive": 0,
+  "loginSuccess": 0,
+  "loginFail": 0
+}
+
+```
+
+可视化-全局概览
+
+### 属性
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|submissionTotal|integer(int64)|false|none||提交总数|
+|submissionAccepted|integer(int64)|false|none||AC 提交数|
+|problemActive|integer(int64)|false|none||启用题目数|
+|problemInactive|integer(int64)|false|none||禁用题目数|
+|solutionTotal|integer(int64)|false|none||题解总数|
+|solutionActive|integer(int64)|false|none||启用题解数|
+|discussionTotal|integer(int64)|false|none||讨论总数|
+|discussionActive|integer(int64)|false|none||启用讨论数|
+|loginSuccess|integer(int64)|false|none||登录成功次数|
+|loginFail|integer(int64)|false|none||登录失败次数|
+
 <h2 id="tocS_PageAdmin">PageAdmin</h2>
 
 <a id="schemapageadmin"></a>
@@ -6403,6 +6934,41 @@ GET /api/announcements/{id}
 |countId|string|false|none||none|
 |pages|integer(int64)|false|none||none|
 
+<h2 id="tocS_ApiResponseAnalyticsSummaryVO">ApiResponseAnalyticsSummaryVO</h2>
+
+<a id="schemaapiresponseanalyticssummaryvo"></a>
+<a id="schema_ApiResponseAnalyticsSummaryVO"></a>
+<a id="tocSapiresponseanalyticssummaryvo"></a>
+<a id="tocsapiresponseanalyticssummaryvo"></a>
+
+```json
+{
+  "code": 0,
+  "message": "string",
+  "data": {
+    "submissionTotal": 0,
+    "submissionAccepted": 0,
+    "problemActive": 0,
+    "problemInactive": 0,
+    "solutionTotal": 0,
+    "solutionActive": 0,
+    "discussionTotal": 0,
+    "discussionActive": 0,
+    "loginSuccess": 0,
+    "loginFail": 0
+  }
+}
+
+```
+
+### 属性
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|code|integer(int32)|false|none||none|
+|message|string|false|none||none|
+|data|[AnalyticsSummaryVO](#schemaanalyticssummaryvo)|false|none||可视化-全局概览|
+
 <h2 id="tocS_ApiResponseListProblemTestcase">ApiResponseListProblemTestcase</h2>
 
 <a id="schemaapiresponselistproblemtestcase"></a>
@@ -6433,4 +6999,131 @@ GET /api/announcements/{id}
 |code|integer(int32)|false|none||none|
 |message|string|false|none||none|
 |data|[[ProblemTestcase](#schemaproblemtestcase)]|false|none||[题目测试用例实体]|
+
+<h2 id="tocS_AnalyticsStatusCountVO">AnalyticsStatusCountVO</h2>
+
+<a id="schemaanalyticsstatuscountvo"></a>
+<a id="schema_AnalyticsStatusCountVO"></a>
+<a id="tocSanalyticsstatuscountvo"></a>
+<a id="tocsanalyticsstatuscountvo"></a>
+
+```json
+{
+  "statusId": 0,
+  "total": 0,
+  "name": "string",
+  "code": "string",
+  "percentage": 0.1
+}
+
+```
+
+可视化-状态计数
+
+### 属性
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|statusId|integer(int32)|false|none||状态ID/枚举|
+|total|integer(int64)|false|none||数量|
+|name|string|false|none||状态名称或别名（可选）|
+|code|string|false|none||状态编码/别名（可选）|
+|percentage|number(double)|false|none||占比（0-1），便于直接绘制饼图|
+
+<h2 id="tocS_AnalyticsTimeseriesVO">AnalyticsTimeseriesVO</h2>
+
+<a id="schemaanalyticstimeseriesvo"></a>
+<a id="schema_AnalyticsTimeseriesVO"></a>
+<a id="tocSanalyticstimeseriesvo"></a>
+<a id="tocsanalyticstimeseriesvo"></a>
+
+```json
+{
+  "label": "string",
+  "total": 0,
+  "success": 0,
+  "fail": 0,
+  "bucketStart": "2019-08-24T14:15:22Z",
+  "bucketEnd": "2019-08-24T14:15:22Z"
+}
+
+```
+
+可视化-时间序列点
+
+### 属性
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|label|string|false|none||时间标签，如 2025-12-12 / 2025-12 / 2025-W51 / all|
+|total|integer(int64)|false|none||总数|
+|success|integer(int64)|false|none||成功/通过数（可选）|
+|fail|integer(int64)|false|none||失败数（可选）|
+|bucketStart|string(date-time)|false|none||桶开始时间|
+|bucketEnd|string(date-time)|false|none||桶结束时间（开区间，null 表示无上限）|
+
+<h2 id="tocS_ApiResponseListAnalyticsStatusCountVO">ApiResponseListAnalyticsStatusCountVO</h2>
+
+<a id="schemaapiresponselistanalyticsstatuscountvo"></a>
+<a id="schema_ApiResponseListAnalyticsStatusCountVO"></a>
+<a id="tocSapiresponselistanalyticsstatuscountvo"></a>
+<a id="tocsapiresponselistanalyticsstatuscountvo"></a>
+
+```json
+{
+  "code": 0,
+  "message": "string",
+  "data": [
+    {
+      "statusId": 0,
+      "total": 0,
+      "name": "string",
+      "code": "string",
+      "percentage": 0.1
+    }
+  ]
+}
+
+```
+
+### 属性
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|code|integer(int32)|false|none||none|
+|message|string|false|none||none|
+|data|[[AnalyticsStatusCountVO](#schemaanalyticsstatuscountvo)]|false|none||[可视化-状态计数]|
+
+<h2 id="tocS_ApiResponseListAnalyticsTimeseriesVO">ApiResponseListAnalyticsTimeseriesVO</h2>
+
+<a id="schemaapiresponselistanalyticstimeseriesvo"></a>
+<a id="schema_ApiResponseListAnalyticsTimeseriesVO"></a>
+<a id="tocSapiresponselistanalyticstimeseriesvo"></a>
+<a id="tocsapiresponselistanalyticstimeseriesvo"></a>
+
+```json
+{
+  "code": 0,
+  "message": "string",
+  "data": [
+    {
+      "label": "string",
+      "total": 0,
+      "success": 0,
+      "fail": 0,
+      "bucketStart": "2019-08-24T14:15:22Z",
+      "bucketEnd": "2019-08-24T14:15:22Z"
+    }
+  ]
+}
+
+```
+
+### 属性
+
+|名称|类型|必选|约束|中文名|说明|
+|---|---|---|---|---|---|
+|code|integer(int32)|false|none||none|
+|message|string|false|none||none|
+|data|[[AnalyticsTimeseriesVO](#schemaanalyticstimeseriesvo)]|false|none||[可视化-时间序列点]|
 
